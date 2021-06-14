@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+import "v1/agreement.proto";
+
+option (scalapb.options) = {
+  package_name: "it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1"
+};
+
+message AgreementAddedV1 {
+  required AgreementV1 agreement = 1;
+}

@@ -20,7 +20,7 @@ object AgreementPersistentBehavior {
     context: ActorContext[Command]
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
     val idleTimeout =
-      context.system.settings.config.getDuration("pdnd-interop-uservice-agreement-management.idle-timeout")
+      context.system.settings.config.getDuration("uservice-agreement-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddAgreement(newAgreement, replyTo) =>
@@ -67,14 +67,14 @@ object AgreementPersistentBehavior {
     }
 
   val TypeKey: EntityTypeKey[Command] =
-    EntityTypeKey[Command]("pdnd-interop-uservice-agreement-management-persistence-agreement")
+    EntityTypeKey[Command]("uservice-agreement-management-persistence-agreement")
 
   def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[Command] = {
     Behaviors.setup { context =>
       context.log.error(s"Starting Pet Shard ${persistenceId.id}")
       val numberOfEvents =
         context.system.settings.config
-          .getInt("pdnd-interop-uservice-agreement-management.number-of-events-before-snapshot")
+          .getInt("uservice-agreement-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,

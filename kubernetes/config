@@ -10,7 +10,7 @@ popd  > /dev/null
 
 repository=$DOCKER_REPO
 
-replicas=$REPLICAS
+replicas=$REPLICAS_NR
 
 name=$(cat $SCRIPT_PATH/../build.sbt | grep "name :=" | awk -F:= '{ print $2 }' | sed 's/\"//' | sed 's/\",//' | sed 's/ //' | tr '[:upper:]' '[:lower:]' | grep -v client )
 

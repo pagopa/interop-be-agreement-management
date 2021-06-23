@@ -1,5 +1,3 @@
-import scala.sys.process.Process
-
 ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / organization := "it.pagopa"
 ThisBuild / organizationName := "Pagopa S.p.A."
@@ -9,10 +7,7 @@ ThisBuild / libraryDependencies := Dependencies.Jars.`server`.map(m =>
   else
     m
 )
-ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
-ThisBuild / version := {
-  Process("./version.sh").lineStream_!.head.replaceFirst("v", "")
-}
+ThisBuild / version := "0.1.0-SNAPSHOT"
 
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
 
@@ -60,7 +55,7 @@ lazy val generated = project
 lazy val client = project
   .in(file("client"))
   .settings(
-    name := "pdnd-interop-uservice-agreement-management",
+    name := "pdnd-interop-uservice-agreement-management-client",
     scalacOptions := Seq(),
     libraryDependencies := Dependencies.Jars.client.map(m =>
       if (scalaVersion.value.startsWith("3.0"))
@@ -89,13 +84,7 @@ lazy val root = (project in file("."))
     dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
     dockerUpdateLatest := true,
     daemonUser := "daemon",
-    Docker / version := s"${
-      val buildVersion = (ThisBuild / version).value
-      if (buildVersion == "latest")
-        buildVersion
-      else
-        s"v$buildVersion"
-    }".toLowerCase,
+    Docker / version := (ThisBuild / version).value,
     Docker / packageName := s"services/${name.value}",
     Docker / dockerExposedPorts := Seq(8080),
     wartremoverErrors ++= Warts.all,

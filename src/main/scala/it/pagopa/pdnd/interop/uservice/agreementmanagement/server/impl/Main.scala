@@ -63,16 +63,19 @@ object Main extends App {
           case None    => ClusterShardingSettings(context.system)
           case Some(s) => s
         }
+        val persistence =
+          classicSystem.classicSystem.settings.config.getString("uservice-agreement-management")
+        if (persistence == "cassandra") {
+          val agreementPersistentProjection =
+            new AgreementPersistentProjection(context.system, agreementPersistenceEntity)
 
-        val agreementPersistentProjection =
-          new AgreementPersistentProjection(context.system, agreementPersistenceEntity)
-
-        ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
-          name = "agreement-projections",
-          numberOfInstances = settings.numberOfShards,
-          behaviorFactory = (i: Int) => ProjectionBehavior(agreementPersistentProjection.projections(i)),
-          stopMessage = ProjectionBehavior.Stop
-        )
+          ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
+            name = "agreement-projections",
+            numberOfInstances = settings.numberOfShards,
+            behaviorFactory = (i: Int) => ProjectionBehavior(agreementPersistentProjection.projections(i)),
+            stopMessage = ProjectionBehavior.Stop
+          )
+        }
 
         val uuidSupplier: UUIDSupplier = new UUIDSupplierImpl
 

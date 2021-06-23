@@ -10,6 +10,8 @@ popd  > /dev/null
 
 repository=$DOCKER_REPO
 
-name=$(cat $SCRIPT_PATH/../build.sbt | grep "name :=" | awk -F:= '{ print $2 }' | sed 's/\"//' | sed 's/\",//' | sed 's/ //' | tr '[:upper:]' '[:lower:]' | grep -v client)
+replicas=$REPLICAS
 
-version=$($SCRIPT_PATH/../version.sh)
+name=$(cat $SCRIPT_PATH/../build.sbt | grep "name :=" | awk -F:= '{ print $2 }' | sed 's/\"//' | sed 's/\",//' | sed 's/ //' | tr '[:upper:]' '[:lower:]' | grep -v client )
+
+version=$(cat $SCRIPT_PATH/../build.sbt  | grep "ThisBuild / version := " | awk -F:= '{ print $2 }'  | sed 's/ //' | sed 's/"//' | sed 's/"//' | uniq)

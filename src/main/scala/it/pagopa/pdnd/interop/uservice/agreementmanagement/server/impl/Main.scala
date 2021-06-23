@@ -64,7 +64,7 @@ object Main extends App {
           case Some(s) => s
         }
         val persistence =
-          classicSystem.classicSystem.settings.config.getString("uservice-agreement-management")
+          classicSystem.classicSystem.settings.config.getString("uservice-agreement-management.persistence")
         if (persistence == "cassandra") {
           val agreementPersistentProjection =
             new AgreementPersistentProjection(context.system, agreementPersistenceEntity)

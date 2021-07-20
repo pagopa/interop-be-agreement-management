@@ -36,7 +36,7 @@ class AgreementApiServiceImpl(
     case Some(s) => s
   }
 
-  @inline private def getShard(id: String): String = (id.hashCode % settings.numberOfShards).toString
+  @inline private def getShard(id: String): String = Math.abs(id.hashCode % settings.numberOfShards).toString
 
   /** Code: 200, Message: Agreement created, DataType: Agreement
     * Code: 405, Message: Invalid input, DataType: Problem
@@ -50,8 +50,8 @@ class AgreementApiServiceImpl(
     val agreement: Agreement = Agreement(
       id = id,
       eserviceId = agreementSeed.eserviceId,
-      producerId = agreementSeed.eserviceId,
-      consumerId = agreementSeed.eserviceId,
+      producerId = agreementSeed.producerId,
+      consumerId = agreementSeed.consumerId,
       status = "active"
     )
     val commander: EntityRef[Command] =

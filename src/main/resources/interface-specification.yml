@@ -28,6 +28,8 @@ paths:
         - agreement
       summary: Add a new agreement
       operationId: addAgreement
+      security:
+        - bearerAuth: [ ]
       requestBody:
         description: A Agreement seed
         content:
@@ -55,11 +57,11 @@ paths:
       operationId: getAgreements
       parameters:
         - in: query
-          name: producer_id
+          name: producerId
           schema:
             type: string
         - in: query
-          name: consumer_id
+          name: consumerId
           schema:
             type: string
         - in: query
@@ -80,6 +82,8 @@ paths:
         - agreement
       summary: Get an agreement
       operationId: getAgreement
+      security:
+        - bearerAuth: [ ]
       parameters:
         - name: agreement_id
           in: path
@@ -111,38 +115,38 @@ components:
     AgreementSeed:
       type: object
       required:
-        - eservice_id
-        - producer_id
-        - consumer_id
+        - eserviceId
+        - producerId
+        - consumerId
       properties:
-        eservice_id:
+        eserviceId:
           type: string
           format: uuid
-        producer_id:
+        producerId:
           type: string
           format: uuid
-        consumer_id:
+        consumerId:
           type: string
           format: uuid
     Agreement:
       type: object
       required:
         - id
-        - eservice_id
-        - producer_id
-        - consumer_id
+        - eserviceId
+        - producerId
+        - consumerId
         - status
       properties:
         id:
           type: string
           format: uuid
-        eservice_id:
+        eserviceId:
           type: string
           format: uuid
-        producer_id:
+        producerId:
           type: string
           format: uuid
-        consumer_id:
+        consumerId:
           type: string
           format: uuid
         status:
@@ -182,3 +186,9 @@ components:
       required:
         - status
         - title
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: A bearer token in the format of a JWS and comformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).
+      scheme: bearer
+      bearerFormat: JWT

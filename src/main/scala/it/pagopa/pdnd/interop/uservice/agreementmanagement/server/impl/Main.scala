@@ -28,6 +28,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.impl.UUIDSupplierImpl
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.ApplicationConfiguration
 import kamon.Kamon
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -106,7 +107,7 @@ object Main extends App {
           })
         )
 
-        val _ = Http().newServerAt("0.0.0.0", 8088).bind(controller.routes)
+        val _ = Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
 
         val listener = context.spawn(
           Behaviors.receive[ClusterEvent.MemberEvent]((ctx, event) => {

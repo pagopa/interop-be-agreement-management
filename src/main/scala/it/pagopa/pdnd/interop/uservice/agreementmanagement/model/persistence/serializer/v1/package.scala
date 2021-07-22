@@ -55,9 +55,9 @@ package object v1 {
         AgreementAdded(agreement =
           Agreement(
             id = UUID.fromString(event.agreement.id),
-            eserviceId = UUID.fromString(event.agreement.id),
-            producerId = UUID.fromString(event.agreement.id),
-            consumerId = UUID.fromString(event.agreement.id),
+            eserviceId = UUID.fromString(event.agreement.eserviceId),
+            producerId = UUID.fromString(event.agreement.producerId),
+            consumerId = UUID.fromString(event.agreement.consumerId),
             status = event.agreement.status
           )
         )

@@ -25,7 +25,6 @@ object AgreementPersistentBehavior {
     command match {
       case AddAgreement(newAgreement, replyTo) =>
         val agreement: Option[Agreement] = state.agreements.get(newAgreement.id.toString)
-
         agreement
           .map { es =>
             replyTo ! StatusReply.Error[Agreement](s"Agreement ${es.id.toString} already exists")
@@ -35,6 +34,22 @@ object AgreementPersistentBehavior {
             Effect
               .persist(AgreementAdded(newAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(newAgreement))
+          }
+
+      case UpdateVerifiedAttribute(agreementId, updateVerifiedAttribute, replyTo) =>
+        val attributeId = updateVerifiedAttribute.id.toString
+        val agreementOpt: Option[Agreement] =
+          state.getAgreementContainingVerifiedAttribute(agreementId, attributeId)
+        agreementOpt
+          .map { agreement =>
+            val updatedAgreement = state.updateAgreementContent(agreement, updateVerifiedAttribute)
+            Effect
+              .persist(VerifiedAttributeUpdated(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
+          }
+          .getOrElse {
+            replyTo ! StatusReply.Error[Agreement](s"Attribute ${attributeId} not found for agreement ${agreementId}!")
+            Effect.none[VerifiedAttributeUpdated, State]
           }
 
       case GetAgreement(agreementId, replyTo) =>
@@ -63,7 +78,8 @@ object AgreementPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case AgreementAdded(agreement) => state.add(agreement)
+      case AgreementAdded(agreement)           => state.add(agreement)
+      case VerifiedAttributeUpdated(agreement) => state.updateAgreement(agreement)
     }
 
   val TypeKey: EntityTypeKey[Command] =

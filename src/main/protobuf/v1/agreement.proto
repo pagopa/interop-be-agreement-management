@@ -12,4 +12,12 @@ message AgreementV1 {
   required string producerId = 3;
   required string consumerId = 4;
   required string status = 5;
+  repeated VerifiedAttributeV1 verifiedAttributes = 6;
+}
+
+message VerifiedAttributeV1 {
+  required string id = 1;                 // registry identifier
+  required bool verified = 2;             // state of verification
+  optional string verificationDate = 4;   // timestamp of verification, None if not verified
+  optional string validityTimespan = 5;  // seconds of verification validity, None by default
 }

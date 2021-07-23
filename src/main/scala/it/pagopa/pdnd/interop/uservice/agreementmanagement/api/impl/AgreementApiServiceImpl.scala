@@ -10,7 +10,7 @@ import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, Problem}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, Problem, VerifiedAttribute}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
 import scala.concurrent.duration.Duration
@@ -52,7 +52,8 @@ class AgreementApiServiceImpl(
       eserviceId = agreementSeed.eserviceId,
       producerId = agreementSeed.producerId,
       consumerId = agreementSeed.consumerId,
-      status = "active"
+      status = "active",
+      verifiedAttributes = agreementSeed.verifiedAttributes.distinctBy(_.id)
     )
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id.toString))
@@ -111,4 +112,25 @@ class AgreementApiServiceImpl(
     getAgreements200(agreements)
   }
 
+  /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
+    * Code: 400, Message: Bad Request, DataType: Problem
+    * Code: 404, Message: Resource Not Found, DataType: Problem
+    */
+  override def updateAgreementVerifiedAttribute(agreementId: String, verifiedAttribute: VerifiedAttribute)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+    val result: Future[StatusReply[Agreement]] =
+      commander.ask(ref => UpdateVerifiedAttribute(agreementId, verifiedAttribute, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => updateAgreementVerifiedAttribute200(statusReply.getValue)
+      case statusReply if statusReply.isError =>
+        updateAgreementVerifiedAttribute404(
+          Problem(Option(statusReply.getError.getMessage), status = 404, "Verified Attribute not found")
+        )
+    }
+  }
 }

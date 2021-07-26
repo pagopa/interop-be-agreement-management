@@ -48,7 +48,7 @@ object AgreementPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
           }
           .getOrElse {
-            replyTo ! StatusReply.Error[Agreement](s"Attribute ${attributeId} not found for agreement ${agreementId}!")
+            replyTo ! StatusReply.Error[Agreement](s"Attribute ${attributeId} not found for agreement ${agreementId}.")
             Effect.none[VerifiedAttributeUpdated, State]
           }
 

@@ -149,12 +149,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifiedAttribute'
+              $ref: '#/components/schemas/VerifiedAttributeSeed'
         description: the updated attribute
+        required: true
 components:
   schemas:
     AgreementSeed:
       type: object
+      description: contains the expected payload for attributes persistence.
       properties:
         eserviceId:
           type: string
@@ -169,13 +171,12 @@ components:
           type: array
           description: 'set of the verified attributes belonging to this agreement, if any.'
           items:
-            $ref: '#/components/schemas/VerifiedAttribute'
+            $ref: '#/components/schemas/VerifiedAttributeSeed'
       required:
         - eserviceId
         - producerId
         - consumerId
         - verifiedAttributes
-      description: contains the expected payload for attributes persistence.
     Agreement:
       type: object
       properties:
@@ -254,6 +255,27 @@ components:
           type: string
           description: 'timestamp containing the instant of the verification, if any.'
           format: date-time
+        validityTimespan:
+          type: integer
+          format: int64
+          description: 'optional validity timespan, in seconds.'
+          exclusiveMinimum: false
+          minimum: 1
+      required:
+        - id
+        - verified
+    VerifiedAttributeSeed:
+      title: VerifiedAttributeSeed
+      type: object
+      description: represents the details of a verified attribute bound to the agreement.
+      properties:
+        id:
+          type: string
+          description: identifier of the attribute as defined on the attribute registry
+          format: uuid
+        verified:
+          type: boolean
+          description: flag stating the current verification state of this attribute
         validityTimespan:
           type: integer
           format: int64

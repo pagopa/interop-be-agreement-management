@@ -1,7 +1,13 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, Problem, VerifiedAttribute}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
+  Agreement,
+  AgreementSeed,
+  Problem,
+  VerifiedAttribute,
+  VerifiedAttributeSeed
+}
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError}
 
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
@@ -45,9 +51,10 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
       }
     }
 
-  implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute] = jsonFormat4(VerifiedAttribute)
-  implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]         = jsonFormat4(AgreementSeed)
-  implicit val agreementFormat: RootJsonFormat[Agreement]                 = jsonFormat6(Agreement)
-  implicit val problemFormat: RootJsonFormat[Problem]                     = jsonFormat3(Problem)
+  implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute]         = jsonFormat4(VerifiedAttribute)
+  implicit val verifiedAttributeSeedFormat: RootJsonFormat[VerifiedAttributeSeed] = jsonFormat3(VerifiedAttributeSeed)
+  implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]                 = jsonFormat4(AgreementSeed)
+  implicit val agreementFormat: RootJsonFormat[Agreement]                         = jsonFormat6(Agreement)
+  implicit val problemFormat: RootJsonFormat[Problem]                             = jsonFormat3(Problem)
 
 }

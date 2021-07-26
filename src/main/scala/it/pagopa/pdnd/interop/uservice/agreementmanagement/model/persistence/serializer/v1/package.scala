@@ -132,7 +132,7 @@ package object v1 {
       id = verifiedAttribute.id.toString,
       verified = verifiedAttribute.verified,
       verificationDate = verifiedAttribute.verificationDate.map(fromTime),
-      endOfValidityDate = verifiedAttribute.validityTimespan.map(_.toString)
+      validityTimespan = verifiedAttribute.validityTimespan.map(_.toString)
     )
   }
 
@@ -141,7 +141,7 @@ package object v1 {
       id = UUID.fromString(serializedVerifiedAttribute.id),
       verified = serializedVerifiedAttribute.verified,
       verificationDate = serializedVerifiedAttribute.verificationDate.map(toTime),
-      validityTimespan = serializedVerifiedAttribute.endOfValidityDate.map(_.toLong)
+      validityTimespan = serializedVerifiedAttribute.validityTimespan.map(_.toLong)
     )
   }
 

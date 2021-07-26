@@ -10,9 +10,16 @@ import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, Problem, VerifiedAttribute}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
+  Agreement,
+  AgreementSeed,
+  Problem,
+  VerifiedAttribute,
+  VerifiedAttributeSeed
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
+import java.time.OffsetDateTime
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -46,14 +53,16 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val id = UUIDSupplier.get
+    val id         = UUIDSupplier.get
+    val attributes = agreementSeed.verifiedAttributes.distinctBy(_.id).map(toVerifiedAttribute)
+
     val agreement: Agreement = Agreement(
       id = id,
       eserviceId = agreementSeed.eserviceId,
       producerId = agreementSeed.producerId,
       consumerId = agreementSeed.consumerId,
       status = "active",
-      verifiedAttributes = agreementSeed.verifiedAttributes.distinctBy(_.id)
+      verifiedAttributes = attributes
     )
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id.toString))
@@ -95,6 +104,7 @@ class AgreementApiServiceImpl(
   ): Route = {
     contexts.foreach(println)
     val sliceSize = 100
+
     def getSlice(commander: EntityRef[Command], from: Int, to: Int): LazyList[Agreement] = {
       val slice: Seq[Agreement] = Await
         .result(commander.ask(ref => ListAgreements(from, to, producerId, consumerId, status, ref)), Duration.Inf)
@@ -104,6 +114,7 @@ class AgreementApiServiceImpl(
       else
         getSlice(commander, to, to + sliceSize) #::: slice.to(LazyList)
     }
+
     val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(shard.toString))
     )
@@ -112,11 +123,21 @@ class AgreementApiServiceImpl(
     getAgreements200(agreements)
   }
 
+  private def toVerifiedAttribute(seed: VerifiedAttributeSeed): VerifiedAttribute = {
+    VerifiedAttribute(
+      id = seed.id,
+      verified = seed.verified,
+      verificationDate = if (seed.verified) Some(OffsetDateTime.now()) else None,
+      validityTimespan = seed.validityTimespan
+    )
+  }
+
   /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
     * Code: 400, Message: Bad Request, DataType: Problem
     * Code: 404, Message: Resource Not Found, DataType: Problem
     */
-  override def updateAgreementVerifiedAttribute(agreementId: String, verifiedAttribute: VerifiedAttribute)(implicit
+  override def updateAgreementVerifiedAttribute(agreementId: String, verifiedAttributeSeed: VerifiedAttributeSeed)(
+    implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
@@ -124,7 +145,7 @@ class AgreementApiServiceImpl(
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
     val result: Future[StatusReply[Agreement]] =
-      commander.ask(ref => UpdateVerifiedAttribute(agreementId, verifiedAttribute, ref))
+      commander.ask(ref => UpdateVerifiedAttribute(agreementId, toVerifiedAttribute(verifiedAttributeSeed), ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => updateAgreementVerifiedAttribute200(statusReply.getValue)
       case statusReply if statusReply.isError =>

@@ -101,7 +101,7 @@ paths:
           schema:
             type: string
             enum:
-              - draft
+              - pending
               - active
               - suspended
       responses:
@@ -152,6 +152,70 @@ paths:
               $ref: '#/components/schemas/VerifiedAttributeSeed'
         description: the updated attribute
         required: true
+  '/agreements/{agreement_id}/activate':
+    parameters:
+      - schema:
+          type: string
+        name: agreement_id
+        in: path
+        required: true
+    patch:
+      summary: Activate Agreement
+      operationId: activateAgreement
+      responses:
+        '200':
+          description: Agreement activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      description: 'activates the agreement, if any.'
+      tags:
+        - agreement
+  '/agreements/{agreement_id}/suspend':
+    parameters:
+      - schema:
+          type: string
+        name: agreement_id
+        in: path
+        required: true
+    patch:
+      summary: Suspend Agreement
+      operationId: suspendAgreement
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Agreement Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      tags:
+        - agreement
+      description: suspends the agreement by id
 components:
   schemas:
     AgreementSeed:
@@ -196,6 +260,8 @@ components:
           type: string
           enum:
             - active
+            - pending
+            - suspended
         verifiedAttributes:
           type: array
           description: 'set of the verified attributes belonging to this agreement, if any.'

@@ -14,6 +14,8 @@ final case class UpdateVerifiedAttribute(
   replyTo: ActorRef[StatusReply[Agreement]]
 )                                                                                                     extends Command
 final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply[Option[Agreement]]]) extends Command
+final case class ActivateAgreement(agreementId: String, replyTo: ActorRef[StatusReply[Agreement]])    extends Command
+final case class SuspendAgreement(agreementId: String, replyTo: ActorRef[StatusReply[Agreement]])     extends Command
 final case class ListAgreements(
   from: Int,
   to: Int,

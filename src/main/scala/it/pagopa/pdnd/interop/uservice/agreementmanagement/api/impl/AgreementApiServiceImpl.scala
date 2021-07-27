@@ -61,7 +61,7 @@ class AgreementApiServiceImpl(
       eserviceId = agreementSeed.eserviceId,
       producerId = agreementSeed.producerId,
       consumerId = agreementSeed.consumerId,
-      status = "active",
+      status = "pending",
       verifiedAttributes = attributes
     )
     val commander: EntityRef[Command] =
@@ -93,6 +93,36 @@ class AgreementApiServiceImpl(
         )
       case statusReply if statusReply.isError =>
         getAgreement400(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
+
+  override def activateAgreement(agreementId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+    val result: Future[StatusReply[Agreement]] = commander.ask(ref => ActivateAgreement(agreementId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
+      case statusReply if statusReply.isError =>
+        activateAgreement404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
+
+  override def suspendAgreement(agreementId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+    val result: Future[StatusReply[Agreement]] = commander.ask(ref => SuspendAgreement(agreementId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
+      case statusReply if statusReply.isError =>
+        suspendAgreement404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
 

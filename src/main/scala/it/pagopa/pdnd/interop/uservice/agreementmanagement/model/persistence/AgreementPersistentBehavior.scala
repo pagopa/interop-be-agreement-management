@@ -57,6 +57,34 @@ object AgreementPersistentBehavior {
         replyTo ! StatusReply.Success[Option[Agreement]](agreement)
         Effect.none[Event, State]
 
+      case ActivateAgreement(agreementId, replyTo) =>
+        val agreement: Option[Agreement] = state.agreements.get(agreementId)
+        agreement
+          .map { agreement =>
+            val updatedAgreement = agreement.copy(status = "active")
+            Effect
+              .persist(AgreementActivated(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
+          }
+          .getOrElse {
+            replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
+            Effect.none[AgreementActivated, State]
+          }
+
+      case SuspendAgreement(agreementId, replyTo) =>
+        val agreement: Option[Agreement] = state.agreements.get(agreementId)
+        agreement
+          .map { agreement =>
+            val updatedAgreement = agreement.copy(status = "suspended")
+            Effect
+              .persist(AgreementSuspended(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
+          }
+          .getOrElse {
+            replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
+            Effect.none[AgreementSuspended, State]
+          }
+
       case ListAgreements(from, to, producerId, _, status, replyTo) =>
         val agreements: Seq[Agreement] = state.agreements
           .filter { case (_, v) =>
@@ -79,6 +107,8 @@ object AgreementPersistentBehavior {
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case AgreementAdded(agreement)           => state.add(agreement)
+      case AgreementActivated(agreement)       => state.updateAgreement(agreement)
+      case AgreementSuspended(agreement)       => state.updateAgreement(agreement)
       case VerifiedAttributeUpdated(agreement) => state.updateAgreement(agreement)
     }
 

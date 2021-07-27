@@ -2,7 +2,9 @@ package it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.se
 
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, VerifiedAttribute}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{
+  AgreementActivated,
   AgreementAdded,
+  AgreementSuspended,
   State,
   VerifiedAttributeUpdated
 }
@@ -11,7 +13,9 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.ser
   VerifiedAttributeV1
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1.events.{
+  AgreementActivatedV1,
   AgreementAddedV1,
+  AgreementSuspendedV1,
   VerifiedAttributeUpdatedV1
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1.state.{AgreementsV1, StateV1}
@@ -125,6 +129,72 @@ package object v1 {
               verifiedAttributes = event.agreement.verifiedAttributes.map(serializeVerifiedAttribute)
             )
           )
+      )
+
+  implicit def agreementActivatedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementActivated, AgreementActivatedV1] =
+    event =>
+      Right[Throwable, AgreementActivatedV1](
+        AgreementActivatedV1
+          .of(
+            AgreementV1(
+              id = event.agreement.id.toString,
+              eserviceId = event.agreement.eserviceId.toString,
+              producerId = event.agreement.producerId.toString,
+              consumerId = event.agreement.consumerId.toString,
+              status = event.agreement.status,
+              verifiedAttributes = event.agreement.verifiedAttributes.map(serializeVerifiedAttribute)
+            )
+          )
+      )
+
+  implicit def agreementActivatedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementActivatedV1, AgreementActivated] =
+    event =>
+      Right[Throwable, AgreementActivated](
+        AgreementActivated(agreement =
+          Agreement(
+            id = UUID.fromString(event.agreement.id),
+            eserviceId = UUID.fromString(event.agreement.eserviceId),
+            producerId = UUID.fromString(event.agreement.producerId),
+            consumerId = UUID.fromString(event.agreement.consumerId),
+            status = event.agreement.status,
+            verifiedAttributes = event.agreement.verifiedAttributes.map(deserializeVerifiedAttribute)
+          )
+        )
+      )
+
+  implicit def agreementSuspendedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementSuspended, AgreementSuspendedV1] =
+    event =>
+      Right[Throwable, AgreementSuspendedV1](
+        AgreementSuspendedV1
+          .of(
+            AgreementV1(
+              id = event.agreement.id.toString,
+              eserviceId = event.agreement.eserviceId.toString,
+              producerId = event.agreement.producerId.toString,
+              consumerId = event.agreement.consumerId.toString,
+              status = event.agreement.status,
+              verifiedAttributes = event.agreement.verifiedAttributes.map(serializeVerifiedAttribute)
+            )
+          )
+      )
+
+  implicit def agreementSuspendedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementSuspendedV1, AgreementSuspended] =
+    event =>
+      Right[Throwable, AgreementSuspended](
+        AgreementSuspended(agreement =
+          Agreement(
+            id = UUID.fromString(event.agreement.id),
+            eserviceId = UUID.fromString(event.agreement.eserviceId),
+            producerId = UUID.fromString(event.agreement.producerId),
+            consumerId = UUID.fromString(event.agreement.consumerId),
+            status = event.agreement.status,
+            verifiedAttributes = event.agreement.verifiedAttributes.map(deserializeVerifiedAttribute)
+          )
+        )
       )
 
   private def serializeVerifiedAttribute(verifiedAttribute: VerifiedAttribute): VerifiedAttributeV1 = {

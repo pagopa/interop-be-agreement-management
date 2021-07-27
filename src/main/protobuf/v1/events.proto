@@ -14,3 +14,11 @@ message AgreementAddedV1 {
 message VerifiedAttributeUpdatedV1 {
   required AgreementV1 agreement = 1;
 }
+
+message AgreementActivatedV1 {
+  required AgreementV1 agreement = 1;
+}
+
+message AgreementSuspendedV1 {
+  required AgreementV1 agreement = 1;
+}

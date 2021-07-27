@@ -107,7 +107,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        activateAgreement404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+        activateAgreement404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
 

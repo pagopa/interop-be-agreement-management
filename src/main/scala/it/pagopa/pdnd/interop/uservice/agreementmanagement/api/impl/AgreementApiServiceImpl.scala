@@ -10,13 +10,7 @@ import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
-  Agreement,
-  AgreementSeed,
-  Problem,
-  VerifiedAttribute,
-  VerifiedAttributeSeed
-}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
 import java.time.OffsetDateTime
@@ -66,7 +60,8 @@ class AgreementApiServiceImpl(
     )
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id.toString))
-    val result: Future[StatusReply[Agreement]] = commander.ask(ref => AddAgreement(agreement, ref))
+    val result: Future[StatusReply[Agreement]] =
+      commander.ask(ref => AddAgreement(agreement, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addAgreement200(agreement)
       case statusReply if statusReply.isError =>
@@ -141,12 +136,13 @@ class AgreementApiServiceImpl(
 
       if (slice.isEmpty)
         LazyList.empty[Agreement]
-      else
+      else {
         getSlice(commander, to, to + sliceSize) #::: slice.to(LazyList)
+      }
     }
 
     val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(shard.toString))
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, shard.toString)
     )
     val agreements: Seq[Agreement] = commanders.flatMap(ref => getSlice(ref, 0, sliceSize))
 

@@ -1,6 +1,6 @@
-CREATE KEYSPACE uservice_agreement_management WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': '3'}  AND durable_writes = true;
+CREATE KEYSPACE agreement_management_persistence WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': '3'}  AND durable_writes = true;
 
-CREATE TABLE uservice_agreement_management.tag_views (
+CREATE TABLE agreement_management_persistence.tag_views (
     tag_name text,
     timebucket bigint,
     timestamp timeuuid,
@@ -32,7 +32,7 @@ CREATE TABLE uservice_agreement_management.tag_views (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE TABLE uservice_agreement_management.messages (
+CREATE TABLE agreement_management_persistence.messages (
     persistence_id text,
     partition_nr bigint,
     sequence_nr bigint,
@@ -64,7 +64,7 @@ CREATE TABLE uservice_agreement_management.messages (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE TABLE uservice_agreement_management.tag_scanning (
+CREATE TABLE agreement_management_persistence.tag_scanning (
     persistence_id text PRIMARY KEY,
     sequence_nr bigint
 ) WITH bloom_filter_fp_chance = 0.01
@@ -82,7 +82,7 @@ CREATE TABLE uservice_agreement_management.tag_scanning (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE TABLE uservice_agreement_management.all_persistence_ids (
+CREATE TABLE agreement_management_persistence.all_persistence_ids (
     persistence_id text PRIMARY KEY
 ) WITH bloom_filter_fp_chance = 0.01
     AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
@@ -99,7 +99,7 @@ CREATE TABLE uservice_agreement_management.all_persistence_ids (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE TABLE uservice_agreement_management.offset_store (
+CREATE TABLE agreement_management_persistence.offset_store (
     projection_name text,
     partition int,
     projection_key text,
@@ -123,7 +123,7 @@ CREATE TABLE uservice_agreement_management.offset_store (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE TABLE uservice_agreement_management.tag_write_progress (
+CREATE TABLE agreement_management_persistence.tag_write_progress (
     persistence_id text,
     tag text,
     offset timeuuid,
@@ -146,7 +146,7 @@ CREATE TABLE uservice_agreement_management.tag_write_progress (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE TABLE uservice_agreement_management.metadata (
+CREATE TABLE agreement_management_persistence.metadata (
     persistence_id text PRIMARY KEY,
     deleted_to bigint,
     properties map<text, text>
@@ -165,9 +165,7 @@ CREATE TABLE uservice_agreement_management.metadata (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 	
-CREATE KEYSPACE uservice_agreement_management_snap WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': '3'}  AND durable_writes = true;
-
-CREATE TABLE uservice_agreement_management_snap.snapshots (
+CREATE TABLE agreement_management_persistence.snapshots (
     persistence_id text,
     sequence_nr bigint,
     meta blob,
@@ -195,9 +193,7 @@ CREATE TABLE uservice_agreement_management_snap.snapshots (
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
 
-CREATE KEYSPACE uservice_agreement_management_proj WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': '3'}  AND durable_writes = true;
-
-CREATE TABLE uservice_agreement_management_proj.projection_management (
+CREATE TABLE agreement_management_persistence.projection_management (
     projection_name text,
     partition int,
     projection_key text,
@@ -219,27 +215,3 @@ CREATE TABLE uservice_agreement_management_proj.projection_management (
     AND min_index_interval = 128
     AND read_repair_chance = 0.0
     AND speculative_retry = '99PERCENTILE';
-
-CREATE TABLE uservice_agreement_management_proj.offset_store (
-    projection_name text,
-    partition int,
-    projection_key text,
-    last_updated timestamp,
-    manifest text,
-    offset text,
-    PRIMARY KEY ((projection_name, partition), projection_key)
-) WITH CLUSTERING ORDER BY (projection_key ASC)
-    AND bloom_filter_fp_chance = 0.01
-    AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
-    AND comment = ''
-    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
-    AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
-    AND crc_check_chance = 1.0
-    AND dclocal_read_repair_chance = 0.1
-    AND default_time_to_live = 0
-    AND gc_grace_seconds = 864000
-    AND max_index_interval = 2048
-    AND memtable_flush_period_in_ms = 0
-    AND min_index_interval = 128
-    AND read_repair_chance = 0.0
-    AND speculative_retry = '99PERCENTILE';	

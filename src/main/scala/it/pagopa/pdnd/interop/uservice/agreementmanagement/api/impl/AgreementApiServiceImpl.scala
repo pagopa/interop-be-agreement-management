@@ -123,7 +123,12 @@ class AgreementApiServiceImpl(
 
   /** Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
     */
-  override def getAgreements(producerId: Option[String], consumerId: Option[String], status: Option[String])(implicit
+  override def getAgreements(
+    producerId: Option[String],
+    consumerId: Option[String],
+    eserviceId: Option[String],
+    status: Option[String]
+  )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     contexts: Seq[(String, String)]
   ): Route = {
@@ -132,7 +137,10 @@ class AgreementApiServiceImpl(
 
     def getSlice(commander: EntityRef[Command], from: Int, to: Int): LazyList[Agreement] = {
       val slice: Seq[Agreement] = Await
-        .result(commander.ask(ref => ListAgreements(from, to, producerId, consumerId, status, ref)), Duration.Inf)
+        .result(
+          commander.ask(ref => ListAgreements(from, to, producerId, consumerId, eserviceId, status, ref)),
+          Duration.Inf
+        )
 
       if (slice.isEmpty)
         LazyList.empty[Agreement]

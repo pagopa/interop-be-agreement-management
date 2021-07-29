@@ -21,6 +21,7 @@ final case class ListAgreements(
   to: Int,
   producerId: Option[String],
   consumerId: Option[String],
+  eserviceId: Option[String],
   status: Option[String],
   replyTo: ActorRef[Seq[Agreement]]
 ) extends Command

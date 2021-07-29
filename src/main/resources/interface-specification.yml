@@ -20,7 +20,7 @@ tags:
       description: Find out more
       url: 'http://swagger.io'
 paths:
-  '/agreements/{agreement_id}':
+  '/agreement/{agreement_id}':
     get:
       tags:
         - agreement
@@ -94,6 +94,10 @@ paths:
             type: string
         - in: query
           name: consumerId
+          schema:
+            type: string
+        - in: query
+          name: eserviceId
           schema:
             type: string
         - in: query

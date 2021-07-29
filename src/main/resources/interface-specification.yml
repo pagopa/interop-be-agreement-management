@@ -87,6 +87,8 @@ paths:
         - agreement
       summary: Retrieve a list of agreement
       operationId: getAgreements
+      security:
+        - bearerAuth: [ ]
       parameters:
         - in: query
           name: producerId

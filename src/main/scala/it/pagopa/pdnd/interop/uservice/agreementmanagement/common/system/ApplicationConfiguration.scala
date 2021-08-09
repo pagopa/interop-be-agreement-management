@@ -8,4 +8,5 @@ object ApplicationConfiguration {
   def serverPort: Int = {
     config.getInt("uservice-agreement-management.port")
   }
+
 }

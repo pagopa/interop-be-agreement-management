@@ -11,9 +11,8 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiServi
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
-
-import java.time.OffsetDateTime
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -47,23 +46,14 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val id         = UUIDSupplier.get
-    val attributes = agreementSeed.verifiedAttributes.distinctBy(_.id).map(toVerifiedAttribute)
+    val agreement: PersistentAgreement = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
 
-    val agreement: Agreement = Agreement(
-      id = id,
-      eserviceId = agreementSeed.eserviceId,
-      producerId = agreementSeed.producerId,
-      consumerId = agreementSeed.consumerId,
-      status = "pending",
-      verifiedAttributes = attributes
-    )
     val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id.toString))
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreement.id.toString))
     val result: Future[StatusReply[Agreement]] =
       commander.ask(ref => AddAgreement(agreement, ref))
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => addAgreement200(agreement)
+      case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         addAgreement405(Problem(Option(statusReply.getError.getMessage), status = 405, "some error"))
     }
@@ -157,15 +147,6 @@ class AgreementApiServiceImpl(
     getAgreements200(agreements)
   }
 
-  private def toVerifiedAttribute(seed: VerifiedAttributeSeed): VerifiedAttribute = {
-    VerifiedAttribute(
-      id = seed.id,
-      verified = seed.verified,
-      verificationDate = if (seed.verified) Some(OffsetDateTime.now()) else None,
-      validityTimespan = seed.validityTimespan
-    )
-  }
-
   /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
     * Code: 400, Message: Bad Request, DataType: Problem
     * Code: 404, Message: Resource Not Found, DataType: Problem
@@ -179,7 +160,7 @@ class AgreementApiServiceImpl(
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
     val result: Future[StatusReply[Agreement]] =
-      commander.ask(ref => UpdateVerifiedAttribute(agreementId, toVerifiedAttribute(verifiedAttributeSeed), ref))
+      commander.ask(ref => UpdateVerifiedAttribute(agreementId, verifiedAttributeSeed, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => updateAgreementVerifiedAttribute200(statusReply.getValue)
       case statusReply if statusReply.isError =>

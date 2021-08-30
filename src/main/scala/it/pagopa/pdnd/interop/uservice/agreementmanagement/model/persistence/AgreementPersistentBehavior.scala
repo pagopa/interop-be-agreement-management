@@ -7,6 +7,11 @@ import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.Agreement
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementStatus,
+  PersistentVerifiedAttribute
+}
 
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -24,7 +29,7 @@ object AgreementPersistentBehavior {
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddAgreement(newAgreement, replyTo) =>
-        val agreement: Option[Agreement] = state.agreements.get(newAgreement.id.toString)
+        val agreement: Option[PersistentAgreement] = state.agreements.get(newAgreement.id.toString)
         agreement
           .map { es =>
             replyTo ! StatusReply.Error[Agreement](s"Agreement ${es.id.toString} already exists")
@@ -33,19 +38,20 @@ object AgreementPersistentBehavior {
           .getOrElse {
             Effect
               .persist(AgreementAdded(newAgreement))
-              .thenRun((_: State) => replyTo ! StatusReply.Success(newAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(newAgreement)))
           }
 
       case UpdateVerifiedAttribute(agreementId, updateVerifiedAttribute, replyTo) =>
         val attributeId = updateVerifiedAttribute.id.toString
-        val agreementOpt: Option[Agreement] =
+        val agreementOpt: Option[PersistentAgreement] =
           state.getAgreementContainingVerifiedAttribute(agreementId, attributeId)
         agreementOpt
           .map { agreement =>
-            val updatedAgreement = state.updateAgreementContent(agreement, updateVerifiedAttribute)
+            val updatedAgreement =
+              state.updateAgreementContent(agreement, PersistentVerifiedAttribute.fromAPI(updateVerifiedAttribute))
             Effect
               .persist(VerifiedAttributeUpdated(updatedAgreement))
-              .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
             replyTo ! StatusReply.Error[Agreement](s"Attribute ${attributeId} not found for agreement ${agreementId}.")
@@ -53,18 +59,18 @@ object AgreementPersistentBehavior {
           }
 
       case GetAgreement(agreementId, replyTo) =>
-        val agreement: Option[Agreement] = state.agreements.get(agreementId)
-        replyTo ! StatusReply.Success[Option[Agreement]](agreement)
+        val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
+        replyTo ! StatusReply.Success[Option[Agreement]](agreement.map(PersistentAgreement.toAPI))
         Effect.none[Event, State]
 
       case ActivateAgreement(agreementId, replyTo) =>
-        val agreement: Option[Agreement] = state.agreements.get(agreementId)
+        val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
-            val updatedAgreement = agreement.copy(status = "active")
+            val updatedAgreement = agreement.copy(status = PersistentAgreementStatus.Active)
             Effect
               .persist(AgreementActivated(updatedAgreement))
-              .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
             replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
@@ -72,13 +78,13 @@ object AgreementPersistentBehavior {
           }
 
       case SuspendAgreement(agreementId, replyTo) =>
-        val agreement: Option[Agreement] = state.agreements.get(agreementId)
+        val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
-            val updatedAgreement = agreement.copy(status = "suspended")
+            val updatedAgreement = agreement.copy(status = PersistentAgreementStatus.Suspended)
             Effect
               .persist(AgreementSuspended(updatedAgreement))
-              .thenRun((_: State) => replyTo ! StatusReply.Success(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
             replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
@@ -96,6 +102,7 @@ object AgreementPersistentBehavior {
           }
           .values
           .toSeq
+          .map(PersistentAgreement.toAPI)
         replyTo ! agreements
         Effect.none[Event, State]
 

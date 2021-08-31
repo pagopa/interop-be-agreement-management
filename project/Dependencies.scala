@@ -27,6 +27,7 @@ object Dependencies {
       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
     lazy val clusterHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
     lazy val slf4j       = namespace                       %% "akka-slf4j"                   % akkaVersion
+    lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
   }
 
   private[this] object awssdk {
@@ -80,6 +81,11 @@ object Dependencies {
     lazy val core      = namespace %% "scalamock" % scalaMockVersion
   }
 
+  private[this] object cats {
+    lazy val namespace = "org.typelevel"
+    lazy val core      = namespace %% "cats-core" % catsVersion
+  }
+
   object Jars {
     lazy val overrides: Seq[ModuleID] =
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
@@ -111,9 +117,11 @@ object Dependencies {
       openapi4j.operationValidator % Compile,
       kamon.bundle                 % Compile,
       kamon.prometheus             % Compile,
+      cats.core                    % Compile,
       scalaprotobuf.core           % Protobuf,
       scalatest.core               % Test,
-      scalamock.core               % Test
+      scalamock.core               % Test,
+      akka.testkit                 % Test
     )
     lazy val client: Seq[ModuleID] = Seq(
       akka.stream     % Compile,

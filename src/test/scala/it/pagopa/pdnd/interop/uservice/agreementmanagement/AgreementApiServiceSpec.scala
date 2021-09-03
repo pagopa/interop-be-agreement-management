@@ -59,7 +59,7 @@ object AgreementApiServiceSpec {
   */
 class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServiceSpec.config) with AnyWordSpecLike {
 
-  val payloadMarshaller: AgreementApiMarshaller      = new AgreementApiMarshallerImpl
+  val agreementApiMarshaller: AgreementApiMarshaller = new AgreementApiMarshallerImpl
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
@@ -80,13 +80,13 @@ class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServ
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
 
-    val partyApi = new AgreementApi(
+    val agreementApi = new AgreementApi(
       new AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
-      payloadMarshaller,
+      agreementApiMarshaller,
       wrappingDirective
     )
 
-    controller = Some(new Controller(partyApi)(classicSystem))
+    controller = Some(new Controller(agreementApi)(classicSystem))
 
     controller foreach { controller =>
       bindServer = Some(
@@ -107,7 +107,7 @@ class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServ
     println("Resources cleaned")
   }
 
-  "Processing a request payload" should {
+  "Processing a request payload" must {
 
     "create a new agreement" in {
       val uuid = "27f8dce0-0a5b-476b-9fdd-a7a658eb9211"
@@ -158,82 +158,82 @@ class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServ
         .validityTimespan
         .get should be(123L)
     }
-  }
 
-  "should activate an agreement properly" in {
-    //given a pending agreement
-    val uuid = "27f8dce0-0a5b-476b-9fdd-a7a658eb9224"
+    "should activate an agreement properly" in {
+      //given a pending agreement
+      val uuid = "27f8dce0-0a5b-476b-9fdd-a7a658eb9224"
 
-    val agreementSeed = AgreementSeed(
-      eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
-      producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
-      consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
-      verifiedAttributes = Seq.empty
-    )
-    (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
-    val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
-    val response = makeRequest(data, "agreements", HttpMethods.POST)
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
+        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
+        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
+      val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
+      val response = makeRequest(data, "agreements", HttpMethods.POST)
 
-    val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
-    bodyResponse.verifiedAttributes shouldBe empty
-    bodyResponse.status shouldBe "pending"
+      val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
+      bodyResponse.verifiedAttributes shouldBe empty
+      bodyResponse.status shouldBe "pending"
 
-    //when the activation occurs
-    val activateAgreementResponse = Await.result(
-      Http().singleRequest(
-        HttpRequest(uri = s"$url/agreements/$uuid/activate", method = HttpMethods.PATCH, headers = authorization)
-      ),
-      Duration.Inf
-    )
+      //when the activation occurs
+      val activateAgreementResponse = Await.result(
+        Http().singleRequest(
+          HttpRequest(uri = s"$url/agreements/$uuid/activate", method = HttpMethods.PATCH, headers = authorization)
+        ),
+        Duration.Inf
+      )
 
-    //the agreement should change its status to "active"
-    activateAgreementResponse.status shouldBe StatusCodes.OK
-    val activatedAgreement = Await.result(Unmarshal(activateAgreementResponse.entity).to[Agreement], Duration.Inf)
+      //the agreement should change its status to "active"
+      activateAgreementResponse.status shouldBe StatusCodes.OK
+      val activatedAgreement = Await.result(Unmarshal(activateAgreementResponse.entity).to[Agreement], Duration.Inf)
 
-    activatedAgreement.status shouldBe "active"
-  }
+      activatedAgreement.status shouldBe "active"
+    }
 
-  "should verify an attribute properly" in {
-    //given an agreement with an attribute not yet verified
-    val uuid        = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
-    val attributeId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9284"
+    "should verify an attribute properly" in {
+      //given an agreement with an attribute not yet verified
+      val uuid        = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
+      val attributeId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9284"
 
-    val agreementSeed = AgreementSeed(
-      eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
-      producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
-      consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
-      verifiedAttributes =
-        Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = false, validityTimespan = None))
-    )
-    (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
-    val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
-    val response = makeRequest(data, "agreements", HttpMethods.POST)
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
+        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
+        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
+        verifiedAttributes =
+          Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = false, validityTimespan = None))
+      )
+      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
+      val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
+      val response = makeRequest(data, "agreements", HttpMethods.POST)
 
-    val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
-    bodyResponse.verifiedAttributes
-      .find(p => p.id.toString == attributeId)
-      .get
-      .verified should be(false)
+      val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
+      bodyResponse.verifiedAttributes
+        .find(p => p.id.toString == attributeId)
+        .get
+        .verified should be(false)
 
-    bodyResponse.verifiedAttributes
-      .find(p => p.id.toString == attributeId)
-      .get
-      .verificationDate should be(None)
+      bodyResponse.verifiedAttributes
+        .find(p => p.id.toString == attributeId)
+        .get
+        .verificationDate should be(None)
 
-    val verifiedAttributeSeed =
-      VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = true, validityTimespan = None)
-    val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
+      val verifiedAttributeSeed =
+        VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = true, validityTimespan = None)
+      val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
-    //when the verification occurs
-    val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/${uuid}/attribute", HttpMethods.PATCH)
+      //when the verification occurs
+      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/${uuid}/attribute", HttpMethods.PATCH)
 
-    //it should set its verified attribute to true and setup a verification date also.
-    updatedAgreementResponse.status shouldBe StatusCodes.OK
-    val updatedAgreement = Await.result(Unmarshal(updatedAgreementResponse.entity).to[Agreement], Duration.Inf)
-    val updatedAttribute = updatedAgreement.verifiedAttributes.find(p => p.id.toString == attributeId).get
+      //it should set its verified attribute to true and setup a verification date also.
+      updatedAgreementResponse.status shouldBe StatusCodes.OK
+      val updatedAgreement = Await.result(Unmarshal(updatedAgreementResponse.entity).to[Agreement], Duration.Inf)
+      val updatedAttribute = updatedAgreement.verifiedAttributes.find(p => p.id.toString == attributeId).get
 
-    updatedAttribute.verified should be(true)
-    updatedAttribute.verificationDate shouldBe a[Some[_]]
+      updatedAttribute.verified should be(true)
+      updatedAttribute.verificationDate shouldBe a[Some[_]]
+    }
   }
 
 }

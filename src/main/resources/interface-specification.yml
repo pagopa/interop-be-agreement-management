@@ -110,6 +110,10 @@ paths:
               - pending
               - active
               - suspended
+        - in: query
+          name: attributeVerified
+          schema:
+            type: boolean
       responses:
         '200':
           description: A list of Agreement
@@ -366,4 +370,4 @@ components:
       type: http
       description: 'A bearer token in the format of a JWS and comformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).'
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: JWT dello d'Interoperabilità di AgID (default)

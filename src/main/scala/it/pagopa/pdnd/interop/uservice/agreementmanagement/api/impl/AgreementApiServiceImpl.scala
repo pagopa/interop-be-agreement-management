@@ -1,6 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
@@ -9,12 +9,12 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.PersistentAgreement
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+
+import scala.concurrent.Future
 
 @SuppressWarnings(
   Array(
@@ -117,7 +117,8 @@ class AgreementApiServiceImpl(
     producerId: Option[String],
     consumerId: Option[String],
     eserviceId: Option[String],
-    status: Option[String]
+    status: Option[String],
+    verified: Option[Boolean]
   )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     contexts: Seq[(String, String)]
@@ -125,27 +126,32 @@ class AgreementApiServiceImpl(
     contexts.foreach(println)
     val sliceSize = 100
 
-    def getSlice(commander: EntityRef[Command], from: Int, to: Int): LazyList[Agreement] = {
-      val slice: Seq[Agreement] = Await
-        .result(
-          commander.ask(ref => ListAgreements(from, to, producerId, consumerId, eserviceId, status, ref)),
-          Duration.Inf
-        )
-
-      if (slice.isEmpty)
-        LazyList.empty[Agreement]
-      else {
-        getSlice(commander, to, to + sliceSize) #::: slice.to(LazyList)
-      }
-    }
-
     val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, shard.toString)
     )
-    val agreements: Seq[Agreement] = commanders.flatMap(ref => getSlice(ref, 0, sliceSize))
+
+    val commandGenerator: (Int, Int) => ActorRef[Seq[Agreement]] => ListAgreements = createListAgreementsGenerator(
+      producerId = producerId,
+      consumerId = consumerId,
+      eserviceId = eserviceId,
+      status = status,
+      verified = verified
+    )
+
+    val agreements: Seq[Agreement] = commanders.flatMap(ref => slices(ref, sliceSize)(commandGenerator))
 
     getAgreements200(agreements)
   }
+
+  private def createListAgreementsGenerator(
+    producerId: Option[String],
+    consumerId: Option[String],
+    eserviceId: Option[String],
+    status: Option[String],
+    verified: Option[Boolean]
+  )(from: Int, to: Int): ActorRef[Seq[Agreement]] => ListAgreements =
+    (ref: ActorRef[Seq[Agreement]]) =>
+      ListAgreements(from, to, producerId, consumerId, eserviceId, status, verified, ref)
 
   /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
     * Code: 400, Message: Bad Request, DataType: Problem

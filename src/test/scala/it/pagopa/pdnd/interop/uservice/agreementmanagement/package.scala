@@ -23,13 +23,16 @@ package object agreementmanagement extends MockFactory {
   final lazy val url: String                  = "http://localhost:18088/pdnd-interop-uservice-agreement-management/0.0.1"
   final val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken("token")))
 
-  implicit def fromEntityUnmarshallerAgreementSeed: ToEntityMarshaller[AgreementSeed] =
+  implicit def toEntityMarshallerAgreementSeed: ToEntityMarshaller[AgreementSeed] =
     sprayJsonMarshaller[AgreementSeed]
 
-  implicit def fromEntityUnmarshallerVerifiedAttributeSeed: ToEntityMarshaller[VerifiedAttributeSeed] =
+  implicit def toEntityMarshallerVerifiedAttributeSeed: ToEntityMarshaller[VerifiedAttributeSeed] =
     sprayJsonMarshaller[VerifiedAttributeSeed]
 
-  implicit def toEntityMarshallerAgreement: FromEntityUnmarshaller[Agreement] =
+  implicit def fromEntityUnmarshallerAgreements: FromEntityUnmarshaller[Seq[Agreement]] =
+    sprayJsonUnmarshaller[Seq[Agreement]]
+
+  implicit def fromEntityUnmarshallerAgreement: FromEntityUnmarshaller[Agreement] =
     sprayJsonUnmarshaller[Agreement]
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))

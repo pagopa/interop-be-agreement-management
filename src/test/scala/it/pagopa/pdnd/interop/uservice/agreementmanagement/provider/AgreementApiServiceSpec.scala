@@ -8,7 +8,7 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, StatusCodes}
+import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
@@ -118,10 +118,9 @@ class AgreementApiServiceSpec
       )
       (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
 
-      val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
-      val response = makeRequest(data, "agreements", HttpMethods.POST)
+      val response: Future[Agreement] = createAgreement(agreementSeed)
 
-      val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
 
       bodyResponse.id.toString shouldBe uuid
       bodyResponse.status shouldBe "pending"
@@ -153,24 +152,18 @@ class AgreementApiServiceSpec
         verifiedAttributes = Seq.empty
       )
       (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
-      val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
-      val response = makeRequest(data, "agreements", HttpMethods.POST)
 
-      val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
+      val response: Future[Agreement] = createAgreement(agreementSeed)
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
       bodyResponse.verifiedAttributes shouldBe empty
       bodyResponse.status shouldBe "pending"
 
       //when the activation occurs
-      val activateAgreementResponse = Await.result(
-        Http().singleRequest(
-          HttpRequest(uri = s"$url/agreements/$uuid/activate", method = HttpMethods.PATCH, headers = authorization)
-        ),
-        Duration.Inf
-      )
+      val activateAgreementResponse = activateAgreement(bodyResponse)
 
       //the agreement should change its status to "active"
-      activateAgreementResponse.status shouldBe StatusCodes.OK
-      val activatedAgreement = Await.result(Unmarshal(activateAgreementResponse.entity).to[Agreement], Duration.Inf)
+      val activatedAgreement = Await.result(activateAgreementResponse, Duration.Inf)
 
       activatedAgreement.status shouldBe "active"
     }

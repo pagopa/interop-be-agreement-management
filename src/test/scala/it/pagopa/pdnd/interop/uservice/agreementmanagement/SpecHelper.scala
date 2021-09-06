@@ -39,6 +39,27 @@ trait SpecHelper {
     val id3: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9217")
   }
 
+  def createAgreement(
+    seed: AgreementSeed
+  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
+    data      <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
+  } yield agreement
+
+  def activateAgreement(
+    agreement: Agreement
+  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
+    activated <- Unmarshal(makeRequest(emptyData, s"agreements/${agreement.id.toString}/activate", HttpMethods.PATCH))
+      .to[Agreement]
+  } yield activated
+
+  def suspendAgreement(
+    agreement: Agreement
+  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
+    suspended <- Unmarshal(makeRequest(emptyData, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))
+      .to[Agreement]
+  } yield suspended
+
   def prepareDataForListingTests(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Unit = {
     (() => mockUUIDSupplier.get).expects().returning(AgreementOne.agreementId).once()
     (() => mockUUIDSupplier.get).expects().returning(AgreementTwo.agreementId).once()
@@ -75,21 +96,6 @@ trait SpecHelper {
         VerifiedAttributeSeed(id = Attributes.id3, verified = false, validityTimespan = Some(123L))
       )
     )
-
-    def createAgreement(seed: AgreementSeed): Future[Agreement] = for {
-      data      <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
-      agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
-    } yield agreement
-
-    def activateAgreement(agreement: Agreement): Future[Agreement] = for {
-      activated <- Unmarshal(makeRequest(emptyData, s"agreements/${agreement.id.toString}/activate", HttpMethods.PATCH))
-        .to[Agreement]
-    } yield activated
-
-    def suspendAgreement(agreement: Agreement): Future[Agreement] = for {
-      suspended <- Unmarshal(makeRequest(emptyData, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))
-        .to[Agreement]
-    } yield suspended
 
     val pending   = createAgreement(agreementSeed1)
     val activated = createAgreement(agreementSeed2).flatMap(activateAgreement)

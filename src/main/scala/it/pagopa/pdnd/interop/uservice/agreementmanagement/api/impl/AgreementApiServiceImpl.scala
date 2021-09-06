@@ -117,8 +117,7 @@ class AgreementApiServiceImpl(
     producerId: Option[String],
     consumerId: Option[String],
     eserviceId: Option[String],
-    status: Option[String],
-    verified: Option[Boolean]
+    status: Option[String]
   )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     contexts: Seq[(String, String)]
@@ -134,8 +133,7 @@ class AgreementApiServiceImpl(
       producerId = producerId,
       consumerId = consumerId,
       eserviceId = eserviceId,
-      status = status,
-      verified = verified
+      status = status
     )
 
     val agreements: Seq[Agreement] = commanders.flatMap(ref => slices(ref, sliceSize)(commandGenerator))
@@ -147,11 +145,10 @@ class AgreementApiServiceImpl(
     producerId: Option[String],
     consumerId: Option[String],
     eserviceId: Option[String],
-    status: Option[String],
-    verified: Option[Boolean]
+    status: Option[String]
   )(from: Int, to: Int): ActorRef[Seq[Agreement]] => ListAgreements =
     (ref: ActorRef[Seq[Agreement]]) =>
-      ListAgreements(from, to, producerId, consumerId, eserviceId, status, verified, ref)
+      ListAgreements(from, to, producerId, consumerId, eserviceId, status, ref)
 
   /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
     * Code: 400, Message: Bad Request, DataType: Problem

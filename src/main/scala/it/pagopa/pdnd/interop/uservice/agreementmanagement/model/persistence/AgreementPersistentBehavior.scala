@@ -91,16 +91,13 @@ object AgreementPersistentBehavior {
             Effect.none[AgreementSuspended, State]
           }
 
-      case ListAgreements(from, to, producerId, consumerId, eserviceId, status, verified, replyTo) =>
+      case ListAgreements(from, to, producerId, consumerId, eserviceId, status, replyTo) =>
         val agreements: Seq[Agreement] = state.agreements
           .slice(from, to)
           .filter(agreement => producerId.forall(filter => filter == agreement._2.producerId.toString))
           .filter(agreement => consumerId.forall(filter => filter == agreement._2.consumerId.toString))
           .filter(agreement => eserviceId.forall(filter => filter == agreement._2.eserviceId.toString))
           .filter(agreement => status.forall(filter => filter == agreement._2.status.stringify))
-          .filter(agreement =>
-            verified.forall(filter => agreement._2.verifiedAttributes.forall(v => v.verified == filter))
-          )
           .values
           .toSeq
           .map(PersistentAgreement.toAPI)

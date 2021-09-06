@@ -110,10 +110,6 @@ paths:
               - pending
               - active
               - suspended
-        - in: query
-          name: attributeVerified
-          schema:
-            type: boolean
       responses:
         '200':
           description: A list of Agreement

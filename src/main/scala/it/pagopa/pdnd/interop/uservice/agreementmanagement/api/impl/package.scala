@@ -1,18 +1,19 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement.api
 
+import akka.actor.typed.ActorRef
+import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
-  Agreement,
-  AgreementSeed,
-  Problem,
-  VerifiedAttribute,
-  VerifiedAttributeSeed
-}
+import akka.util.Timeout
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.Command
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError}
 
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
+import scala.annotation.tailrec
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
@@ -56,5 +57,23 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]                 = jsonFormat4(AgreementSeed)
   implicit val agreementFormat: RootJsonFormat[Agreement]                         = jsonFormat6(Agreement)
   implicit val problemFormat: RootJsonFormat[Problem]                             = jsonFormat3(Problem)
+
+  // This function could be candidate for the commons library
+  @SuppressWarnings(
+    Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Any", "org.wartremover.warts.Nothing")
+  )
+  def slices[A, B <: Command](commander: EntityRef[B], sliceSize: Int)(
+    commandGenerator: (Int, Int) => ActorRef[Seq[A]] => B
+  )(implicit timeout: Timeout): LazyList[A] = {
+    @tailrec
+    def readSlice(commander: EntityRef[B], from: Int, to: Int, lazyList: LazyList[A]): LazyList[A] = {
+
+      val slice: Seq[A] = Await.result(commander.ask(commandGenerator(from, to)), Duration.Inf)
+
+      if (slice.isEmpty) lazyList
+      else readSlice(commander, to, to + sliceSize, slice.to(LazyList) #::: lazyList)
+    }
+    readSlice(commander, 0, sliceSize, LazyList.empty)
+  }
 
 }

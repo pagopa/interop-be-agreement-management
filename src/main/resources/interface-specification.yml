@@ -366,4 +366,4 @@ components:
       type: http
       description: 'A bearer token in the format of a JWS and comformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).'
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: JWT d'Interoperabilità di AgID (default)

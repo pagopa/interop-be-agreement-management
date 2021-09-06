@@ -94,15 +94,14 @@ object AgreementPersistentBehavior {
       case ListAgreements(from, to, producerId, consumerId, eserviceId, status, replyTo) =>
         val agreements: Seq[Agreement] = state.agreements
           .slice(from, to)
-          .filter { case (_, v) =>
-            (if (producerId.isDefined) producerId.contains(v.producerId.toString) else true) &&
-              (if (consumerId.isDefined) consumerId.contains(v.consumerId.toString) else true) &&
-              (if (eserviceId.isDefined) eserviceId.contains(v.eserviceId.toString) else true) &&
-              (if (status.isDefined) status.contains(v.status) else true)
-          }
+          .filter(agreement => producerId.forall(filter => filter == agreement._2.producerId.toString))
+          .filter(agreement => consumerId.forall(filter => filter == agreement._2.consumerId.toString))
+          .filter(agreement => eserviceId.forall(filter => filter == agreement._2.eserviceId.toString))
+          .filter(agreement => status.forall(filter => filter == agreement._2.status.stringify))
           .values
           .toSeq
           .map(PersistentAgreement.toAPI)
+
         replyTo ! agreements
         Effect.none[Event, State]
 

@@ -1,5 +1,6 @@
 package it.pagopa.pdnd.interop.uservice
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
@@ -18,18 +19,23 @@ import scala.concurrent.duration.Duration
 
 package object agreementmanagement extends MockFactory {
 
-  val uuidSupplier: UUIDSupplier = mock[UUIDSupplier]
-
   final lazy val url: String                  = "http://localhost:18088/pdnd-interop-uservice-agreement-management/0.0.1"
   final val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken("token")))
 
-  implicit def fromEntityUnmarshallerAgreementSeed: ToEntityMarshaller[AgreementSeed] =
+  val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
+
+  val emptyData: Source[ByteString, NotUsed] = Source.empty[ByteString]
+
+  implicit def toEntityMarshallerAgreementSeed: ToEntityMarshaller[AgreementSeed] =
     sprayJsonMarshaller[AgreementSeed]
 
-  implicit def fromEntityUnmarshallerVerifiedAttributeSeed: ToEntityMarshaller[VerifiedAttributeSeed] =
+  implicit def toEntityMarshallerVerifiedAttributeSeed: ToEntityMarshaller[VerifiedAttributeSeed] =
     sprayJsonMarshaller[VerifiedAttributeSeed]
 
-  implicit def toEntityMarshallerAgreement: FromEntityUnmarshaller[Agreement] =
+  implicit def fromEntityUnmarshallerAgreements: FromEntityUnmarshaller[Seq[Agreement]] =
+    sprayJsonUnmarshaller[Seq[Agreement]]
+
+  implicit def fromEntityUnmarshallerAgreement: FromEntityUnmarshaller[Agreement] =
     sprayJsonUnmarshaller[Agreement]
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))

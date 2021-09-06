@@ -1,5 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement
 
+import akka.actor
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
@@ -10,7 +11,6 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import com.typesafe.config.ConfigFactory
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
   AgreementApiServiceImpl
@@ -21,34 +21,14 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, Agr
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.impl.Main
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 
-object AgreementApiServiceSpec {
-
-  val testData = ConfigFactory.parseString(s"""
-      akka.actor.provider = cluster
-
-      akka.remote.classic.netty.tcp.port = 0
-      akka.remote.artery.canonical.port = 0
-      akka.remote.artery.canonical.hostname = 127.0.0.1
-
-      akka.cluster.jmx.multi-mbeans-in-same-jvm = on
-
-      akka.cluster.sharding.number-of-shards = 10
-
-      akka.coordinated-shutdown.terminate-actor-system = off
-      akka.coordinated-shutdown.run-by-actor-system-terminate = off
-      akka.coordinated-shutdown.run-by-jvm-shutdown-hook = off
-      akka.cluster.run-coordinated-shutdown-when-down = off
-    """)
-
-  val config = ConfigFactory
-    .parseResourcesAnySyntax("test")
-    .withFallback(testData)
+object AgreementApiServiceSpec extends MockFactory {
 
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
 }
@@ -57,7 +37,11 @@ object AgreementApiServiceSpec {
   *
   * Starts a local cluster sharding and invokes REST operations on the eventsourcing entity
   */
-class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServiceSpec.config) with AnyWordSpecLike {
+class AgreementApiServiceSpec
+    extends ScalaTestWithActorTestKit(SpecConfiguration.config)
+    with AnyWordSpecLike
+    with SpecConfiguration
+    with SpecHelper {
 
   val agreementApiMarshaller: AgreementApiMarshaller = new AgreementApiMarshallerImpl
   var controller: Option[Controller]                 = None
@@ -65,16 +49,15 @@ class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServ
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
     SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
 
-  val sharding = ClusterSharding(system)
+  val sharding: ClusterSharding = ClusterSharding(system)
 
-  val httpSystem                                          = ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
+  val httpSystem: ActorSystem[Any] =
+    ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
+
   implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
-  implicit val classicSystem                              = httpSystem.classicSystem
-
-  import AgreementApiServiceSpec._
+  implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-
     val persistentEntity = Main.buildPersistentEntity()
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
@@ -224,7 +207,7 @@ class AgreementApiServiceSpec extends ScalaTestWithActorTestKit(AgreementApiServ
       val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
       //when the verification occurs
-      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/${uuid}/attribute", HttpMethods.PATCH)
+      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$uuid/attribute", HttpMethods.PATCH)
 
       //it should set its verified attribute to true and setup a verification date also.
       updatedAgreementResponse.status shouldBe StatusCodes.OK

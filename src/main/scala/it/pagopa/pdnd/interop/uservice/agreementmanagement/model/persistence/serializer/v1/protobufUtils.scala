@@ -24,14 +24,16 @@ object protobufUtils {
 
   def toPersistentAgreement(protobufAgreement: AgreementV1): Either[Throwable, PersistentAgreement] = {
     for {
-      status     <- PersistentAgreementStatus.fromText(protobufAgreement.status.name)
-      id         <- uuidParsing(protobufAgreement.id)
-      eserviceId <- uuidParsing(protobufAgreement.eserviceId)
-      producerId <- uuidParsing(protobufAgreement.producerId)
-      consumerId <- uuidParsing(protobufAgreement.consumerId)
+      status       <- PersistentAgreementStatus.fromText(protobufAgreement.status.name)
+      id           <- uuidParsing(protobufAgreement.id)
+      eserviceId   <- uuidParsing(protobufAgreement.eserviceId)
+      descriptorId <- uuidParsing(protobufAgreement.descriptorId)
+      producerId   <- uuidParsing(protobufAgreement.producerId)
+      consumerId   <- uuidParsing(protobufAgreement.consumerId)
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
+      descriptorId = descriptorId,
       producerId = producerId,
       consumerId = consumerId,
       status = status,
@@ -47,6 +49,7 @@ object protobufUtils {
     } yield AgreementV1(
       id = persistentAgreement.id.toString,
       eserviceId = persistentAgreement.eserviceId.toString,
+      descriptorId = persistentAgreement.descriptorId.toString,
       producerId = persistentAgreement.producerId.toString,
       consumerId = persistentAgreement.consumerId.toString,
       status = status,

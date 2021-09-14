@@ -93,49 +93,47 @@ class AgreementApiServiceSpec
   "Processing a request payload" must {
 
     "create a new agreement" in {
-      val uuid = "27f8dce0-0a5b-476b-9fdd-a7a658eb9211"
+      val agreementId  = UUID.fromString("4330c05c-e892-4fed-a664-c40f27b50e63")
+      val eserviceId   = UUID.fromString("8c4da4ab-8dee-4af1-be5e-c93addb48d6d")
+      val descriptorId = UUID.fromString("ac51f56f-9944-4f96-a8f1-93cd0c256ac7")
+      val producerId   = UUID.fromString("5cc978b5-87f9-4685-8be1-a11e6e795964")
+      val consumerId   = UUID.fromString("cbc42433-2165-40a5-a60d-bb33471e8a91")
+
+      val attributeId1 = UUID.fromString("9888fb13-870b-45c6-9cd8-b74457bb797a")
+      val attributeId2 = UUID.fromString("8141a60d-5fd8-45bb-b229-ad661a6793ba")
+      val attributeId3 = UUID.fromString("f59b912c-6a5e-451c-8041-71b1c2087250")
+
       val agreementSeed = AgreementSeed(
-        eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
-        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
-        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
         verifiedAttributes = Seq(
-          VerifiedAttributeSeed(
-            id = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
-            verified = true,
-            validityTimespan = None
-          ),
-          VerifiedAttributeSeed(
-            id = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9216"),
-            verified = false,
-            validityTimespan = None
-          ),
-          VerifiedAttributeSeed(
-            id = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9217"),
-            verified = false,
-            validityTimespan = Some(123L)
-          )
+          VerifiedAttributeSeed(id = attributeId1, verified = true, validityTimespan = None),
+          VerifiedAttributeSeed(id = attributeId2, verified = false, validityTimespan = None),
+          VerifiedAttributeSeed(id = attributeId3, verified = false, validityTimespan = Some(123L))
         )
       )
-      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = createAgreement(agreementSeed)
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
 
-      bodyResponse.id.toString shouldBe uuid
+      bodyResponse.id shouldBe agreementId
       bodyResponse.status shouldBe "pending"
       bodyResponse.verifiedAttributes
-        .find(p => p.id.toString == "27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
+        .find(p => p.id == attributeId1)
         .get
         .verificationDate shouldBe a[Some[_]]
 
       bodyResponse.verifiedAttributes
-        .find(p => p.id.toString == "27f8dce0-0a5b-476b-9fdd-a7a658eb9216")
+        .find(p => p.id == attributeId2)
         .get
         .verificationDate should be(None)
 
       bodyResponse.verifiedAttributes
-        .find(p => p.id.toString == "27f8dce0-0a5b-476b-9fdd-a7a658eb9217")
+        .find(p => p.id == attributeId3)
         .get
         .validityTimespan
         .get should be(123L)
@@ -143,15 +141,16 @@ class AgreementApiServiceSpec
 
     "should activate an agreement properly" in {
       //given a pending agreement
-      val uuid = "27f8dce0-0a5b-476b-9fdd-a7a658eb9224"
+      val agreementId = UUID.fromString("d1040ff3-7fbc-4b29-9081-b1b53f72d386")
 
       val agreementSeed = AgreementSeed(
-        eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
-        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
-        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
+        eserviceId = UUID.fromString("94c06558-c0f9-42e0-a11e-c5f82e4b8a9b"),
+        descriptorId = UUID.fromString("77262ddf-7743-4f26-85fd-ec53febbfe56"),
+        producerId = UUID.fromString("f318fcc9-5421-4081-8e13-ba508152af9e"),
+        consumerId = UUID.fromString("1f538520-95b6-4d3f-accf-90c7b183df9f"),
         verifiedAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = createAgreement(agreementSeed)
 
@@ -170,17 +169,18 @@ class AgreementApiServiceSpec
 
     "should verify an attribute properly" in {
       //given an agreement with an attribute not yet verified
-      val uuid        = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
+      val agreementId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
       val attributeId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9284"
 
       val agreementSeed = AgreementSeed(
         eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
-        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
-        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
+        descriptorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
+        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
+        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
         verifiedAttributes =
           Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = false, validityTimespan = None))
       )
-      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(uuid)).once()
+      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(agreementId)).once()
       val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
       val response = makeRequest(data, "agreements", HttpMethods.POST)
 
@@ -200,7 +200,7 @@ class AgreementApiServiceSpec
       val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
       //when the verification occurs
-      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$uuid/attribute", HttpMethods.PATCH)
+      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$agreementId/attribute", HttpMethods.PATCH)
 
       //it should set its verified attribute to true and setup a verification date also.
       updatedAgreementResponse.status shouldBe StatusCodes.OK

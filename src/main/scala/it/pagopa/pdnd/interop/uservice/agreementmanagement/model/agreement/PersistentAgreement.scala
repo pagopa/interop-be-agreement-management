@@ -8,6 +8,7 @@ import java.util.UUID
 final case class PersistentAgreement(
   id: UUID,
   eserviceId: UUID,
+  descriptorId: UUID,
   producerId: UUID,
   consumerId: UUID,
   status: PersistentAgreementStatus,
@@ -19,6 +20,7 @@ object PersistentAgreement {
     PersistentAgreement(
       id = uuidSupplier.get,
       eserviceId = agreement.eserviceId,
+      descriptorId = agreement.descriptorId,
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
       status = PersistentAgreementStatus.Pending,
@@ -30,6 +32,7 @@ object PersistentAgreement {
     Agreement(
       id = persistentAgreement.id,
       eserviceId = persistentAgreement.eserviceId,
+      descriptorId = persistentAgreement.descriptorId,
       producerId = persistentAgreement.producerId,
       consumerId = persistentAgreement.consumerId,
       status = persistentAgreement.status.stringify,

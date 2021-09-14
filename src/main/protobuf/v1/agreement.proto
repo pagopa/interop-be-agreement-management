@@ -9,10 +9,11 @@ option (scalapb.options) = {
 message AgreementV1 {
   required string id = 1;
   required string eserviceId = 2;
-  required string producerId = 3;
-  required string consumerId = 4;
-  required AgreementStatusV1 status = 5;
-  repeated VerifiedAttributeV1 verifiedAttributes = 6;
+  required string descriptorId = 3;
+  required string producerId = 4;
+  required string consumerId = 5;
+  required AgreementStatusV1 status = 6;
+  repeated VerifiedAttributeV1 verifiedAttributes = 7;
 }
 
 message VerifiedAttributeV1 {

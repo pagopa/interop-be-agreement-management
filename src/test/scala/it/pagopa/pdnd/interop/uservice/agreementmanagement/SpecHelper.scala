@@ -13,24 +13,27 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 trait SpecHelper {
 
   object AgreementOne {
-    val agreementId: UUID = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9210")
-    val eserviceId: UUID  = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9211")
-    val producerId: UUID  = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9212")
-    val consumerId: UUID  = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9213")
+    val agreementId: UUID  = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9210")
+    val eserviceId: UUID   = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9211")
+    val descriptorId: UUID = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9212")
+    val producerId: UUID   = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9213")
+    val consumerId: UUID   = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9214")
   }
 
   object AgreementTwo {
-    val agreementId: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9210")
-    val eserviceId: UUID  = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9211")
-    val consumerId: UUID  = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212")
-    val producerId: UUID  = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213")
+    val agreementId: UUID  = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9210")
+    val eserviceId: UUID   = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9211")
+    val descriptorId: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212")
+    val consumerId: UUID   = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213")
+    val producerId: UUID   = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214")
   }
 
   object AgreementThree {
-    val agreementId: UUID = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9210")
-    val eserviceId: UUID  = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9211")
-    val consumerId: UUID  = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9212")
-    val producerId: UUID  = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9213")
+    val agreementId: UUID  = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9210")
+    val eserviceId: UUID   = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9211")
+    val descriptorId: UUID = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9212")
+    val consumerId: UUID   = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9213")
+    val producerId: UUID   = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9214")
   }
 
   object Attributes {
@@ -66,6 +69,7 @@ trait SpecHelper {
     (() => mockUUIDSupplier.get).expects().returning(AgreementThree.agreementId).once()
     val agreementSeed1 = AgreementSeed(
       eserviceId = AgreementOne.eserviceId,
+      descriptorId = AgreementOne.descriptorId,
       producerId = AgreementOne.producerId,
       consumerId = AgreementOne.consumerId,
       verifiedAttributes = Seq(
@@ -77,6 +81,7 @@ trait SpecHelper {
 
     val agreementSeed2 = agreementSeed1.copy(
       eserviceId = AgreementTwo.eserviceId,
+      descriptorId = AgreementTwo.descriptorId,
       consumerId = AgreementTwo.consumerId,
       producerId = AgreementTwo.producerId,
       verifiedAttributes = Seq(
@@ -88,6 +93,7 @@ trait SpecHelper {
 
     val agreementSeed3 = agreementSeed1.copy(
       eserviceId = AgreementThree.eserviceId,
+      descriptorId = AgreementThree.descriptorId,
       consumerId = AgreementThree.consumerId,
       producerId = AgreementThree.producerId,
       verifiedAttributes = Seq(

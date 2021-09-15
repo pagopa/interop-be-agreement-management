@@ -117,6 +117,7 @@ class AgreementApiServiceImpl(
     producerId: Option[String],
     consumerId: Option[String],
     eserviceId: Option[String],
+    descriptorId: Option[String],
     status: Option[String]
   )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
@@ -133,6 +134,7 @@ class AgreementApiServiceImpl(
       producerId = producerId,
       consumerId = consumerId,
       eserviceId = eserviceId,
+      descriptorId = descriptorId,
       status = status
     )
 
@@ -145,10 +147,11 @@ class AgreementApiServiceImpl(
     producerId: Option[String],
     consumerId: Option[String],
     eserviceId: Option[String],
+    descriptorId: Option[String],
     status: Option[String]
   )(from: Int, to: Int): ActorRef[Seq[Agreement]] => ListAgreements =
     (ref: ActorRef[Seq[Agreement]]) =>
-      ListAgreements(from, to, producerId, consumerId, eserviceId, status, ref)
+      ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, status, ref)
 
   /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
     * Code: 400, Message: Bad Request, DataType: Problem

@@ -23,6 +23,7 @@ final case class ListAgreements(
   producerId: Option[String],
   consumerId: Option[String],
   eserviceId: Option[String],
+  descriptorId: Option[String],
   status: Option[String],
   replyTo: ActorRef[Seq[Agreement]]
 ) extends Command

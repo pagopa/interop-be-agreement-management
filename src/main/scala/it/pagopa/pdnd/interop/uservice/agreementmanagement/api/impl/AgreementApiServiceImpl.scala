@@ -14,7 +14,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.Persi
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
-import scala.concurrent.Future
+import scala.concurrent._
 
 @SuppressWarnings(
   Array(
@@ -29,7 +29,8 @@ class AgreementApiServiceImpl(
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
   UUIDSupplier: UUIDSupplier
-) extends AgreementApiService {
+)(implicit ec: ExecutionContext)
+    extends AgreementApiService {
 
   private val settings: ClusterShardingSettings = entity.settings match {
     case None    => ClusterShardingSettings(system)
@@ -46,17 +47,21 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val agreement: PersistentAgreement = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
-
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreement.id.toString))
-    val result: Future[StatusReply[Agreement]] =
-      commander.ask(ref => AddAgreement(agreement, ref))
+    val result: Future[StatusReply[Agreement]] = createAgreement(agreementSeed)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         addAgreement405(Problem(Option(statusReply.getError.getMessage), status = 405, "some error"))
     }
+  }
+
+  private def createAgreement(agreementSeed: AgreementSeed) = {
+    val agreement: PersistentAgreement = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreement.id.toString))
+
+    commander.ask(ref => AddAgreement(agreement, ref))
   }
 
   /** Code: 200, Message: EService retrieved, DataType: Agreement
@@ -101,14 +106,19 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-    val result: Future[StatusReply[Agreement]] = commander.ask(ref => SuspendAgreement(agreementId, ref))
+    val result: Future[StatusReply[Agreement]] = suspendAgreementById(agreementId)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         suspendAgreement404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
+  }
+
+  private def suspendAgreementById(agreementId: String) = {
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+
+    commander.ask(ref => SuspendAgreement(agreementId, ref))
   }
 
   /** Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
@@ -173,6 +183,24 @@ class AgreementApiServiceImpl(
         updateAgreementVerifiedAttribute404(
           Problem(Option(statusReply.getError.getMessage), status = 404, "Verified Attribute not found")
         )
+    }
+  }
+
+  //TODO introduce proper uuid handling (e.g.: Twitter snowflake)
+  override def upgradeAgreementById(agreementId: String, agreementSeed: AgreementSeed)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val result = for {
+      _            <- suspendAgreementById(agreementId)
+      newAgreement <- createAgreement(agreementSeed)
+    } yield newAgreement
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => upgradeAgreementById200(statusReply.getValue)
+      case statusReply if statusReply.isError =>
+        upgradeAgreementById400(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
 }

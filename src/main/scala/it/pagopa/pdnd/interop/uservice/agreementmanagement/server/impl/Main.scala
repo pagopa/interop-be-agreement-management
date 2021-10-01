@@ -15,15 +15,23 @@ import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApi
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
+  AgreementApiMarshallerImpl,
+  AgreementApiServiceImpl
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.{ApplicationConfiguration, Authenticator}
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{AgreementPersistentBehavior, AgreementPersistentProjection, Command}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{
+  AgreementPersistentBehavior,
+  AgreementPersistentProjection,
+  Command
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.concurrent.ExecutionContextExecutor
 
 @SuppressWarnings(Array("org.wartremover.warts.StringPlusAny", "org.wartremover.warts.Nothing"))
 object Main extends App {
@@ -42,7 +50,8 @@ object Main extends App {
     val _ = ActorSystem[Nothing](
       Behaviors.setup[Nothing] { context =>
         import akka.actor.typed.scaladsl.adapter._
-        implicit val classicSystem: classic.ActorSystem = context.system.toClassic
+        implicit val classicSystem: classic.ActorSystem         = context.system.toClassic
+        implicit val executionContext: ExecutionContextExecutor = context.system.executionContext
 
         val cluster = Cluster(context.system)
 

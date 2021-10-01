@@ -54,6 +54,49 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/agreements/{agreementId}/upgrade':
+    post:
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - agreement
+      summary: upgrades an agreement.
+      description: upgrades an agreement with a newer eservice version, if any.
+      operationId: upgradeAgreementById
+      parameters:
+        - name: agreementId
+          in: path
+          description: The identifier of the agreement to update
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: The updated agreement data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgreementSeed'
+        required: true
+      responses:
+        '200':
+          description: Agreement updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '400':
+          description: Invalid ID supplied
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /agreements:
     post:
       tags:

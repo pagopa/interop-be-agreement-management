@@ -13,8 +13,8 @@ final case class PersistentAgreement(
   consumerId: UUID,
   status: PersistentAgreementStatus,
   verifiedAttributes: Seq[PersistentVerifiedAttribute],
-  suspendedByConsumer: Boolean,
-  suspendedByProducer: Boolean
+  suspendedByConsumer: Option[Boolean],
+  suspendedByProducer: Option[Boolean]
 )
 
 object PersistentAgreement {
@@ -27,8 +27,8 @@ object PersistentAgreement {
       consumerId = agreement.consumerId,
       status = PersistentAgreementStatus.Pending,
       verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
-      suspendedByConsumer = false,
-      suspendedByProducer = false
+      suspendedByConsumer = None,
+      suspendedByProducer = None
     )
 
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))

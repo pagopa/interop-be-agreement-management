@@ -290,12 +290,13 @@ components:
   schemas:
     StatusChangeDetails:
       type: object
-      description: mentions the owner of the change.
+      description: tracks the owner of the change.
       properties:
-        isConsumerSuspending:
-          type: boolean
-        isProducerSuspending:
-          type: boolean
+        changedBy:
+          type: string
+          enum:
+            - producer
+            - consumer
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -364,8 +365,6 @@ components:
         - consumerId
         - status
         - verifiedAttributes
-        - suspendedByConsumer
-        - suspendedByProducer
       description: business representation of an agreement
     Agreements:
       type: array

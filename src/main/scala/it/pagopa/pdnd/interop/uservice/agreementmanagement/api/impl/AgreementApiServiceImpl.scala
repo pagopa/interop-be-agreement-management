@@ -10,7 +10,10 @@ import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.PersistentAgreement
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  StatusChangeDetailsEnum
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
@@ -196,7 +199,7 @@ class AgreementApiServiceImpl(
     val result = for {
       _ <- suspendAgreementById(
         agreementId,
-        StatusChangeDetails(isConsumerSuspending = Some(true), isProducerSuspending = None)
+        StatusChangeDetails(changedBy = Some(StatusChangeDetailsEnum.Consumer.stringify))
       )
       newAgreement <- createAgreement(agreementSeed)
     } yield newAgreement

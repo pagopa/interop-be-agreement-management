@@ -10,7 +10,8 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, Sta
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementStatus,
-  PersistentVerifiedAttribute
+  PersistentVerifiedAttribute,
+  StatusChangeDetailsEnum
 }
 
 import java.time.temporal.ChronoUnit
@@ -149,12 +150,17 @@ object AgreementPersistentBehavior {
     statusChangeDetails: StatusChangeDetails
   ): PersistentAgreement = {
 
-    (statusChangeDetails.isConsumerSuspending, statusChangeDetails.isProducerSuspending) match {
-      case (Some(isConsumer), Some(isProducer)) =>
-        persistentAgreement.copy(status = status, suspendedByProducer = isProducer, suspendedByConsumer = isConsumer)
-      case (None, Some(isProducer)) => persistentAgreement.copy(status = status, suspendedByProducer = isProducer)
-      case (Some(isConsumer), None) => persistentAgreement.copy(status = status, suspendedByConsumer = isConsumer)
-      case (None, None)             => persistentAgreement.copy(status = status)
+    def isSuspended = status == PersistentAgreementStatus.Suspended
+
+    (statusChangeDetails.changedBy) match {
+      case (Some(isConsumer)) if isConsumer == StatusChangeDetailsEnum.Consumer.stringify =>
+        persistentAgreement.copy(status = status, suspendedByConsumer = Some(isSuspended))
+
+      case (Some(isProducer)) if isProducer == StatusChangeDetailsEnum.Producer.stringify =>
+        persistentAgreement.copy(status = status, suspendedByProducer = Some(isSuspended))
+
+      case Some(_) => persistentAgreement.copy(status = status)
+      case None    => persistentAgreement.copy(status = status)
     }
 
   }

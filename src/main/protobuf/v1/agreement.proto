@@ -14,8 +14,8 @@ message AgreementV1 {
   required string consumerId = 5;
   required AgreementStatusV1 status = 6;
   repeated VerifiedAttributeV1 verifiedAttributes = 7;
-  required bool suspendedByConsumer = 8;
-  required bool suspendedByProducer = 9;
+  optional bool suspendedByConsumer = 8;
+  optional bool suspendedByProducer = 9;
 }
 
 message VerifiedAttributeV1 {

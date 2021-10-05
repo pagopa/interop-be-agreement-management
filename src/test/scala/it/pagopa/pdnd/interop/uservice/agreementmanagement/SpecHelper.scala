@@ -57,7 +57,7 @@ trait SpecHelper {
   def activateAgreement(
     agreement: Agreement
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    data <- Marshal(StatusChangeDetails(isConsumerSuspending = Some(false), isProducerSuspending = None))
+    data <- Marshal(StatusChangeDetails(changedBy = Some("consumer")))
       .to[MessageEntity]
       .map(_.dataBytes)
     activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.PATCH))
@@ -67,7 +67,7 @@ trait SpecHelper {
   def suspendAgreement(
     agreement: Agreement
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    data <- Marshal(StatusChangeDetails(isConsumerSuspending = Some(true), isProducerSuspending = None))
+    data <- Marshal(StatusChangeDetails(changedBy = Some("consumer")))
       .to[MessageEntity]
       .map(_.dataBytes)
     suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))

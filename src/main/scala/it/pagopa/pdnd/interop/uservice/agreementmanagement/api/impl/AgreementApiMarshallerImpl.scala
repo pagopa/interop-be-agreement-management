@@ -8,6 +8,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
   Agreement,
   AgreementSeed,
   Problem,
+  StatusChangeDetails,
   VerifiedAttributeSeed
 }
 import spray.json._
@@ -26,4 +27,8 @@ class AgreementApiMarshallerImpl extends AgreementApiMarshaller with SprayJsonSu
 
   override implicit def fromEntityUnmarshallerVerifiedAttributeSeed: FromEntityUnmarshaller[VerifiedAttributeSeed] =
     sprayJsonUnmarshaller[VerifiedAttributeSeed]
+
+  override implicit def fromEntityUnmarshallerStatusChangeDetails: FromEntityUnmarshaller[StatusChangeDetails] =
+    sprayJsonUnmarshaller[StatusChangeDetails]
+
 }

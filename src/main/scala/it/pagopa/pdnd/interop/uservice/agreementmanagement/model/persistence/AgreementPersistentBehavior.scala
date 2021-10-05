@@ -6,11 +6,12 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.Agreement
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, StatusChangeDetails}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementStatus,
-  PersistentVerifiedAttribute
+  PersistentVerifiedAttribute,
+  StatusChangeDetailsEnum
 }
 
 import java.time.temporal.ChronoUnit
@@ -63,11 +64,12 @@ object AgreementPersistentBehavior {
         replyTo ! StatusReply.Success[Option[Agreement]](agreement.map(PersistentAgreement.toAPI))
         Effect.none[Event, State]
 
-      case ActivateAgreement(agreementId, replyTo) =>
+      case ActivateAgreement(agreementId, statusChangeDetails, replyTo) =>
         val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
-            val updatedAgreement = agreement.copy(status = PersistentAgreementStatus.Active)
+            val updatedAgreement =
+              updateAgreementStatus(agreement, PersistentAgreementStatus.Active, statusChangeDetails)
             Effect
               .persist(AgreementActivated(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
@@ -77,11 +79,12 @@ object AgreementPersistentBehavior {
             Effect.none[AgreementActivated, State]
           }
 
-      case SuspendAgreement(agreementId, replyTo) =>
+      case SuspendAgreement(agreementId, statusChangeDetails, replyTo) =>
         val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
-            val updatedAgreement = agreement.copy(status = PersistentAgreementStatus.Suspended)
+            val updatedAgreement =
+              updateAgreementStatus(agreement, PersistentAgreementStatus.Suspended, statusChangeDetails)
             Effect
               .persist(AgreementSuspended(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
@@ -139,5 +142,26 @@ object AgreementPersistentBehavior {
         .withTagger(_ => Set(persistenceId.id))
         .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
     }
+  }
+
+  private def updateAgreementStatus(
+    persistentAgreement: PersistentAgreement,
+    status: PersistentAgreementStatus,
+    statusChangeDetails: StatusChangeDetails
+  ): PersistentAgreement = {
+
+    def isSuspended = status == PersistentAgreementStatus.Suspended
+
+    (statusChangeDetails.changedBy) match {
+      case (Some(isConsumer)) if isConsumer == StatusChangeDetailsEnum.Consumer.stringify =>
+        persistentAgreement.copy(status = status, suspendedByConsumer = Some(isSuspended))
+
+      case (Some(isProducer)) if isProducer == StatusChangeDetailsEnum.Producer.stringify =>
+        persistentAgreement.copy(status = status, suspendedByProducer = Some(isSuspended))
+
+      case Some(_) => persistentAgreement.copy(status = status)
+      case None    => persistentAgreement.copy(status = status)
+    }
+
   }
 }

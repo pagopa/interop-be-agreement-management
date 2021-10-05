@@ -12,7 +12,9 @@ final case class PersistentAgreement(
   producerId: UUID,
   consumerId: UUID,
   status: PersistentAgreementStatus,
-  verifiedAttributes: Seq[PersistentVerifiedAttribute]
+  verifiedAttributes: Seq[PersistentVerifiedAttribute],
+  suspendedByConsumer: Option[Boolean],
+  suspendedByProducer: Option[Boolean]
 )
 
 object PersistentAgreement {
@@ -24,7 +26,9 @@ object PersistentAgreement {
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
       status = PersistentAgreementStatus.Pending,
-      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI)
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      suspendedByConsumer = None,
+      suspendedByProducer = None
     )
 
   def fromAPIWithActiveStatus(agreement: AgreementSeed, uuidSupplier: UUIDSupplier): PersistentAgreement =
@@ -35,7 +39,9 @@ object PersistentAgreement {
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
       status = PersistentAgreementStatus.Active,
-      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI)
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      suspendedByConsumer = None,
+      suspendedByProducer = None
     )
 
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))
@@ -47,7 +53,9 @@ object PersistentAgreement {
       producerId = persistentAgreement.producerId,
       consumerId = persistentAgreement.consumerId,
       status = persistentAgreement.status.stringify,
-      verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI)
+      verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
+      suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+      suspendedByProducer = persistentAgreement.suspendedByProducer
     )
   }
 }

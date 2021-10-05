@@ -4,7 +4,12 @@ import akka.actor
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, VerifiedAttributeSeed}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
+  Agreement,
+  AgreementSeed,
+  StatusChangeDetails,
+  VerifiedAttributeSeed
+}
 
 import java.util.UUID
 import scala.concurrent.duration.Duration
@@ -52,14 +57,20 @@ trait SpecHelper {
   def activateAgreement(
     agreement: Agreement
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    activated <- Unmarshal(makeRequest(emptyData, s"agreements/${agreement.id.toString}/activate", HttpMethods.PATCH))
+    data <- Marshal(StatusChangeDetails(changedBy = Some("consumer")))
+      .to[MessageEntity]
+      .map(_.dataBytes)
+    activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.PATCH))
       .to[Agreement]
   } yield activated
 
   def suspendAgreement(
     agreement: Agreement
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    suspended <- Unmarshal(makeRequest(emptyData, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))
+    data <- Marshal(StatusChangeDetails(changedBy = Some("consumer")))
+      .to[MessageEntity]
+      .map(_.dataBytes)
+    suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))
       .to[Agreement]
   } yield suspended
 

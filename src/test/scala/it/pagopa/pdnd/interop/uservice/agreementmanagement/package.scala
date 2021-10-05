@@ -10,7 +10,12 @@ import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, VerifiedAttributeSeed}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
+  Agreement,
+  AgreementSeed,
+  StatusChangeDetails,
+  VerifiedAttributeSeed
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 
@@ -28,6 +33,9 @@ package object agreementmanagement extends MockFactory {
 
   implicit def toEntityMarshallerAgreementSeed: ToEntityMarshaller[AgreementSeed] =
     sprayJsonMarshaller[AgreementSeed]
+
+  implicit def toEntityMarshallerStatusChangeDetailsSeed: ToEntityMarshaller[StatusChangeDetails] =
+    sprayJsonMarshaller[StatusChangeDetails]
 
   implicit def toEntityMarshallerVerifiedAttributeSeed: ToEntityMarshaller[VerifiedAttributeSeed] =
     sprayJsonMarshaller[VerifiedAttributeSeed]

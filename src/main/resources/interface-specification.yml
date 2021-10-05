@@ -206,15 +206,21 @@ paths:
         description: the updated attribute
         required: true
   '/agreements/{agreement_id}/activate':
-    parameters:
-      - schema:
-          type: string
-        name: agreement_id
-        in: path
-        required: true
     patch:
       summary: Activate Agreement
       operationId: activateAgreement
+      parameters:
+        - schema:
+            type: string
+          name: agreement_id
+          in: path
+          required: true
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusChangeDetails'
+          required: true
       responses:
         '200':
           description: Agreement activated
@@ -240,15 +246,22 @@ paths:
       tags:
         - agreement
   '/agreements/{agreement_id}/suspend':
-    parameters:
-      - schema:
-          type: string
-        name: agreement_id
-        in: path
-        required: true
     patch:
       summary: Suspend Agreement
       operationId: suspendAgreement
+      parameters:
+        - schema:
+            type: string
+          name: agreement_id
+          in: path
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusChangeDetails'
+        description: the updated attribute
+        required: true
       responses:
         '200':
           description: OK
@@ -275,6 +288,15 @@ paths:
         - bearerAuth: [ ]
 components:
   schemas:
+    StatusChangeDetails:
+      type: object
+      description: tracks the owner of the change.
+      properties:
+        changedBy:
+          type: string
+          enum:
+            - producer
+            - consumer
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -331,6 +353,10 @@ components:
           description: 'set of the verified attributes belonging to this agreement, if any.'
           items:
             $ref: '#/components/schemas/VerifiedAttribute'
+        suspendedByConsumer:
+          type: boolean
+        suspendedByProducer:
+          type: boolean
       required:
         - id
         - eserviceId

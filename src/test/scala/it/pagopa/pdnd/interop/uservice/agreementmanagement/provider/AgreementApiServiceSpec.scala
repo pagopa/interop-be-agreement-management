@@ -139,7 +139,7 @@ class AgreementApiServiceSpec
         .get should be(123L)
     }
 
-    "should activate an agreement properly" in {
+    "activate an agreement properly" in {
       //given a pending agreement
       val agreementId = UUID.fromString("d1040ff3-7fbc-4b29-9081-b1b53f72d386")
 

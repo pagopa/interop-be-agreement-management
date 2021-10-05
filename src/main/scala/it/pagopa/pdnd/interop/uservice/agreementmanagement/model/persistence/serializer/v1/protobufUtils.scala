@@ -37,7 +37,9 @@ object protobufUtils {
       producerId = producerId,
       consumerId = consumerId,
       status = status,
-      verifiedAttributes = protobufAgreement.verifiedAttributes.map(deserializeVerifiedAttribute)
+      verifiedAttributes = protobufAgreement.verifiedAttributes.map(deserializeVerifiedAttribute),
+      suspendedByConsumer = protobufAgreement.suspendedByConsumer,
+      suspendedByProducer = protobufAgreement.suspendedByProducer
     )
   }
 
@@ -53,7 +55,9 @@ object protobufUtils {
       producerId = persistentAgreement.producerId.toString,
       consumerId = persistentAgreement.consumerId.toString,
       status = status,
-      verifiedAttributes = persistentAgreement.verifiedAttributes.map(serializeVerifiedAttribute)
+      verifiedAttributes = persistentAgreement.verifiedAttributes.map(serializeVerifiedAttribute),
+      suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+      suspendedByProducer = persistentAgreement.suspendedByProducer
     )
   }
 

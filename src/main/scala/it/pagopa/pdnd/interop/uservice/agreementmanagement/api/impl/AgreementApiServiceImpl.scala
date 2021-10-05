@@ -86,14 +86,15 @@ class AgreementApiServiceImpl(
     }
   }
 
-  override def activateAgreement(agreementId: String)(implicit
+  override def activateAgreement(agreementId: String, statusChangeDetails: StatusChangeDetails)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-    val result: Future[StatusReply[Agreement]] = commander.ask(ref => ActivateAgreement(agreementId, ref))
+    val result: Future[StatusReply[Agreement]] =
+      commander.ask(ref => ActivateAgreement(agreementId, statusChangeDetails, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
@@ -101,12 +102,12 @@ class AgreementApiServiceImpl(
     }
   }
 
-  override def suspendAgreement(agreementId: String)(implicit
+  override def suspendAgreement(agreementId: String, statusChangeDetails: StatusChangeDetails)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val result: Future[StatusReply[Agreement]] = suspendAgreementById(agreementId)
+    val result: Future[StatusReply[Agreement]] = suspendAgreementById(agreementId, statusChangeDetails)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
@@ -114,11 +115,11 @@ class AgreementApiServiceImpl(
     }
   }
 
-  private def suspendAgreementById(agreementId: String) = {
+  private def suspendAgreementById(agreementId: String, statusChangeDetails: StatusChangeDetails) = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    commander.ask(ref => SuspendAgreement(agreementId, ref))
+    commander.ask(ref => SuspendAgreement(agreementId, statusChangeDetails, ref))
   }
 
   /** Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
@@ -193,7 +194,10 @@ class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     val result = for {
-      _            <- suspendAgreementById(agreementId)
+      _ <- suspendAgreementById(
+        agreementId,
+        StatusChangeDetails(isConsumerSuspending = Some(true), isProducerSuspending = None)
+      )
       newAgreement <- createAgreement(agreementSeed)
     } yield newAgreement
 

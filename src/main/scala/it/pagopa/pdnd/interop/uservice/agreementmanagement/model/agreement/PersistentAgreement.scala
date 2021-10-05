@@ -31,6 +31,19 @@ object PersistentAgreement {
       suspendedByProducer = None
     )
 
+  def fromAPIWithActiveStatus(agreement: AgreementSeed, uuidSupplier: UUIDSupplier): PersistentAgreement =
+    PersistentAgreement(
+      id = uuidSupplier.get,
+      eserviceId = agreement.eserviceId,
+      descriptorId = agreement.descriptorId,
+      producerId = agreement.producerId,
+      consumerId = agreement.consumerId,
+      status = PersistentAgreementStatus.Active,
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      suspendedByConsumer = None,
+      suspendedByProducer = None
+    )
+
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   def toAPI(persistentAgreement: PersistentAgreement): Agreement = {
     Agreement(

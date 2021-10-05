@@ -27,6 +27,17 @@ object PersistentAgreement {
       verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI)
     )
 
+  def fromAPIWithActiveStatus(agreement: AgreementSeed, uuidSupplier: UUIDSupplier): PersistentAgreement =
+    PersistentAgreement(
+      id = uuidSupplier.get,
+      eserviceId = agreement.eserviceId,
+      descriptorId = agreement.descriptorId,
+      producerId = agreement.producerId,
+      consumerId = agreement.consumerId,
+      status = PersistentAgreementStatus.Active,
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI)
+    )
+
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   def toAPI(persistentAgreement: PersistentAgreement): Agreement = {
     Agreement(

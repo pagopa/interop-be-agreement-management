@@ -47,7 +47,8 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val result: Future[StatusReply[Agreement]] = createAgreement(agreementSeed)
+    val agreement: PersistentAgreement         = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
+    val result: Future[StatusReply[Agreement]] = createAgreement(agreement)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
@@ -55,9 +56,7 @@ class AgreementApiServiceImpl(
     }
   }
 
-  private def createAgreement(agreementSeed: AgreementSeed) = {
-    val agreement: PersistentAgreement = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
-
+  private def createAgreement(agreement: PersistentAgreement) = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreement.id.toString))
 
@@ -91,14 +90,19 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-    val result: Future[StatusReply[Agreement]] = commander.ask(ref => ActivateAgreement(agreementId, ref))
+    val result: Future[StatusReply[Agreement]] = activateAgreementById(agreementId)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         activateAgreement404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
+  }
+
+  private def activateAgreementById(agreementId: String) = {
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+
+    commander.ask(ref => ActivateAgreement(agreementId, ref))
   }
 
   override def suspendAgreement(agreementId: String)(implicit
@@ -193,9 +197,10 @@ class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     val result = for {
-      _            <- suspendAgreementById(agreementId)
-      newAgreement <- createAgreement(agreementSeed)
-    } yield newAgreement
+      _ <- suspendAgreementById(agreementId)
+      persistentAgreement = PersistentAgreement.fromAPIWithActiveStatus(agreementSeed, UUIDSupplier)
+      activeAgreement <- createAgreement(persistentAgreement)
+    } yield activeAgreement
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => upgradeAgreementById200(statusReply.getValue)

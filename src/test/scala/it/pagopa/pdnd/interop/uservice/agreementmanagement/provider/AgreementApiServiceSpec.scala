@@ -1,4 +1,4 @@
-package it.pagopa.pdnd.interop.uservice.agreementmanagement
+package it.pagopa.pdnd.interop.uservice.agreementmanagement.provider
 
 import akka.actor
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
@@ -11,6 +11,7 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import it.pagopa.pdnd.interop.uservice.agreementmanagement._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
   AgreementApiServiceImpl
@@ -109,9 +110,9 @@ class AgreementApiServiceSpec
         producerId = producerId,
         consumerId = consumerId,
         verifiedAttributes = Seq(
-          VerifiedAttributeSeed(id = attributeId1, verified = true, validityTimespan = None),
-          VerifiedAttributeSeed(id = attributeId2, verified = false, validityTimespan = None),
-          VerifiedAttributeSeed(id = attributeId3, verified = false, validityTimespan = Some(123L))
+          VerifiedAttributeSeed(id = attributeId1, verified = Some(true), validityTimespan = None),
+          VerifiedAttributeSeed(id = attributeId2, verified = None, validityTimespan = None),
+          VerifiedAttributeSeed(id = attributeId3, verified = Some(false), validityTimespan = Some(123L))
         )
       )
       (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
@@ -178,7 +179,7 @@ class AgreementApiServiceSpec
         producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
         consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
         verifiedAttributes =
-          Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = false, validityTimespan = None))
+          Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = None, validityTimespan = None))
       )
       (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(agreementId)).once()
       val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
@@ -188,7 +189,7 @@ class AgreementApiServiceSpec
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
         .get
-        .verified should be(false)
+        .verified shouldBe None
 
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
@@ -196,7 +197,7 @@ class AgreementApiServiceSpec
         .verificationDate should be(None)
 
       val verifiedAttributeSeed =
-        VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = true, validityTimespan = None)
+        VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = Some(true), validityTimespan = None)
       val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
       //when the verification occurs
@@ -207,7 +208,7 @@ class AgreementApiServiceSpec
       val updatedAgreement = Await.result(Unmarshal(updatedAgreementResponse.entity).to[Agreement], Duration.Inf)
       val updatedAttribute = updatedAgreement.verifiedAttributes.find(p => p.id.toString == attributeId).get
 
-      updatedAttribute.verified should be(true)
+      updatedAttribute.verified shouldBe Some(true)
       updatedAttribute.verificationDate shouldBe a[Some[_]]
     }
   }

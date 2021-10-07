@@ -20,9 +20,9 @@ message AgreementV1 {
 
 message VerifiedAttributeV1 {
   required string id = 1;                 // registry identifier
-  required bool verified = 2;             // state of verification
+  optional bool verified = 2;             // state of verification
   optional string verificationDate = 4;   // timestamp of verification, None if not verified
-  optional string validityTimespan = 5;  // seconds of verification validity, None by default
+  optional string validityTimespan = 5;   // seconds of verification validity, None by default
 }
 
 enum AgreementStatusV1 {

@@ -420,7 +420,6 @@ components:
           minimum: 1
       required:
         - id
-        - verified
     VerifiedAttributeSeed:
       title: VerifiedAttributeSeed
       type: object
@@ -441,10 +440,9 @@ components:
           minimum: 1
       required:
         - id
-        - verified
   securitySchemes:
     bearerAuth:
       type: http
-      description: 'A bearer token in the format of a JWS and comformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).'
+      description: 'A bearer token in the format of a JWS and conformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).'
       scheme: bearer
       bearerFormat: JWT d'Interoperabilità di AgID (default)

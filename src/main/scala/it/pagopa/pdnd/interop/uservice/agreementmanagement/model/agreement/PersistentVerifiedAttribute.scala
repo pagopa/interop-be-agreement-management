@@ -18,8 +18,8 @@ object PersistentVerifiedAttribute {
       id = attribute.id,
       verified = attribute.verified,
       verificationDate = attribute.verified match {
-        case Some(true) => Some(OffsetDateTime.now())
-        case _          => None
+        case Some(_) => Some(OffsetDateTime.now())
+        case None    => None
       },
       validityTimespan = attribute.validityTimespan
     )

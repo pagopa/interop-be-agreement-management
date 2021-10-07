@@ -110,9 +110,9 @@ class AgreementApiServiceSpec
         producerId = producerId,
         consumerId = consumerId,
         verifiedAttributes = Seq(
-          VerifiedAttributeSeed(id = attributeId1, verified = true, validityTimespan = None),
-          VerifiedAttributeSeed(id = attributeId2, verified = false, validityTimespan = None),
-          VerifiedAttributeSeed(id = attributeId3, verified = false, validityTimespan = Some(123L))
+          VerifiedAttributeSeed(id = attributeId1, verified = Some(true), validityTimespan = None),
+          VerifiedAttributeSeed(id = attributeId2, verified = None, validityTimespan = None),
+          VerifiedAttributeSeed(id = attributeId3, verified = Some(false), validityTimespan = Some(123L))
         )
       )
       (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
@@ -179,7 +179,7 @@ class AgreementApiServiceSpec
         producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
         consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
         verifiedAttributes =
-          Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = false, validityTimespan = None))
+          Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = None, validityTimespan = None))
       )
       (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(agreementId)).once()
       val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
@@ -189,7 +189,7 @@ class AgreementApiServiceSpec
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
         .get
-        .verified shouldBe Some(false)
+        .verified shouldBe None
 
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
@@ -197,7 +197,7 @@ class AgreementApiServiceSpec
         .verificationDate should be(None)
 
       val verifiedAttributeSeed =
-        VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = true, validityTimespan = None)
+        VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = Some(true), validityTimespan = None)
       val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
       //when the verification occurs

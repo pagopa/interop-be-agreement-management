@@ -84,9 +84,9 @@ trait SpecHelper {
       producerId = AgreementOne.producerId,
       consumerId = AgreementOne.consumerId,
       verifiedAttributes = Seq(
-        VerifiedAttributeSeed(id = Attributes.id1, verified = true, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id2, verified = false, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id3, verified = false, validityTimespan = Some(123L))
+        VerifiedAttributeSeed(id = Attributes.id1, verified = Some(true), validityTimespan = None),
+        VerifiedAttributeSeed(id = Attributes.id2, verified = None, validityTimespan = None),
+        VerifiedAttributeSeed(id = Attributes.id3, verified = Some(false), validityTimespan = Some(123L))
       )
     )
 
@@ -96,9 +96,9 @@ trait SpecHelper {
       consumerId = AgreementTwo.consumerId,
       producerId = AgreementTwo.producerId,
       verifiedAttributes = Seq(
-        VerifiedAttributeSeed(id = Attributes.id1, verified = false, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id2, verified = true, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id3, verified = false, validityTimespan = Some(123L))
+        VerifiedAttributeSeed(id = Attributes.id1, verified = None, validityTimespan = None),
+        VerifiedAttributeSeed(id = Attributes.id2, verified = Some(true), validityTimespan = None),
+        VerifiedAttributeSeed(id = Attributes.id3, verified = Some(false), validityTimespan = Some(123L))
       )
     )
 
@@ -108,9 +108,9 @@ trait SpecHelper {
       consumerId = AgreementThree.consumerId,
       producerId = AgreementThree.producerId,
       verifiedAttributes = Seq(
-        VerifiedAttributeSeed(id = Attributes.id1, verified = false, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id2, verified = false, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id3, verified = false, validityTimespan = Some(123L))
+        VerifiedAttributeSeed(id = Attributes.id1, verified = Some(false), validityTimespan = None),
+        VerifiedAttributeSeed(id = Attributes.id2, verified = Some(false), validityTimespan = None),
+        VerifiedAttributeSeed(id = Attributes.id3, verified = Some(false), validityTimespan = Some(123L))
       )
     )
 

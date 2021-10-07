@@ -16,8 +16,11 @@ object PersistentVerifiedAttribute {
   def fromAPI(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute =
     PersistentVerifiedAttribute(
       id = attribute.id,
-      verified = Some(attribute.verified),
-      verificationDate = if (attribute.verified) Some(OffsetDateTime.now()) else None,
+      verified = attribute.verified,
+      verificationDate = attribute.verified match {
+        case Some(true) => Some(OffsetDateTime.now())
+        case _          => None
+      },
       validityTimespan = attribute.validityTimespan
     )
   def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute =

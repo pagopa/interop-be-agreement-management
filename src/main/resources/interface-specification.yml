@@ -157,6 +157,7 @@ paths:
               - pending
               - active
               - suspended
+              - inactive
       responses:
         '200':
           description: A list of Agreement
@@ -348,6 +349,7 @@ components:
             - active
             - pending
             - suspended
+            - inactive
         verifiedAttributes:
           type: array
           description: 'set of the verified attributes belonging to this agreement, if any.'

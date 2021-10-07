@@ -29,4 +29,5 @@ enum AgreementStatusV1 {
   pending = 0;
   active = 1;
   suspended = 2;
+  inactive = 3;
 }

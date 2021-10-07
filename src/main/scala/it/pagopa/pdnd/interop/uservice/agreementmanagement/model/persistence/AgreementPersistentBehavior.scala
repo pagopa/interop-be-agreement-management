@@ -94,6 +94,21 @@ object AgreementPersistentBehavior {
             Effect.none[AgreementSuspended, State]
           }
 
+      case DeactivateAgreement(agreementId, statusChangeDetails, replyTo) =>
+        val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
+        agreement
+          .map { agreement =>
+            val updatedAgreement =
+              updateAgreementStatus(agreement, PersistentAgreementStatus.Inactive, statusChangeDetails)
+            Effect
+              .persist(AgreementDeactivated(updatedAgreement))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
+          }
+          .getOrElse {
+            replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
+            Effect.none[AgreementDeactivated, State]
+          }
+
       case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, status, replyTo) =>
         val agreements: Seq[Agreement] = state.agreements
           .slice(from, to)
@@ -121,6 +136,7 @@ object AgreementPersistentBehavior {
       case AgreementAdded(agreement)           => state.add(agreement)
       case AgreementActivated(agreement)       => state.updateAgreement(agreement)
       case AgreementSuspended(agreement)       => state.updateAgreement(agreement)
+      case AgreementDeactivated(agreement)     => state.updateAgreement(agreement)
       case VerifiedAttributeUpdated(agreement) => state.updateAgreement(agreement)
     }
 

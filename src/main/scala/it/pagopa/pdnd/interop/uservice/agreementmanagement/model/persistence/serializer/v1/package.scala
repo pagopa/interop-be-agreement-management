@@ -6,6 +6,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1.events.{
   AgreementActivatedV1,
   AgreementAddedV1,
+  AgreementDeactivatedV1,
   AgreementSuspendedV1,
   VerifiedAttributeUpdatedV1
 }
@@ -71,5 +72,13 @@ package object v1 {
   implicit def agreementSuspendedV1PersistEventDeserializer
     : PersistEventDeserializer[AgreementSuspendedV1, AgreementSuspended] =
     event => toPersistentAgreement(event.agreement).map(AgreementSuspended)
+
+  implicit def agreementDeactivatedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementDeactivated, AgreementDeactivatedV1] =
+    event => toProtobufAgreement(event.agreement).map(ag => AgreementDeactivatedV1.of(ag))
+
+  implicit def agreementDeactivatedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementDeactivatedV1, AgreementDeactivated] =
+    event => toPersistentAgreement(event.agreement).map(AgreementDeactivated)
 
 }

@@ -25,6 +25,13 @@ final case class SuspendAgreement(
   statusChangeDetails: StatusChangeDetails,
   replyTo: ActorRef[StatusReply[Agreement]]
 ) extends Command
+
+final case class DeactivateAgreement(
+  agreementId: String,
+  statusChangeDetails: StatusChangeDetails,
+  replyTo: ActorRef[StatusReply[Agreement]]
+) extends Command
+
 final case class ListAgreements(
   from: Int,
   to: Int,

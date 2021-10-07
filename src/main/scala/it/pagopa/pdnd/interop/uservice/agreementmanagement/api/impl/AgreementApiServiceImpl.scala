@@ -10,10 +10,7 @@ import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
-  PersistentAgreement,
-  StatusChangeDetailsEnum
-}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
@@ -200,10 +197,7 @@ class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     val result = for {
-      _ <- suspendAgreementById(
-        agreementId,
-        StatusChangeDetails(changedBy = Some(StatusChangeDetailsEnum.Consumer.stringify))
-      )
+      _ <- deactivateAgreementById(agreementId, StatusChangeDetails(changedBy = None))
       persistentAgreement = PersistentAgreement.fromAPIWithActiveStatus(agreementSeed, UUIDSupplier)
       activeAgreement <- createAgreement(persistentAgreement)
     } yield activeAgreement
@@ -213,5 +207,12 @@ class AgreementApiServiceImpl(
       case statusReply if statusReply.isError =>
         upgradeAgreementById400(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
+  }
+
+  private def deactivateAgreementById(agreementId: String, statusChangeDetails: StatusChangeDetails) = {
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+
+    commander.ask(ref => DeactivateAgreement(agreementId, statusChangeDetails, ref))
   }
 }

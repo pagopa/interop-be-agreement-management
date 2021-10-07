@@ -213,4 +213,39 @@ class AgreementApiServiceSpec
     }
   }
 
+  "upgrade an agreement properly" in {
+    //given a pending agreement
+    val agreementId = UUID.randomUUID()
+
+    val agreementSeed = AgreementSeed(
+      eserviceId = UUID.fromString("94c06558-c0f9-42e0-a11e-c5f82e4b8a9b"),
+      descriptorId = UUID.fromString("77262ddf-7743-4f26-85fd-ec53febbfe56"),
+      producerId = UUID.fromString("f318fcc9-5421-4081-8e13-ba508152af9e"),
+      consumerId = UUID.fromString("1f538520-95b6-4d3f-accf-90c7b183df9f"),
+      verifiedAttributes = Seq.empty
+    )
+    (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+    val response: Future[Agreement] = createAgreement(agreementSeed)
+    val bodyResponse: Agreement     = Await.result(response, Duration.Inf)
+    bodyResponse.verifiedAttributes shouldBe empty
+    bodyResponse.status shouldBe "pending"
+
+    //after its activation
+    val _ = activateAgreement(bodyResponse).futureValue
+
+    //and its upgrade
+    val updateAgreementId = UUID.randomUUID()
+    (() => mockUUIDSupplier.get).expects().returning(updateAgreementId).once()
+    val _ = upgradeAgreement(agreementId.toString, agreementSeed).futureValue
+
+    //when we retrieve the original agreement. it should have its state changed to "inactive"
+    val inactiveAgreement = getAgreement(agreementId.toString).futureValue
+    inactiveAgreement.status shouldBe "inactive"
+
+    //when we retrieve the updated agreement, it should have its state changed to "active"
+    val activeAgreement = getAgreement(updateAgreementId.toString).futureValue
+    activeAgreement.status shouldBe "active"
+  }
+
 }

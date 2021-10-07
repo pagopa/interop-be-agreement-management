@@ -54,6 +54,15 @@ trait SpecHelper {
     agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
+  def getAgreement(id: String)(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = {
+
+    val response = makeRequest(emptyData, s"agreement/$id", HttpMethods.GET)
+    val result = for {
+      agreement <- Unmarshal(response).to[Agreement]
+    } yield agreement
+    result
+  }
+
   def activateAgreement(
     agreement: Agreement
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
@@ -73,6 +82,14 @@ trait SpecHelper {
     suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))
       .to[Agreement]
   } yield suspended
+
+  def upgradeAgreement(agreementId: String, seed: AgreementSeed)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Agreement] = for {
+    data      <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    agreement <- Unmarshal(makeRequest(data, s"agreements/${agreementId}/upgrade", HttpMethods.POST)).to[Agreement]
+  } yield agreement
 
   def prepareDataForListingTests(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Unit = {
     (() => mockUUIDSupplier.get).expects().returning(AgreementOne.agreementId).once()

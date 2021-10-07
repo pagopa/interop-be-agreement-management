@@ -420,7 +420,6 @@ components:
           minimum: 1
       required:
         - id
-        - verified
     VerifiedAttributeSeed:
       title: VerifiedAttributeSeed
       type: object

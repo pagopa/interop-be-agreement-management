@@ -7,7 +7,7 @@ import java.util.UUID
 
 final case class PersistentVerifiedAttribute(
   id: UUID,
-  verified: Boolean,
+  verified: Option[Boolean],
   verificationDate: Option[OffsetDateTime],
   validityTimespan: Option[Long]
 )
@@ -16,7 +16,7 @@ object PersistentVerifiedAttribute {
   def fromAPI(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute =
     PersistentVerifiedAttribute(
       id = attribute.id,
-      verified = attribute.verified,
+      verified = Some(attribute.verified),
       verificationDate = if (attribute.verified) Some(OffsetDateTime.now()) else None,
       validityTimespan = attribute.validityTimespan
     )

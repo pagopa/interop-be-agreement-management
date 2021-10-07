@@ -1,4 +1,4 @@
-package it.pagopa.pdnd.interop.uservice.agreementmanagement
+package it.pagopa.pdnd.interop.uservice.agreementmanagement.provider
 
 import akka.actor
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
@@ -11,6 +11,7 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import it.pagopa.pdnd.interop.uservice.agreementmanagement._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
   AgreementApiServiceImpl
@@ -188,7 +189,7 @@ class AgreementApiServiceSpec
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
         .get
-        .verified should be(false)
+        .verified shouldBe Some(false)
 
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
@@ -207,7 +208,7 @@ class AgreementApiServiceSpec
       val updatedAgreement = Await.result(Unmarshal(updatedAgreementResponse.entity).to[Agreement], Duration.Inf)
       val updatedAttribute = updatedAgreement.verifiedAttributes.find(p => p.id.toString == attributeId).get
 
-      updatedAttribute.verified should be(true)
+      updatedAttribute.verified shouldBe Some(true)
       updatedAttribute.verificationDate shouldBe a[Some[_]]
     }
   }

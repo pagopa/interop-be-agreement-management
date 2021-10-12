@@ -39,7 +39,7 @@ class Controller({{#apiInfo}}{{#apis}}{{#operations}}{{classVarName}}: {{classna
         w.close()
         private val api = new OpenApi3Parser().parse(tmpFile, true)
         private val validator = new RequestValidator(api)
-        private val strictnessTimeout = FiniteDuration(ConfigFactory.load().getDuration("http.entity-to-strict-timeout").toSeconds, SECONDS)
+        private val strictnessTimeout = FiniteDuration({{strictnessTimeout}}, SECONDS)
         private val validationsWhitelist: List[String] = List("swagger-ui", "build-info")
 
       def validationFunction(httpRequest: HttpRequest)(route: Route): Route = {

@@ -23,7 +23,6 @@ trait SpecConfiguration {
   val config = ConfigFactory
     .parseResourcesAnySyntax("test")
     .withFallback(testData)
-
 }
 
 object SpecConfiguration extends SpecConfiguration

@@ -24,7 +24,8 @@ import scala.concurrent.duration.Duration
 
 package object agreementmanagement extends MockFactory {
 
-  final lazy val url: String                  = "http://localhost:18088/pdnd-interop-uservice-agreement-management/0.0.1"
+  final lazy val url: String =
+    s"http://localhost:18088/pdnd-interop-uservice-agreement-management/${buildinfo.BuildInfo.interfaceVersion}"
   final val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken("token")))
 
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]

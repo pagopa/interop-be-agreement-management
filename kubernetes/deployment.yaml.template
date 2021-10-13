@@ -77,7 +77,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: REQUIRED_CONTACT_POINT_NR
-              value: "{{replicas}}"
+              value: "1"
           volumeMounts:
             - name: application-conf
               mountPath: /opt/docker/etc

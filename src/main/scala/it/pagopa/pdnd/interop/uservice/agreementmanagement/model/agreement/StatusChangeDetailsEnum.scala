@@ -6,14 +6,7 @@ sealed trait StatusChangeDetailsEnum {
     case StatusChangeDetailsEnum.Producer => "producer"
   }
 }
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.ToString"
-  )
-)
+
 object StatusChangeDetailsEnum {
   case object Consumer extends StatusChangeDetailsEnum
   case object Producer extends StatusChangeDetailsEnum

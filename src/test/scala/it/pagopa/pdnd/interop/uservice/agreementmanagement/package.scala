@@ -47,7 +47,6 @@ package object agreementmanagement extends MockFactory {
   implicit def fromEntityUnmarshallerAgreement: FromEntityUnmarshaller[Agreement] =
     sprayJsonUnmarshaller[Agreement]
 
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def makeRequest(data: Source[ByteString, Any], path: String, verb: HttpMethod)(implicit
     actorSystem: ActorSystem
   ): HttpResponse = {

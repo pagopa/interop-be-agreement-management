@@ -8,14 +8,7 @@ sealed trait PersistentAgreementStatus {
     case PersistentAgreementStatus.Inactive  => "inactive"
   }
 }
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.ToString"
-  )
-)
+
 object PersistentAgreementStatus {
   case object Pending   extends PersistentAgreementStatus
   case object Active    extends PersistentAgreementStatus

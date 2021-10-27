@@ -15,7 +15,6 @@ import akka.{Done, NotUsed}
 
 import scala.concurrent.duration.DurationInt
 
-@SuppressWarnings(Array("org.wartremover.warts.StringPlusAny"))
 class AgreementPersistentProjection(system: ActorSystem[_], entity: Entity[Command, ShardingEnvelope[Command]]) {
 
   private val settings: ClusterShardingSettings = entity.settings match {

@@ -21,7 +21,6 @@ package object v1 {
   //type alias for traverse type inference
   type ThrowableOr[A] = Either[Throwable, A]
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
       for {
@@ -33,7 +32,6 @@ package object v1 {
       } yield State(agreements)
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing", "org.wartremover.warts.OptionPartial"))
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
       for {

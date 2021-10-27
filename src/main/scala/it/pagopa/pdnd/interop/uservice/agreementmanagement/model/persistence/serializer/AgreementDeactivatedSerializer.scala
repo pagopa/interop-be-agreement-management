@@ -23,7 +23,6 @@ class AgreementDeactivatedSerializer extends SerializerWithStringManifest {
       serialize(event, AgreementDeactivatedManifest, currentVersion)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case AgreementDeactivatedManifest :: `version1` :: Nil =>
       deserialize(v1.events.AgreementDeactivatedV1, bytes, manifest, currentVersion)

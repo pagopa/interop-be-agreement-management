@@ -5,7 +5,6 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentVerifiedAttribute
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final case class State(agreements: Map[String, PersistentAgreement]) extends Persistable {
   def add(agreement: PersistentAgreement): State =
     copy(agreements = agreements + (agreement.id.toString -> agreement))

@@ -52,7 +52,7 @@ object PersistentAgreement {
       descriptorId = persistentAgreement.descriptorId,
       producerId = persistentAgreement.producerId,
       consumerId = persistentAgreement.consumerId,
-      status = persistentAgreement.status.stringify,
+      status = persistentAgreement.status.toApi,
       verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer

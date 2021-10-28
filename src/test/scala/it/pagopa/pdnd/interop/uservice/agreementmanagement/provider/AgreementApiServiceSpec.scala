@@ -12,13 +12,10 @@ import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.agreementmanagement._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
-  AgreementApiMarshallerImpl,
-  AgreementApiServiceImpl
-}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.{AgreementApi, AgreementApiMarshaller}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.Authenticator
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed, VerifiedAttributeSeed}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{ACTIVE, Agreement, AgreementSeed, INACTIVE, PENDING, VerifiedAttributeSeed}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.impl.Main
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
@@ -122,7 +119,7 @@ class AgreementApiServiceSpec
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
 
       bodyResponse.id shouldBe agreementId
-      bodyResponse.status shouldBe "pending"
+      bodyResponse.status shouldBe PENDING
       bodyResponse.verifiedAttributes
         .find(p => p.id == attributeId1)
         .get
@@ -157,7 +154,7 @@ class AgreementApiServiceSpec
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
       bodyResponse.verifiedAttributes shouldBe empty
-      bodyResponse.status shouldBe "pending"
+      bodyResponse.status shouldBe PENDING
 
       //when the activation occurs
       val activateAgreementResponse = activateAgreement(bodyResponse)
@@ -165,7 +162,7 @@ class AgreementApiServiceSpec
       //the agreement should change its status to "active"
       val activatedAgreement = Await.result(activateAgreementResponse, Duration.Inf)
 
-      activatedAgreement.status shouldBe "active"
+      activatedAgreement.status shouldBe ACTIVE
     }
 
     "should verify an attribute properly" in {
@@ -229,7 +226,7 @@ class AgreementApiServiceSpec
     val response: Future[Agreement] = createAgreement(agreementSeed)
     val bodyResponse: Agreement     = Await.result(response, Duration.Inf)
     bodyResponse.verifiedAttributes shouldBe empty
-    bodyResponse.status shouldBe "pending"
+    bodyResponse.status shouldBe PENDING
 
     //after its activation
     val _ = activateAgreement(bodyResponse).futureValue
@@ -241,11 +238,11 @@ class AgreementApiServiceSpec
 
     //when we retrieve the original agreement. it should have its state changed to "inactive"
     val inactiveAgreement = getAgreement(agreementId.toString).futureValue
-    inactiveAgreement.status shouldBe "inactive"
+    inactiveAgreement.status shouldBe INACTIVE
 
     //when we retrieve the updated agreement, it should have its state changed to "active"
     val activeAgreement = getAgreement(updateAgreementId.toString).futureValue
-    activeAgreement.status shouldBe "active"
+    activeAgreement.status shouldBe ACTIVE
   }
 
 }

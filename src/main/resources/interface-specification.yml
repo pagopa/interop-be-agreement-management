@@ -152,12 +152,7 @@ paths:
         - in: query
           name: status
           schema:
-            type: string
-            enum:
-              - pending
-              - active
-              - suspended
-              - inactive
+            $ref: '#/components/schemas/AgreementStatusEnum'
       responses:
         '200':
           description: A list of Agreement
@@ -165,6 +160,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Agreements'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/agreements/{agreement_id}/attribute':
     parameters:
       - schema:
@@ -294,10 +295,21 @@ components:
       description: tracks the owner of the change.
       properties:
         changedBy:
-          type: string
-          enum:
-            - producer
-            - consumer
+          $ref: '#/components/schemas/ChangedByEnum'
+    ChangedByEnum:
+      type: string
+      description: Changed By Enum
+      enum:
+        - PRODUCER
+        - CONSUMER
+    AgreementStatusEnum:
+      type: string
+      description: Agreement Status
+      enum:
+        - ACTIVE
+        - PENDING
+        - SUSPENDED
+        - INACTIVE
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -344,12 +356,7 @@ components:
           type: string
           format: uuid
         status:
-          type: string
-          enum:
-            - active
-            - pending
-            - suspended
-            - inactive
+          $ref: '#/components/schemas/AgreementStatusEnum'
         verifiedAttributes:
           type: array
           description: 'set of the verified attributes belonging to this agreement, if any.'

@@ -20,11 +20,11 @@ object protobufUtils {
 
   private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-  private def uuidParsing(id: String) = Try { UUID.fromString(id) }.toEither
+  private def uuidParsing(id: String): Either[Throwable, UUID] = Try(UUID.fromString(id)).toEither
 
   def toPersistentAgreement(protobufAgreement: AgreementV1): Either[Throwable, PersistentAgreement] = {
     for {
-      status       <- PersistentAgreementStatus.fromText(protobufAgreement.status.name)
+      status       <- fromProtobufAgreementStatus(protobufAgreement.status)
       id           <- uuidParsing(protobufAgreement.id)
       eserviceId   <- uuidParsing(protobufAgreement.eserviceId)
       descriptorId <- uuidParsing(protobufAgreement.descriptorId)
@@ -43,23 +43,20 @@ object protobufUtils {
     )
   }
 
-  def toProtobufAgreement(persistentAgreement: PersistentAgreement): Either[Throwable, AgreementV1] = {
-    for {
-      status <- AgreementStatusV1
-        .fromName(persistentAgreement.status.stringify)
-        .toRight(new RuntimeException("Protobuf serialization failed"))
-    } yield AgreementV1(
-      id = persistentAgreement.id.toString,
-      eserviceId = persistentAgreement.eserviceId.toString,
-      descriptorId = persistentAgreement.descriptorId.toString,
-      producerId = persistentAgreement.producerId.toString,
-      consumerId = persistentAgreement.consumerId.toString,
-      status = status,
-      verifiedAttributes = persistentAgreement.verifiedAttributes.map(serializeVerifiedAttribute),
-      suspendedByConsumer = persistentAgreement.suspendedByConsumer,
-      suspendedByProducer = persistentAgreement.suspendedByProducer
+  def toProtobufAgreement(persistentAgreement: PersistentAgreement): Either[Throwable, AgreementV1] =
+    Right(
+      AgreementV1(
+        id = persistentAgreement.id.toString,
+        eserviceId = persistentAgreement.eserviceId.toString,
+        descriptorId = persistentAgreement.descriptorId.toString,
+        producerId = persistentAgreement.producerId.toString,
+        consumerId = persistentAgreement.consumerId.toString,
+        status = toProtobufAgreementStatus(persistentAgreement.status),
+        verifiedAttributes = persistentAgreement.verifiedAttributes.map(serializeVerifiedAttribute),
+        suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+        suspendedByProducer = persistentAgreement.suspendedByProducer
+      )
     )
-  }
 
   def serializeVerifiedAttribute(verifiedAttribute: PersistentVerifiedAttribute): VerifiedAttributeV1 = {
     VerifiedAttributeV1.of(
@@ -83,5 +80,22 @@ object protobufUtils {
   def toTime(timestamp: String): OffsetDateTime = {
     OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
   }
+
+  def toProtobufAgreementStatus(status: PersistentAgreementStatus): AgreementStatusV1 =
+    status match {
+      case PersistentAgreementStatus.Pending   => AgreementStatusV1.PENDING
+      case PersistentAgreementStatus.Active    => AgreementStatusV1.ACTIVE
+      case PersistentAgreementStatus.Suspended => AgreementStatusV1.SUSPENDED
+      case PersistentAgreementStatus.Inactive  => AgreementStatusV1.INACTIVE
+    }
+  def fromProtobufAgreementStatus(status: AgreementStatusV1): Either[Throwable, PersistentAgreementStatus] =
+    status match {
+      case AgreementStatusV1.PENDING   => Right(PersistentAgreementStatus.Pending)
+      case AgreementStatusV1.ACTIVE    => Right(PersistentAgreementStatus.Active)
+      case AgreementStatusV1.SUSPENDED => Right(PersistentAgreementStatus.Suspended)
+      case AgreementStatusV1.INACTIVE  => Right(PersistentAgreementStatus.Inactive)
+      case AgreementStatusV1.Unrecognized(value) =>
+        Left(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
+    }
 
 }

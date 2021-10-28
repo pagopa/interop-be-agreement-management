@@ -2,7 +2,10 @@ package it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence
 
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.PersistentAgreement
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementStatus
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, StatusChangeDetails, VerifiedAttributeSeed}
 
 sealed trait Command
@@ -39,6 +42,6 @@ final case class ListAgreements(
   consumerId: Option[String],
   eserviceId: Option[String],
   descriptorId: Option[String],
-  status: Option[String],
+  status: Option[PersistentAgreementStatus],
   replyTo: ActorRef[Seq[Agreement]]
 ) extends Command

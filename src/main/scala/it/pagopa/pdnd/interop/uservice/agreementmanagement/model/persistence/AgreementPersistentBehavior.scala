@@ -6,13 +6,12 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, StatusChangeDetails}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementStatus,
-  PersistentVerifiedAttribute,
-  StatusChangeDetailsEnum
+  PersistentVerifiedAttribute
 }
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, CONSUMER, PRODUCER, StatusChangeDetails}
 
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -116,7 +115,7 @@ object AgreementPersistentBehavior {
           .filter(agreement => consumerId.forall(filter => filter == agreement._2.consumerId.toString))
           .filter(agreement => eserviceId.forall(filter => filter == agreement._2.eserviceId.toString))
           .filter(agreement => descriptorId.forall(filter => filter == agreement._2.descriptorId.toString))
-          .filter(agreement => status.forall(filter => filter == agreement._2.status.stringify))
+          .filter(agreement => status.forall(filter => filter == agreement._2.status))
           .values
           .toSeq
           .map(PersistentAgreement.toAPI)
@@ -168,15 +167,13 @@ object AgreementPersistentBehavior {
 
     def isSuspended = status == PersistentAgreementStatus.Suspended
 
-    (statusChangeDetails.changedBy) match {
-      case (Some(isConsumer)) if isConsumer == StatusChangeDetailsEnum.Consumer.stringify =>
-        persistentAgreement.copy(status = status, suspendedByConsumer = Some(isSuspended))
-
-      case (Some(isProducer)) if isProducer == StatusChangeDetailsEnum.Producer.stringify =>
-        persistentAgreement.copy(status = status, suspendedByProducer = Some(isSuspended))
-
-      case Some(_) => persistentAgreement.copy(status = status)
-      case None    => persistentAgreement.copy(status = status)
+    statusChangeDetails.changedBy match {
+      case Some(changedBy) =>
+        changedBy match {
+          case CONSUMER => persistentAgreement.copy(status = status, suspendedByConsumer = Some(isSuspended))
+          case PRODUCER => persistentAgreement.copy(status = status, suspendedByProducer = Some(isSuspended))
+        }
+      case None => persistentAgreement.copy(status = status)
     }
 
   }

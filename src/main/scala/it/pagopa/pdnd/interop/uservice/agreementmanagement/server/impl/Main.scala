@@ -33,7 +33,6 @@ import kamon.Kamon
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.concurrent.ExecutionContextExecutor
 
-@SuppressWarnings(Array("org.wartremover.warts.StringPlusAny", "org.wartremover.warts.Nothing"))
 object Main extends App {
 
   Kamon.init()

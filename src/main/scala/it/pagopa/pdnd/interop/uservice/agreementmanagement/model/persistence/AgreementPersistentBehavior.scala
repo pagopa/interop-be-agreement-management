@@ -18,7 +18,6 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 object AgreementPersistentBehavior {
 
   def commandHandler(

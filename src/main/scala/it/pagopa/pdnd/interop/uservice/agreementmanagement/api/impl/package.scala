@@ -59,10 +59,6 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val statusChangeDetailsFormat: RootJsonFormat[StatusChangeDetails]     = jsonFormat1(StatusChangeDetails)
   implicit val problemFormat: RootJsonFormat[Problem]                             = jsonFormat3(Problem)
 
-  // This function could be candidate for the commons library
-  @SuppressWarnings(
-    Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Any", "org.wartremover.warts.Nothing")
-  )
   def slices[A, B <: Command](commander: EntityRef[B], sliceSize: Int)(
     commandGenerator: (Int, Int) => ActorRef[Seq[A]] => B
   )(implicit timeout: Timeout): LazyList[A] = {

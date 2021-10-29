@@ -44,7 +44,6 @@ object PersistentAgreement {
       suspendedByProducer = None
     )
 
-  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   def toAPI(persistentAgreement: PersistentAgreement): Agreement = {
     Agreement(
       id = persistentAgreement.id,

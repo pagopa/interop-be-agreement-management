@@ -16,14 +16,6 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
 import scala.concurrent._
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Recursion"
-  )
-)
 class AgreementApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,

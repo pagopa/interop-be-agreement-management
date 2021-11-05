@@ -11,3 +11,5 @@ metals.sbt
 .DS_Store
 client/project/build.properties
 .env
+generated/src/
+client/src/

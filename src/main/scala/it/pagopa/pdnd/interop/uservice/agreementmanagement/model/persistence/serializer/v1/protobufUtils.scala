@@ -83,17 +83,17 @@ object protobufUtils {
 
   def toProtobufAgreementStatus(status: PersistentAgreementStatus): AgreementStatusV1 =
     status match {
-      case PersistentAgreementStatus.Pending   => AgreementStatusV1.PENDING
-      case PersistentAgreementStatus.Active    => AgreementStatusV1.ACTIVE
-      case PersistentAgreementStatus.Suspended => AgreementStatusV1.SUSPENDED
-      case PersistentAgreementStatus.Inactive  => AgreementStatusV1.INACTIVE
+      case PersistentAgreementStatus.Pending   => AgreementStatusV1.AGREEMENT_STATUS_PENDING
+      case PersistentAgreementStatus.Active    => AgreementStatusV1.AGREEMENT_STATUS_ACTIVE
+      case PersistentAgreementStatus.Suspended => AgreementStatusV1.AGREEMENT_STATUS_SUSPENDED
+      case PersistentAgreementStatus.Inactive  => AgreementStatusV1.AGREEMENT_STATUS_INACTIVE
     }
   def fromProtobufAgreementStatus(status: AgreementStatusV1): Either[Throwable, PersistentAgreementStatus] =
     status match {
-      case AgreementStatusV1.PENDING   => Right(PersistentAgreementStatus.Pending)
-      case AgreementStatusV1.ACTIVE    => Right(PersistentAgreementStatus.Active)
-      case AgreementStatusV1.SUSPENDED => Right(PersistentAgreementStatus.Suspended)
-      case AgreementStatusV1.INACTIVE  => Right(PersistentAgreementStatus.Inactive)
+      case AgreementStatusV1.AGREEMENT_STATUS_PENDING   => Right(PersistentAgreementStatus.Pending)
+      case AgreementStatusV1.AGREEMENT_STATUS_ACTIVE    => Right(PersistentAgreementStatus.Active)
+      case AgreementStatusV1.AGREEMENT_STATUS_SUSPENDED => Right(PersistentAgreementStatus.Suspended)
+      case AgreementStatusV1.AGREEMENT_STATUS_INACTIVE  => Right(PersistentAgreementStatus.Inactive)
       case AgreementStatusV1.Unrecognized(value) =>
         Left(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }

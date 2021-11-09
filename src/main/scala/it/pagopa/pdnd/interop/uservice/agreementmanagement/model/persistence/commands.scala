@@ -4,9 +4,9 @@ import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
-  PersistentAgreementStatus
+  PersistentAgreementState
 }
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, StatusChangeDetails, VerifiedAttributeSeed}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, StateChangeDetails, VerifiedAttributeSeed}
 
 sealed trait Command
 
@@ -20,18 +20,18 @@ final case class UpdateVerifiedAttribute(
 final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply[Option[Agreement]]]) extends Command
 final case class ActivateAgreement(
   agreementId: String,
-  statusChangeDetails: StatusChangeDetails,
+  stateChangeDetails: StateChangeDetails,
   replyTo: ActorRef[StatusReply[Agreement]]
 ) extends Command
 final case class SuspendAgreement(
   agreementId: String,
-  statusChangeDetails: StatusChangeDetails,
+  stateChangeDetails: StateChangeDetails,
   replyTo: ActorRef[StatusReply[Agreement]]
 ) extends Command
 
 final case class DeactivateAgreement(
   agreementId: String,
-  statusChangeDetails: StatusChangeDetails,
+  stateChangeDetails: StateChangeDetails,
   replyTo: ActorRef[StatusReply[Agreement]]
 ) extends Command
 
@@ -42,6 +42,6 @@ final case class ListAgreements(
   consumerId: Option[String],
   eserviceId: Option[String],
   descriptorId: Option[String],
-  status: Option[PersistentAgreementStatus],
+  state: Option[PersistentAgreementState],
   replyTo: ActorRef[Seq[Agreement]]
 ) extends Command

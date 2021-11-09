@@ -124,7 +124,7 @@ class AgreementListApiServiceSpec
     }
     "retrieves all pending agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?status=PENDING", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?state=PENDING", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -134,7 +134,7 @@ class AgreementListApiServiceSpec
     }
     "retrieves all activated agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?status=ACTIVE", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?state=ACTIVE", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -144,7 +144,7 @@ class AgreementListApiServiceSpec
     }
     "retrieves all suspended agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?status=SUSPENDED", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?state=SUSPENDED", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)

@@ -8,10 +8,10 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
-  PersistentAgreementStatus,
+  PersistentAgreementState,
   PersistentVerifiedAttribute
 }
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, CONSUMER, PRODUCER, StatusChangeDetails}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, ChangedBy, StateChangeDetails}
 
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -63,12 +63,12 @@ object AgreementPersistentBehavior {
         replyTo ! StatusReply.Success[Option[Agreement]](agreement.map(PersistentAgreement.toAPI))
         Effect.none[Event, State]
 
-      case ActivateAgreement(agreementId, statusChangeDetails, replyTo) =>
+      case ActivateAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
             val updatedAgreement =
-              updateAgreementStatus(agreement, PersistentAgreementStatus.Active, statusChangeDetails)
+              updateAgreementState(agreement, PersistentAgreementState.Active, stateChangeDetails)
             Effect
               .persist(AgreementActivated(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
@@ -78,12 +78,12 @@ object AgreementPersistentBehavior {
             Effect.none[AgreementActivated, State]
           }
 
-      case SuspendAgreement(agreementId, statusChangeDetails, replyTo) =>
+      case SuspendAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
             val updatedAgreement =
-              updateAgreementStatus(agreement, PersistentAgreementStatus.Suspended, statusChangeDetails)
+              updateAgreementState(agreement, PersistentAgreementState.Suspended, stateChangeDetails)
             Effect
               .persist(AgreementSuspended(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
@@ -93,12 +93,12 @@ object AgreementPersistentBehavior {
             Effect.none[AgreementSuspended, State]
           }
 
-      case DeactivateAgreement(agreementId, statusChangeDetails, replyTo) =>
+      case DeactivateAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
         agreement
           .map { agreement =>
             val updatedAgreement =
-              updateAgreementStatus(agreement, PersistentAgreementStatus.Inactive, statusChangeDetails)
+              updateAgreementState(agreement, PersistentAgreementState.Inactive, stateChangeDetails)
             Effect
               .persist(AgreementDeactivated(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
@@ -108,14 +108,14 @@ object AgreementPersistentBehavior {
             Effect.none[AgreementDeactivated, State]
           }
 
-      case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, status, replyTo) =>
+      case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, agreementState, replyTo) =>
         val agreements: Seq[Agreement] = state.agreements
           .slice(from, to)
           .filter(agreement => producerId.forall(filter => filter == agreement._2.producerId.toString))
           .filter(agreement => consumerId.forall(filter => filter == agreement._2.consumerId.toString))
           .filter(agreement => eserviceId.forall(filter => filter == agreement._2.eserviceId.toString))
           .filter(agreement => descriptorId.forall(filter => filter == agreement._2.descriptorId.toString))
-          .filter(agreement => status.forall(filter => filter == agreement._2.status))
+          .filter(agreement => agreementState.forall(filter => filter == agreement._2.state))
           .values
           .toSeq
           .map(PersistentAgreement.toAPI)
@@ -159,21 +159,21 @@ object AgreementPersistentBehavior {
     }
   }
 
-  private def updateAgreementStatus(
+  private def updateAgreementState(
     persistentAgreement: PersistentAgreement,
-    status: PersistentAgreementStatus,
-    statusChangeDetails: StatusChangeDetails
+    state: PersistentAgreementState,
+    stateChangeDetails: StateChangeDetails
   ): PersistentAgreement = {
 
-    def isSuspended = status == PersistentAgreementStatus.Suspended
+    def isSuspended = state == PersistentAgreementState.Suspended
 
-    statusChangeDetails.changedBy match {
+    stateChangeDetails.changedBy match {
       case Some(changedBy) =>
         changedBy match {
-          case CONSUMER => persistentAgreement.copy(status = status, suspendedByConsumer = Some(isSuspended))
-          case PRODUCER => persistentAgreement.copy(status = status, suspendedByProducer = Some(isSuspended))
+          case ChangedBy.CONSUMER => persistentAgreement.copy(state = state, suspendedByConsumer = Some(isSuspended))
+          case ChangedBy.PRODUCER => persistentAgreement.copy(state = state, suspendedByProducer = Some(isSuspended))
         }
-      case None => persistentAgreement.copy(status = status)
+      case None => persistentAgreement.copy(state = state)
     }
 
   }

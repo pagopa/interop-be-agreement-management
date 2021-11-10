@@ -150,14 +150,9 @@ paths:
           schema:
             type: string
         - in: query
-          name: status
+          name: state
           schema:
-            type: string
-            enum:
-              - pending
-              - active
-              - suspended
-              - inactive
+            $ref: '#/components/schemas/AgreementState'
       responses:
         '200':
           description: A list of Agreement
@@ -165,6 +160,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Agreements'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/agreements/{agreement_id}/attribute':
     parameters:
       - schema:
@@ -220,7 +221,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StatusChangeDetails'
+                $ref: '#/components/schemas/StateChangeDetails'
           required: true
       responses:
         '200':
@@ -260,7 +261,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StatusChangeDetails'
+              $ref: '#/components/schemas/StateChangeDetails'
         description: the updated attribute
         required: true
       responses:
@@ -289,15 +290,26 @@ paths:
         - bearerAuth: [ ]
 components:
   schemas:
-    StatusChangeDetails:
+    StateChangeDetails:
       type: object
       description: tracks the owner of the change.
       properties:
         changedBy:
-          type: string
-          enum:
-            - producer
-            - consumer
+          $ref: '#/components/schemas/ChangedBy'
+    ChangedBy:
+      type: string
+      description: Role who made the change
+      enum:
+        - PRODUCER
+        - CONSUMER
+    AgreementState:
+      type: string
+      description: Agreement State
+      enum:
+        - ACTIVE
+        - PENDING
+        - SUSPENDED
+        - INACTIVE
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -343,13 +355,8 @@ components:
         consumerId:
           type: string
           format: uuid
-        status:
-          type: string
-          enum:
-            - active
-            - pending
-            - suspended
-            - inactive
+        state:
+          $ref: '#/components/schemas/AgreementState'
         verifiedAttributes:
           type: array
           description: 'set of the verified attributes belonging to this agreement, if any.'
@@ -365,7 +372,7 @@ components:
         - descriptorId
         - producerId
         - consumerId
-        - status
+        - state
         - verifiedAttributes
       description: business representation of an agreement
     Agreements:

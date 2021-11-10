@@ -13,7 +13,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
   Agreement,
   AgreementSeed,
-  StatusChangeDetails,
+  StateChangeDetails,
   VerifiedAttributeSeed
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
@@ -35,8 +35,8 @@ package object agreementmanagement extends MockFactory {
   implicit def toEntityMarshallerAgreementSeed: ToEntityMarshaller[AgreementSeed] =
     sprayJsonMarshaller[AgreementSeed]
 
-  implicit def toEntityMarshallerStatusChangeDetailsSeed: ToEntityMarshaller[StatusChangeDetails] =
-    sprayJsonMarshaller[StatusChangeDetails]
+  implicit def toEntityMarshallerStateChangeDetailsSeed: ToEntityMarshaller[StateChangeDetails] =
+    sprayJsonMarshaller[StateChangeDetails]
 
   implicit def toEntityMarshallerVerifiedAttributeSeed: ToEntityMarshaller[VerifiedAttributeSeed] =
     sprayJsonMarshaller[VerifiedAttributeSeed]

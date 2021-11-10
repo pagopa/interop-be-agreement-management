@@ -11,7 +11,7 @@ final case class PersistentAgreement(
   descriptorId: UUID,
   producerId: UUID,
   consumerId: UUID,
-  status: PersistentAgreementStatus,
+  state: PersistentAgreementState,
   verifiedAttributes: Seq[PersistentVerifiedAttribute],
   suspendedByConsumer: Option[Boolean],
   suspendedByProducer: Option[Boolean]
@@ -25,20 +25,20 @@ object PersistentAgreement {
       descriptorId = agreement.descriptorId,
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
-      status = PersistentAgreementStatus.Pending,
+      state = PersistentAgreementState.Pending,
       verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
       suspendedByConsumer = None,
       suspendedByProducer = None
     )
 
-  def fromAPIWithActiveStatus(agreement: AgreementSeed, uuidSupplier: UUIDSupplier): PersistentAgreement =
+  def fromAPIWithActiveState(agreement: AgreementSeed, uuidSupplier: UUIDSupplier): PersistentAgreement =
     PersistentAgreement(
       id = uuidSupplier.get,
       eserviceId = agreement.eserviceId,
       descriptorId = agreement.descriptorId,
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
-      status = PersistentAgreementStatus.Active,
+      state = PersistentAgreementState.Active,
       verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
       suspendedByConsumer = None,
       suspendedByProducer = None
@@ -51,7 +51,7 @@ object PersistentAgreement {
       descriptorId = persistentAgreement.descriptorId,
       producerId = persistentAgreement.producerId,
       consumerId = persistentAgreement.consumerId,
-      status = persistentAgreement.status.stringify,
+      state = persistentAgreement.state.toApi,
       verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer

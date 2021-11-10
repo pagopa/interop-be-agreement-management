@@ -150,7 +150,7 @@ class AgreementApiServiceImpl(
     )
 
     val result = for {
-      stateEnum <- state.traverse(AgreementState.withNameEither)
+      stateEnum <- state.traverse(AgreementState.fromValue)
       generator = createListAgreementsGenerator(
         producerId = producerId,
         consumerId = consumerId,

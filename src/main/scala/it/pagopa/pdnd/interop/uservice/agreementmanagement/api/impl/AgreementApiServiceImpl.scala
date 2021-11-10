@@ -7,10 +7,14 @@ import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
+import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.PersistentAgreement
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementState
+}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
@@ -77,12 +81,12 @@ class AgreementApiServiceImpl(
     }
   }
 
-  override def activateAgreement(agreementId: String, statusChangeDetails: StatusChangeDetails)(implicit
+  override def activateAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val result: Future[StatusReply[Agreement]] = activateAgreementById(agreementId, statusChangeDetails)
+    val result: Future[StatusReply[Agreement]] = activateAgreementById(agreementId, stateChangeDetails)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
@@ -90,19 +94,19 @@ class AgreementApiServiceImpl(
     }
   }
 
-  private def activateAgreementById(agreementId: String, statusChangeDetails: StatusChangeDetails) = {
+  private def activateAgreementById(agreementId: String, stateChangeDetails: StateChangeDetails) = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    commander.ask(ref => ActivateAgreement(agreementId, statusChangeDetails, ref))
+    commander.ask(ref => ActivateAgreement(agreementId, stateChangeDetails, ref))
   }
 
-  override def suspendAgreement(agreementId: String, statusChangeDetails: StatusChangeDetails)(implicit
+  override def suspendAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
-    val result: Future[StatusReply[Agreement]] = suspendAgreementById(agreementId, statusChangeDetails)
+    val result: Future[StatusReply[Agreement]] = suspendAgreementById(agreementId, stateChangeDetails)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
@@ -110,11 +114,11 @@ class AgreementApiServiceImpl(
     }
   }
 
-  private def suspendAgreementById(agreementId: String, statusChangeDetails: StatusChangeDetails) = {
+  private def suspendAgreementById(agreementId: String, stateChangeDetails: StateChangeDetails) = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    commander.ask(ref => SuspendAgreement(agreementId, statusChangeDetails, ref))
+    commander.ask(ref => SuspendAgreement(agreementId, stateChangeDetails, ref))
   }
 
   /** Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
@@ -124,9 +128,10 @@ class AgreementApiServiceImpl(
     consumerId: Option[String],
     eserviceId: Option[String],
     descriptorId: Option[String],
-    status: Option[String]
+    state: Option[String]
   )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
     contexts.foreach(println)
@@ -136,17 +141,23 @@ class AgreementApiServiceImpl(
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, shard.toString)
     )
 
-    val commandGenerator: (Int, Int) => ActorRef[Seq[Agreement]] => ListAgreements = createListAgreementsGenerator(
-      producerId = producerId,
-      consumerId = consumerId,
-      eserviceId = eserviceId,
-      descriptorId = descriptorId,
-      status = status
-    )
+    val result = for {
+      stateEnum <- state.traverse(AgreementState.fromValue)
+      generator = createListAgreementsGenerator(
+        producerId = producerId,
+        consumerId = consumerId,
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        state = stateEnum
+      )(_, _)
+      agreements = commanders.flatMap(ref => slices(ref, sliceSize)(generator))
+    } yield agreements
 
-    val agreements: Seq[Agreement] = commanders.flatMap(ref => slices(ref, sliceSize)(commandGenerator))
+    result match {
+      case Right(agreements) => getAgreements200(agreements)
+      case Left(error)       => getAgreements400(Problem(Option(error.getMessage), 400, "Error on agreements retrieve"))
+    }
 
-    getAgreements200(agreements)
   }
 
   private def createListAgreementsGenerator(
@@ -154,10 +165,19 @@ class AgreementApiServiceImpl(
     consumerId: Option[String],
     eserviceId: Option[String],
     descriptorId: Option[String],
-    status: Option[String]
+    state: Option[AgreementState]
   )(from: Int, to: Int): ActorRef[Seq[Agreement]] => ListAgreements =
     (ref: ActorRef[Seq[Agreement]]) =>
-      ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, status, ref)
+      ListAgreements(
+        from,
+        to,
+        producerId,
+        consumerId,
+        eserviceId,
+        descriptorId,
+        state.map(PersistentAgreementState.fromApi),
+        ref
+      )
 
   /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
     * Code: 400, Message: Bad Request, DataType: Problem
@@ -189,8 +209,8 @@ class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     val result = for {
-      _ <- deactivateAgreementById(agreementId, StatusChangeDetails(changedBy = None))
-      persistentAgreement = PersistentAgreement.fromAPIWithActiveStatus(agreementSeed, UUIDSupplier)
+      _ <- deactivateAgreementById(agreementId, StateChangeDetails(changedBy = None))
+      persistentAgreement = PersistentAgreement.fromAPIWithActiveState(agreementSeed, UUIDSupplier)
       activeAgreement <- createAgreement(persistentAgreement)
     } yield activeAgreement
 
@@ -201,10 +221,10 @@ class AgreementApiServiceImpl(
     }
   }
 
-  private def deactivateAgreementById(agreementId: String, statusChangeDetails: StatusChangeDetails) = {
+  private def deactivateAgreementById(agreementId: String, stateChangeDetails: StateChangeDetails) = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    commander.ask(ref => DeactivateAgreement(agreementId, statusChangeDetails, ref))
+    commander.ask(ref => DeactivateAgreement(agreementId, stateChangeDetails, ref))
   }
 }

@@ -9,5 +9,7 @@ metals.sbt
 .bsp
 .openapi-generator
 .DS_Store
+generated/src
+client/src
 client/project/build.properties
 .env

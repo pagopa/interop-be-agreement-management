@@ -19,3 +19,4 @@ final case class AgreementSeed (
   verifiedAttributes: Seq[VerifiedAttributeSeed]
 )
 
+

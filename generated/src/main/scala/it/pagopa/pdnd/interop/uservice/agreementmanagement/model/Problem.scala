@@ -7,8 +7,9 @@ package it.pagopa.pdnd.interop.uservice.agreementmanagement.model
  * @param title A short, summary of the problem type. Written in english and readable for example: ''Service Unavailable''
 */
 final case class Problem (
-  detail: Option[String],
+  detail: Option[String] = None,
   status: Int,
   title: String
 )
+
 

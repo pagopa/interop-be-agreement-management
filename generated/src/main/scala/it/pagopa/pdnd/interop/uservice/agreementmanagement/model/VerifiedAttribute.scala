@@ -15,8 +15,9 @@ import java.util.UUID
 */
 final case class VerifiedAttribute (
   id: UUID,
-  verified: Option[Boolean],
-  verificationDate: Option[OffsetDateTime],
-  validityTimespan: Option[Long]
+  verified: Option[Boolean] = None,
+  verificationDate: Option[OffsetDateTime] = None,
+  validityTimespan: Option[Long] = None
 )
+
 

@@ -9,8 +9,9 @@ import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.AkkaHttpHelper._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.Agreement
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.AgreementSeed
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.AgreementState
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.Problem
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.StatusChangeDetails
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.StateChangeDetails
 import java.util.UUID
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttributeSeed
 
@@ -26,8 +27,8 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttribu
     lazy val route: Route =
         path("agreements" / Segment / "activate") { (agreementId) => 
         patch { wrappingDirective { implicit contexts =>  
-            entity(as[StatusChangeDetails]){ statusChangeDetails =>
-              agreementService.activateAgreement(agreementId = agreementId, statusChangeDetails = statusChangeDetails)
+            entity(as[StateChangeDetails]){ stateChangeDetails =>
+              agreementService.activateAgreement(agreementId = agreementId, stateChangeDetails = stateChangeDetails)
             }
         }
         }
@@ -48,16 +49,16 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttribu
         } ~
         path("agreements") { 
         get { wrappingDirective { implicit contexts => 
-            parameters("producerId".as[String].?, "consumerId".as[String].?, "eserviceId".as[String].?, "descriptorId".as[String].?, "status".as[String].?) { (producerId, consumerId, eserviceId, descriptorId, status) => 
-            agreementService.getAgreements(producerId = producerId, consumerId = consumerId, eserviceId = eserviceId, descriptorId = descriptorId, status = status)
+            parameters("producerId".as[String].?, "consumerId".as[String].?, "eserviceId".as[String].?, "descriptorId".as[String].?, "state".as[String].?) { (producerId, consumerId, eserviceId, descriptorId, state) => 
+            agreementService.getAgreements(producerId = producerId, consumerId = consumerId, eserviceId = eserviceId, descriptorId = descriptorId, state = state)
             }
         }
         }
         } ~
         path("agreements" / Segment / "suspend") { (agreementId) => 
         patch { wrappingDirective { implicit contexts =>  
-            entity(as[StatusChangeDetails]){ statusChangeDetails =>
-              agreementService.suspendAgreement(agreementId = agreementId, statusChangeDetails = statusChangeDetails)
+            entity(as[StateChangeDetails]){ stateChangeDetails =>
+              agreementService.suspendAgreement(agreementId = agreementId, stateChangeDetails = stateChangeDetails)
             }
         }
         }
@@ -93,7 +94,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttribu
    * Code: 400, Message: Bad Request, DataType: Problem
    * Code: 404, Message: Agreement not found, DataType: Problem
         */
-        def activateAgreement(agreementId: String, statusChangeDetails: StatusChangeDetails)
+        def activateAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)
             (implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], toEntityMarshallerAgreement: ToEntityMarshaller[Agreement], contexts: Seq[(String, String)]): Route
 
           def addAgreement200(responseAgreement: Agreement)(implicit toEntityMarshallerAgreement: ToEntityMarshaller[Agreement]): Route =
@@ -123,11 +124,14 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttribu
 
           def getAgreements200(responseAgreementarray: Seq[Agreement])(implicit toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]]): Route =
             complete((200, responseAgreementarray))
+  def getAgreements400(responseProblem: Problem)(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route =
+            complete((400, responseProblem))
         /**
            * Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
+   * Code: 400, Message: Bad Request, DataType: Problem
         */
-        def getAgreements(producerId: Option[String], consumerId: Option[String], eserviceId: Option[String], descriptorId: Option[String], status: Option[String])
-            (implicit toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]], contexts: Seq[(String, String)]): Route
+        def getAgreements(producerId: Option[String], consumerId: Option[String], eserviceId: Option[String], descriptorId: Option[String], state: Option[String])
+            (implicit toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]], toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route
 
           def suspendAgreement200(responseAgreement: Agreement)(implicit toEntityMarshallerAgreement: ToEntityMarshaller[Agreement]): Route =
             complete((200, responseAgreement))
@@ -140,7 +144,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttribu
    * Code: 400, Message: Bad Request, DataType: Problem
    * Code: 404, Message: Agreement Not Found, DataType: Problem
         */
-        def suspendAgreement(agreementId: String, statusChangeDetails: StatusChangeDetails)
+        def suspendAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)
             (implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], toEntityMarshallerAgreement: ToEntityMarshaller[Agreement], contexts: Seq[(String, String)]): Route
 
           def updateAgreementVerifiedAttribute200(responseAgreement: Agreement)(implicit toEntityMarshallerAgreement: ToEntityMarshaller[Agreement]): Route =
@@ -174,9 +178,9 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.VerifiedAttribu
     }
 
         trait AgreementApiMarshaller {
-          implicit def fromEntityUnmarshallerStatusChangeDetails: FromEntityUnmarshaller[StatusChangeDetails]
+          implicit def fromEntityUnmarshallerAgreementSeed: FromEntityUnmarshaller[AgreementSeed]
 
-  implicit def fromEntityUnmarshallerAgreementSeed: FromEntityUnmarshaller[AgreementSeed]
+  implicit def fromEntityUnmarshallerStateChangeDetails: FromEntityUnmarshaller[StateChangeDetails]
 
   implicit def fromEntityUnmarshallerVerifiedAttributeSeed: FromEntityUnmarshaller[VerifiedAttributeSeed]
 

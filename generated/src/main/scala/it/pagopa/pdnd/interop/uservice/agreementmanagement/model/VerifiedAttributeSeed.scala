@@ -13,7 +13,8 @@ import java.util.UUID
 */
 final case class VerifiedAttributeSeed (
   id: UUID,
-  verified: Option[Boolean],
-  validityTimespan: Option[Long]
+  verified: Option[Boolean] = None,
+  validityTimespan: Option[Long] = None
 )
+
 

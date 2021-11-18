@@ -95,7 +95,6 @@ lazy val root = (project in file("."))
     dockerBuildOptions ++= Seq("--network=host"),
     dockerRepository := Some(System.getenv("DOCKER_REPO")),
     dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
-    dockerUpdateLatest := true,
     daemonUser := "daemon",
     Docker / version := s"${
       val buildVersion = (ThisBuild / version).value

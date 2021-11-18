@@ -15,20 +15,15 @@ import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApi
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
-  AgreementApiMarshallerImpl,
-  AgreementApiServiceImpl
-}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.{ApplicationConfiguration, Authenticator}
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{
-  AgreementPersistentBehavior,
-  AgreementPersistentProjection,
-  Command
-}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{AgreementPersistentBehavior, AgreementPersistentProjection, Command}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
+import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.concurrent.ExecutionContextExecutor
@@ -70,9 +65,12 @@ object Main extends App {
         }
         val persistence =
           classicSystem.classicSystem.settings.config.getString("uservice-agreement-management.persistence")
-        if (persistence == "cassandra") {
+        if (persistence == "jdbc-journal") {
+          val dbConfig: DatabaseConfig[JdbcProfile] =
+            DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
           val agreementPersistentProjection =
-            new AgreementPersistentProjection(context.system, agreementPersistenceEntity)
+            new AgreementPersistentProjection(context.system, agreementPersistenceEntity, dbConfig)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "agreement-projections",

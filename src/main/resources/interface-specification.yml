@@ -99,12 +99,12 @@ paths:
                 $ref: '#/components/schemas/Problem'
   /agreements:
     post:
+      security:
+        - bearerAuth: [ ]
       tags:
         - agreement
       summary: Add a new agreement
       operationId: addAgreement
-      security:
-        - bearerAuth: []
       requestBody:
         description: A Agreement seed
         content:
@@ -174,6 +174,8 @@ paths:
         in: path
         required: true
     patch:
+      security:
+        - bearerAuth: [ ]
       tags:
         - agreement
       summary: Update Verified Attribute
@@ -198,8 +200,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
       description: patches the verified attribute of the agreement as specified in the operation payload.
-      security:
-        - bearerAuth: []
       requestBody:
         content:
           application/json:
@@ -209,6 +209,8 @@ paths:
         required: true
   '/agreements/{agreement_id}/activate':
     patch:
+      security:
+        - bearerAuth: [ ]
       summary: Activate Agreement
       operationId: activateAgreement
       parameters:
@@ -243,12 +245,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
       description: 'activates the agreement, if any.'
-      security:
-        - bearerAuth: [ ]
       tags:
         - agreement
   '/agreements/{agreement_id}/suspend':
     patch:
+      security:
+        - bearerAuth: [ ]
       summary: Suspend Agreement
       operationId: suspendAgreement
       parameters:
@@ -286,8 +288,6 @@ paths:
       tags:
         - agreement
       description: suspends the agreement by id
-      security:
-        - bearerAuth: [ ]
 components:
   schemas:
     StateChangeDetails:

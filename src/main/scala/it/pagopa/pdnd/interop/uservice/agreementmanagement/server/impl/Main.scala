@@ -14,20 +14,21 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.pdnd.interop.commons.utils.service.impl.UUIDSupplierImpl
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApi
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
   AgreementApiServiceImpl
 }
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.{ApplicationConfiguration, Authenticator}
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.ApplicationConfiguration
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.{
   AgreementPersistentBehavior,
   AgreementPersistentProjection,
   Command
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile

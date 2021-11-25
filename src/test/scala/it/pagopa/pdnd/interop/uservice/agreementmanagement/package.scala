@@ -16,7 +16,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
   StateChangeDetails,
   VerifiedAttributeSeed
 }
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Await

@@ -1,3 +1,4 @@
+import PDNDVersions.commonsVersion
 import Versions._
 import sbt._
 
@@ -96,6 +97,11 @@ object Dependencies {
     lazy val core      = namespace %% "cats-core" % catsVersion
   }
 
+  private[this] object pagopa {
+    lazy val namespace = "it.pagopa"
+    lazy val commons   = namespace %% "pdnd-interop-commons-utils" % commonsVersion
+  }
+
   object Jars {
     lazy val overrides: Seq[ModuleID] =
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
@@ -129,6 +135,7 @@ object Dependencies {
       logback.classic              % Compile,
       mustache.mustache            % Compile,
       openapi4j.operationValidator % Compile,
+      pagopa.commons               % Compile,
       postgres.jdbc                % Compile,
       scalaprotobuf.core           % Protobuf,
       scalatest.core               % Test,

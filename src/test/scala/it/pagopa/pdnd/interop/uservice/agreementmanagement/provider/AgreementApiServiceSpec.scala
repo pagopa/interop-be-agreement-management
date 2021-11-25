@@ -17,7 +17,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiServiceImpl
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.{AgreementApi, AgreementApiMarshaller}
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.Authenticator
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
   Agreement,
   AgreementSeed,
@@ -26,18 +26,11 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.impl.Main
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
-
-object AgreementApiServiceSpec extends MockFactory {
-
-  val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
-}
 
 /** Local integration test.
   *

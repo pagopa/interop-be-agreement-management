@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import cats.implicits.toTraverseOps
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
@@ -16,7 +17,6 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreementState
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
 import scala.concurrent._
 

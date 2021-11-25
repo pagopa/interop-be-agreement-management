@@ -1,7 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement
 
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{Agreement, AgreementSeed}
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
 
 import java.util.UUID
 

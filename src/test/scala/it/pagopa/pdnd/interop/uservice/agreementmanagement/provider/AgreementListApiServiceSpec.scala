@@ -1,4 +1,4 @@
-package it.pagopa.pdnd.interop.uservice.agreementmanagement
+package it.pagopa.pdnd.interop.uservice.agreementmanagement.provider
 
 import akka.actor
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
@@ -10,26 +10,26 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.{AgreementApi, AgreementApiMarshaller}
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
   AgreementApiServiceImpl
 }
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system.Authenticator
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.{AgreementApi, AgreementApiMarshaller}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.Agreement
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.server.impl.Main
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.service.UUIDSupplier
-import org.scalamock.scalatest.MockFactory
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.{
+  SpecConfiguration,
+  SpecHelper,
+  emptyData,
+  makeRequest,
+  mockUUIDSupplier
+}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
-
-object AgreementListApiServiceSpec extends MockFactory {
-
-  val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
-}
 
 /** Local integration test.
   *

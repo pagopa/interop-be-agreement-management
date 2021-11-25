@@ -1,5 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1
 
+import cats.implicits.toTraverseOps
+import it.pagopa.pdnd.interop.commons.utils.TypeConversions.{OffsetDateTimeOps, StringOps}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementState,
@@ -11,25 +13,20 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.ser
   VerifiedAttributeV1
 }
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object protobufUtils {
 
-  private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
-  private def uuidParsing(id: String): Either[Throwable, UUID] = Try(UUID.fromString(id)).toEither
-
   def toPersistentAgreement(protobufAgreement: AgreementV1): Either[Throwable, PersistentAgreement] = {
-    for {
+    val agreement = for {
       status       <- fromProtobufAgreementState(protobufAgreement.state)
-      id           <- uuidParsing(protobufAgreement.id)
-      eserviceId   <- uuidParsing(protobufAgreement.eserviceId)
-      descriptorId <- uuidParsing(protobufAgreement.descriptorId)
-      producerId   <- uuidParsing(protobufAgreement.producerId)
-      consumerId   <- uuidParsing(protobufAgreement.consumerId)
+      id           <- protobufAgreement.id.toUUID
+      eserviceId   <- protobufAgreement.eserviceId.toUUID
+      descriptorId <- protobufAgreement.descriptorId.toUUID
+      producerId   <- protobufAgreement.producerId.toUUID
+      consumerId   <- protobufAgreement.consumerId.toUUID
+      attributes   <- protobufAgreement.verifiedAttributes.traverse(deserializeVerifiedAttribute)
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
@@ -37,48 +34,53 @@ object protobufUtils {
       producerId = producerId,
       consumerId = consumerId,
       state = status,
-      verifiedAttributes = protobufAgreement.verifiedAttributes.map(deserializeVerifiedAttribute),
+      verifiedAttributes = attributes,
       suspendedByConsumer = protobufAgreement.suspendedByConsumer,
       suspendedByProducer = protobufAgreement.suspendedByProducer
     )
+    agreement.toEither
   }
 
-  def toProtobufAgreement(persistentAgreement: PersistentAgreement): Either[Throwable, AgreementV1] =
-    Right(
-      AgreementV1(
-        id = persistentAgreement.id.toString,
-        eserviceId = persistentAgreement.eserviceId.toString,
-        descriptorId = persistentAgreement.descriptorId.toString,
-        producerId = persistentAgreement.producerId.toString,
-        consumerId = persistentAgreement.consumerId.toString,
-        state = toProtobufAgreementState(persistentAgreement.state),
-        verifiedAttributes = persistentAgreement.verifiedAttributes.map(serializeVerifiedAttribute),
-        suspendedByConsumer = persistentAgreement.suspendedByConsumer,
-        suspendedByProducer = persistentAgreement.suspendedByProducer
-      )
+  def toProtobufAgreement(persistentAgreement: PersistentAgreement): Either[Throwable, AgreementV1] = {
+    val protobufEntity = for {
+      attributes <- persistentAgreement.verifiedAttributes.traverse(serializeVerifiedAttribute)
+    } yield AgreementV1(
+      id = persistentAgreement.id.toString,
+      eserviceId = persistentAgreement.eserviceId.toString,
+      descriptorId = persistentAgreement.descriptorId.toString,
+      producerId = persistentAgreement.producerId.toString,
+      consumerId = persistentAgreement.consumerId.toString,
+      state = toProtobufAgreementState(persistentAgreement.state),
+      verifiedAttributes = attributes,
+      suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+      suspendedByProducer = persistentAgreement.suspendedByProducer
     )
 
-  def serializeVerifiedAttribute(verifiedAttribute: PersistentVerifiedAttribute): VerifiedAttributeV1 = {
-    VerifiedAttributeV1.of(
+    protobufEntity.toEither
+  }
+
+  def serializeVerifiedAttribute(verifiedAttribute: PersistentVerifiedAttribute): Try[VerifiedAttributeV1] = {
+    for {
+      verificationDate <- verifiedAttribute.verificationDate.traverse(t => t.asFormattedString)
+    } yield VerifiedAttributeV1.of(
       id = verifiedAttribute.id.toString,
       verified = verifiedAttribute.verified,
-      verificationDate = verifiedAttribute.verificationDate.map(fromTime),
+      verificationDate = verificationDate,
       validityTimespan = verifiedAttribute.validityTimespan.map(_.toString)
     )
   }
 
-  def deserializeVerifiedAttribute(serializedVerifiedAttribute: VerifiedAttributeV1): PersistentVerifiedAttribute = {
-    PersistentVerifiedAttribute(
+  def deserializeVerifiedAttribute(
+    serializedVerifiedAttribute: VerifiedAttributeV1
+  ): Try[PersistentVerifiedAttribute] = {
+    for {
+      verificationDate <- serializedVerifiedAttribute.verificationDate.traverse(s => s.toOffsetDateTime)
+    } yield PersistentVerifiedAttribute(
       id = UUID.fromString(serializedVerifiedAttribute.id),
       verified = serializedVerifiedAttribute.verified,
-      verificationDate = serializedVerifiedAttribute.verificationDate.map(toTime),
+      verificationDate = verificationDate,
       validityTimespan = serializedVerifiedAttribute.validityTimespan.map(_.toLong)
     )
-  }
-
-  def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
-  def toTime(timestamp: String): OffsetDateTime = {
-    OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
   }
 
   def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1 =
@@ -88,14 +90,14 @@ object protobufUtils {
       case PersistentAgreementState.Suspended => AgreementStateV1.SUSPENDED
       case PersistentAgreementState.Inactive  => AgreementStateV1.INACTIVE
     }
-  def fromProtobufAgreementState(status: AgreementStateV1): Either[Throwable, PersistentAgreementState] =
+  def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
     status match {
-      case AgreementStateV1.PENDING   => Right(PersistentAgreementState.Pending)
-      case AgreementStateV1.ACTIVE    => Right(PersistentAgreementState.Active)
-      case AgreementStateV1.SUSPENDED => Right(PersistentAgreementState.Suspended)
-      case AgreementStateV1.INACTIVE  => Right(PersistentAgreementState.Inactive)
+      case AgreementStateV1.PENDING   => Success(PersistentAgreementState.Pending)
+      case AgreementStateV1.ACTIVE    => Success(PersistentAgreementState.Active)
+      case AgreementStateV1.SUSPENDED => Success(PersistentAgreementState.Suspended)
+      case AgreementStateV1.INACTIVE  => Success(PersistentAgreementState.Inactive)
       case AgreementStateV1.Unrecognized(value) =>
-        Left(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
+        Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }
 
 }

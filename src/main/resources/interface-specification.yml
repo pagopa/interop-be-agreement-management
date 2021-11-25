@@ -13,8 +13,6 @@ info:
 servers:
   - url: 'https://gateway.interop.pdnd.dev/pdnd-interop-uservice-agreement-management/{{version}}'
     description: This service is agreement manager
-security:
-  - bearerAuth: [ ]
 tags:
   - name: agreement
     description: Everything about your Agreement

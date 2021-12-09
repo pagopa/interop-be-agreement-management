@@ -4,6 +4,7 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
@@ -48,7 +49,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        addAgreement405(Problem(Option(statusReply.getError.getMessage), status = 405, "some error"))
+        addAgreement400(problemOf(StatusCodes.BadRequest, "0001", statusReply.getError))
     }
   }
 
@@ -73,11 +74,11 @@ class AgreementApiServiceImpl(
     val result: Future[StatusReply[Option[Agreement]]] = commander.ask(ref => GetAgreement(agreementId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        statusReply.getValue.fold(getAgreement404(Problem(None, status = 404, "some error")))(agreement =>
+        statusReply.getValue.fold(getAgreement404(problemOf(StatusCodes.NotFound, "0002")))(agreement =>
           getAgreement200(agreement)
         )
       case statusReply if statusReply.isError =>
-        getAgreement400(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+        getAgreement400(problemOf(StatusCodes.BadRequest, "0003", statusReply.getError))
     }
   }
 
@@ -90,7 +91,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        activateAgreement404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        activateAgreement404(problemOf(StatusCodes.NotFound, "0004", statusReply.getError))
     }
   }
 
@@ -110,7 +111,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        suspendAgreement404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        suspendAgreement404(problemOf(StatusCodes.NotFound, "0005", statusReply.getError))
     }
   }
 
@@ -155,7 +156,8 @@ class AgreementApiServiceImpl(
 
     result match {
       case Right(agreements) => getAgreements200(agreements)
-      case Left(error)       => getAgreements400(Problem(Option(error.getMessage), 400, "Error on agreements retrieve"))
+      case Left(error) =>
+        getAgreements400(problemOf(StatusCodes.BadRequest, "0006", error, "Error on agreements retrieve"))
     }
 
   }
@@ -197,7 +199,7 @@ class AgreementApiServiceImpl(
       case statusReply if statusReply.isSuccess => updateAgreementVerifiedAttribute200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         updateAgreementVerifiedAttribute404(
-          Problem(Option(statusReply.getError.getMessage), status = 404, "Verified Attribute not found")
+          problemOf(StatusCodes.NotFound, "0007", statusReply.getError, "Verified Attribute not found")
         )
     }
   }
@@ -217,7 +219,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => upgradeAgreementById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        upgradeAgreementById400(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        upgradeAgreementById400(problemOf(StatusCodes.NotFound, "0008", statusReply.getError))
     }
   }
 

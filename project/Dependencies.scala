@@ -98,8 +98,9 @@ object Dependencies {
   }
 
   private[this] object pagopa {
-    lazy val namespace = "it.pagopa"
-    lazy val commons   = namespace %% "pdnd-interop-commons-utils" % commonsVersion
+    lazy val namespace  = "it.pagopa"
+    lazy val commons    = namespace %% "pdnd-interop-commons-utils" % commonsVersion
+    lazy val commonsJWT = namespace %% "pdnd-interop-commons-jwt"   % commonsVersion
   }
 
   object Jars {
@@ -136,6 +137,7 @@ object Dependencies {
       mustache.mustache            % Compile,
       openapi4j.operationValidator % Compile,
       pagopa.commons               % Compile,
+      pagopa.commonsJWT            % Compile,
       postgres.jdbc                % Compile,
       scalaprotobuf.core           % Protobuf,
       scalatest.core               % Test,

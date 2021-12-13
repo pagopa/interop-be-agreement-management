@@ -15,6 +15,7 @@ postgresHost=$POSTGRES_HOST
 postgresPort=$POSTGRES_PORT
 postgresDb=$POSTGRES_DB
 postgresSchema=$POSTGRES_SCHEMA
+wellKnownURL=$WELL_KNOWN_URL
 
 name=$(cat $SCRIPT_PATH/../build.sbt | grep "name :=" | awk -F:= '{ print $2 }' | sed 's/\"//' | sed 's/\",//' | sed 's/ //' | tr '[:upper:]' '[:lower:]' | grep -v client)
 

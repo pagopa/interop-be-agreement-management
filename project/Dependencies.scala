@@ -9,27 +9,30 @@ object Dependencies {
     lazy val akkaManagementNamespace = "com.lightbend.akka.management"
     lazy val akkaDiscoveryNamespace  = "com.lightbend.akka.discovery"
 
-    lazy val actorTyped             = namespace               %% "akka-actor-typed"                  % akkaVersion
-    lazy val clusterBootstrap       = akkaManagementNamespace %% "akka-management-cluster-bootstrap" % akkaManagementVersion
-    lazy val clusterHttp            = akkaManagementNamespace %% "akka-management-cluster-http"      % akkaManagementVersion
-    lazy val clusterSharding        = namespace               %% "akka-cluster-sharding-typed"       % akkaVersion
-    lazy val clusterTools           = namespace               %% "akka-cluster-tools"                % akkaVersion
-    lazy val clusterTyped           = namespace               %% "akka-cluster-typed"                % akkaVersion
-    lazy val discovery              = namespace               %% "akka-discovery"                    % akkaVersion
-    lazy val discoveryKubernetesApi = akkaDiscoveryNamespace  %% "akka-discovery-kubernetes-api"     % akkaManagementVersion
-    lazy val http                   = namespace               %% "akka-http"                         % akkaHttpVersion
-    lazy val httpJson               = namespace               %% "akka-http-spray-json"              % akkaHttpVersion
-    lazy val httpJson4s             = "de.heikoseeberger"     %% "akka-http-json4s"                  % httpJson4sVersion
-    lazy val persistence            = namespace               %% "akka-persistence-typed"            % akkaVersion
-    lazy val persistenceJdbc        = "com.lightbend.akka"    %% "akka-persistence-jdbc"             % jdbcPersistenceVersion
-    lazy val persistenceQuery       = namespace               %% "akka-persistence-query"            % akkaVersion
-    lazy val projection             = "com.lightbend.akka"    %% "akka-projection-eventsourced"      % projectionVersion
-    lazy val projectionSlick        = "com.lightbend.akka"    %% "akka-projection-slick"             % slickProjectionVersion
-    lazy val s3Journal              = "com.github.j5ik2o"     %% "akka-persistence-s3-journal"       % s3Persistence
-    lazy val s3Snapshot             = "com.github.j5ik2o"     %% "akka-persistence-s3-snapshot"      % s3Persistence
-    lazy val slf4j                  = namespace               %% "akka-slf4j"                        % akkaVersion
-    lazy val stream                 = namespace               %% "akka-stream-typed"                 % akkaVersion
-    lazy val testkit                = namespace               %% "akka-actor-testkit-typed"          % akkaVersion
+    lazy val actorTyped             = namespace                       %% "akka-actor-typed"                  % akkaVersion
+    lazy val clusterBootstrap       = akkaManagementNamespace         %% "akka-management-cluster-bootstrap" % akkaManagementVersion
+    lazy val clusterHttp            = akkaManagementNamespace         %% "akka-management-cluster-http"      % akkaManagementVersion
+    lazy val clusterSharding        = namespace                       %% "akka-cluster-sharding-typed"       % akkaVersion
+    lazy val clusterTools           = namespace                       %% "akka-cluster-tools"                % akkaVersion
+    lazy val clusterTyped           = namespace                       %% "akka-cluster-typed"                % akkaVersion
+    lazy val discovery              = namespace                       %% "akka-discovery"                    % akkaVersion
+    lazy val discoveryKubernetesApi = akkaDiscoveryNamespace          %% "akka-discovery-kubernetes-api"     % akkaManagementVersion
+    lazy val http                   = namespace                       %% "akka-http"                         % akkaHttpVersion
+    lazy val httpJson               = namespace                       %% "akka-http-spray-json"              % akkaHttpVersion
+    lazy val httpJson4s             = "de.heikoseeberger"             %% "akka-http-json4s"                  % httpJson4sVersion
+    lazy val management             = "com.lightbend.akka.management" %% "akka-management"                   % akkaManagementVersion
+    lazy val managementLogLevels =
+      "com.lightbend.akka.management" %% "akka-management-loglevels-logback" % akkaManagementVersion
+    lazy val persistence      = namespace            %% "akka-persistence-typed"       % akkaVersion
+    lazy val persistenceJdbc  = "com.lightbend.akka" %% "akka-persistence-jdbc"        % jdbcPersistenceVersion
+    lazy val persistenceQuery = namespace            %% "akka-persistence-query"       % akkaVersion
+    lazy val projection       = "com.lightbend.akka" %% "akka-projection-eventsourced" % projectionVersion
+    lazy val projectionSlick  = "com.lightbend.akka" %% "akka-projection-slick"        % slickProjectionVersion
+    lazy val s3Journal        = "com.github.j5ik2o"  %% "akka-persistence-s3-journal"  % s3Persistence
+    lazy val s3Snapshot       = "com.github.j5ik2o"  %% "akka-persistence-s3-snapshot" % s3Persistence
+    lazy val slf4j            = namespace            %% "akka-slf4j"                   % akkaVersion
+    lazy val stream           = namespace            %% "akka-stream-typed"            % akkaVersion
+    lazy val testkit          = namespace            %% "akka-actor-testkit-typed"     % akkaVersion
   }
 
   private[this] object awssdk {
@@ -120,6 +123,8 @@ object Dependencies {
       akka.discoveryKubernetesApi  % Compile,
       akka.http                    % Compile,
       akka.httpJson                % Compile,
+      akka.management              % Compile,
+      akka.managementLogLevels     % Compile,
       akka.persistence             % Compile,
       akka.persistenceJdbc         % Compile,
       akka.persistenceQuery        % Compile,

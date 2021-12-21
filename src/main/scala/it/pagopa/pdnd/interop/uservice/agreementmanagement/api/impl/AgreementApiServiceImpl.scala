@@ -99,7 +99,7 @@ class AgreementApiServiceImpl(
           getAgreement200(agreement)
         )
       case statusReply if statusReply.isError =>
-        logger.error("Error in getting agreement {} - {}", agreementId, statusReply.getError.getMessage)
+        logger.error("Error in getting agreement {}", agreementId, statusReply.getError)
         getAgreement400(problemOf(StatusCodes.BadRequest, "0003", statusReply.getError))
     }
   }
@@ -114,7 +114,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        logger.error("Error in activating agreement {} - {}", agreementId, statusReply.getError.getMessage)
+        logger.error("Error in activating agreement {}", agreementId, statusReply.getError)
         activateAgreement404(problemOf(StatusCodes.NotFound, "0004", statusReply.getError))
     }
   }
@@ -136,7 +136,7 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        logger.error("Error in suspending agreement {} - {}", agreementId, statusReply.getError.getMessage)
+        logger.error("Error in suspending agreement {}", agreementId, statusReply.getError)
         suspendAgreement404(problemOf(StatusCodes.NotFound, "0005", statusReply.getError))
     }
   }
@@ -191,13 +191,13 @@ class AgreementApiServiceImpl(
       case Right(agreements) => getAgreements200(agreements)
       case Left(error) =>
         logger.error(
-          "Error while getting agreements for consumer {} to e-service {} of the producer {} with the descriptor {} and state {} - {}",
+          "Error while getting agreements for consumer {} to e-service {} of the producer {} with the descriptor {} and state {}",
           consumerId,
           eserviceId,
           producerId,
           descriptorId,
           state,
-          error.getMessage
+          error
         )
         getAgreements400(problemOf(StatusCodes.BadRequest, "0006", error, "Error on agreements retrieve"))
     }
@@ -242,14 +242,14 @@ class AgreementApiServiceImpl(
       case statusReply if statusReply.isSuccess => updateAgreementVerifiedAttribute200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         logger.error(
-          "Error while updating agreement {} verified attribute {} - {}",
+          "Error while updating agreement {} verified attribute {}",
           agreementId,
           verifiedAttributeSeed.id,
-          statusReply.getError.getMessage
+          statusReply.getError
         )
         updateAgreementVerifiedAttribute404(
           problemOf(StatusCodes.NotFound, "0007", statusReply.getError, "Verified Attribute not found")
-        )
+
     }
   }
 

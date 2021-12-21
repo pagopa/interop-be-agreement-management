@@ -124,7 +124,7 @@ object AgreementPersistentBehavior {
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
-        context.log.error(s"Passivate shard: ${shard.path.name}")
+        context.log.info(s"Passivate shard: ${shard.path.name}")
         Effect.none[Event, State]
     }
   }
@@ -143,7 +143,7 @@ object AgreementPersistentBehavior {
 
   def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[Command] = {
     Behaviors.setup { context =>
-      context.log.error(s"Starting Pet Shard ${persistenceId.id}")
+      context.log.info(s"Starting Agreement Shard ${persistenceId.id}")
       val numberOfEvents =
         context.system.settings.config
           .getInt("uservice-agreement-management.number-of-events-before-snapshot")

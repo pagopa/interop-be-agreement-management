@@ -9,6 +9,8 @@ import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import cats.implicits.toTraverseOps
+import com.typesafe.scalalogging.Logger
+import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
@@ -18,6 +20,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreementState
 }
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
+import org.slf4j.LoggerFactory
 
 import scala.concurrent._
 
@@ -28,6 +31,8 @@ class AgreementApiServiceImpl(
   UUIDSupplier: UUIDSupplier
 )(implicit ec: ExecutionContext)
     extends AgreementApiService {
+
+  val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
 
   private val settings: ClusterShardingSettings = entity.settings match {
     case None    => ClusterShardingSettings(system)
@@ -44,11 +49,26 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info(
+      "Adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
+      agreementSeed.consumerId,
+      agreementSeed.descriptorId,
+      agreementSeed.eserviceId,
+      agreementSeed.producerId
+    )
     val agreement: PersistentAgreement         = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
     val result: Future[StatusReply[Agreement]] = createAgreement(agreement)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.info(
+          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {} - {}",
+          agreementSeed.consumerId,
+          agreementSeed.descriptorId,
+          agreementSeed.eserviceId,
+          agreementSeed.producerId,
+          statusReply.getError.getMessage
+        )
         addAgreement400(problemOf(StatusCodes.BadRequest, "0001", statusReply.getError))
     }
   }
@@ -69,6 +89,7 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info("Getting agreement {}", agreementId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
     val result: Future[StatusReply[Option[Agreement]]] = commander.ask(ref => GetAgreement(agreementId, ref))
@@ -78,6 +99,7 @@ class AgreementApiServiceImpl(
           getAgreement200(agreement)
         )
       case statusReply if statusReply.isError =>
+        logger.error("Error in getting agreement {} - {}", agreementId, statusReply.getError.getMessage)
         getAgreement400(problemOf(StatusCodes.BadRequest, "0003", statusReply.getError))
     }
   }
@@ -87,10 +109,12 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info("Activating agreement {}", agreementId)
     val result: Future[StatusReply[Agreement]] = activateAgreementById(agreementId, stateChangeDetails)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.error("Error in activating agreement {} - {}", agreementId, statusReply.getError.getMessage)
         activateAgreement404(problemOf(StatusCodes.NotFound, "0004", statusReply.getError))
     }
   }
@@ -107,10 +131,12 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info("Suspending agreement {}", agreementId)
     val result: Future[StatusReply[Agreement]] = suspendAgreementById(agreementId, stateChangeDetails)
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.error("Error in suspending agreement {} - {}", agreementId, statusReply.getError.getMessage)
         suspendAgreement404(problemOf(StatusCodes.NotFound, "0005", statusReply.getError))
     }
   }
@@ -135,7 +161,14 @@ class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    contexts.foreach(println)
+    logger.info(
+      "Getting agreements for consumer {} to e-service {} of the producer {} with the descriptor {} and state {}",
+      consumerId,
+      eserviceId,
+      producerId,
+      descriptorId,
+      state
+    )
     val sliceSize = 100
 
     val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
@@ -157,6 +190,15 @@ class AgreementApiServiceImpl(
     result match {
       case Right(agreements) => getAgreements200(agreements)
       case Left(error) =>
+        logger.error(
+          "Error while getting agreements for consumer {} to e-service {} of the producer {} with the descriptor {} and state {} - {}",
+          consumerId,
+          eserviceId,
+          producerId,
+          descriptorId,
+          state,
+          error.getMessage
+        )
         getAgreements400(problemOf(StatusCodes.BadRequest, "0006", error, "Error on agreements retrieve"))
     }
 
@@ -191,6 +233,7 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info("Updating agreement {} verified attribute {}", agreementId, verifiedAttributeSeed.id)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
     val result: Future[StatusReply[Agreement]] =
@@ -198,6 +241,12 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => updateAgreementVerifiedAttribute200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.error(
+          "Error while updating agreement {} verified attribute {} - {}",
+          agreementId,
+          verifiedAttributeSeed.id,
+          statusReply.getError.getMessage
+        )
         updateAgreementVerifiedAttribute404(
           problemOf(StatusCodes.NotFound, "0007", statusReply.getError, "Verified Attribute not found")
         )
@@ -210,6 +259,7 @@ class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info("Updating agreement {}, with data {}", agreementId, agreementSeed)
     val result = for {
       _ <- deactivateAgreementById(agreementId, StateChangeDetails(changedBy = None))
       persistentAgreement = PersistentAgreement.fromAPIWithActiveState(agreementSeed, UUIDSupplier)
@@ -219,6 +269,12 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => upgradeAgreementById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.info(
+          "Error while updating agreement {}, with data {} - {}",
+          agreementId,
+          agreementSeed,
+          statusReply.getError.getMessage
+        )
         upgradeAgreementById400(problemOf(StatusCodes.NotFound, "0008", statusReply.getError))
     }
   }

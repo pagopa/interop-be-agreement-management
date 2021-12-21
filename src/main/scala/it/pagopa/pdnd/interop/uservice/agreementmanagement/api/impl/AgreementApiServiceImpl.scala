@@ -50,8 +50,9 @@ class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     logger.info(
-      "Adding an agreement {} for consumer {} to e-service {} of the producer {}",
+      "Adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
       agreementSeed.consumerId,
+      agreementSeed.descriptorId,
       agreementSeed.eserviceId,
       agreementSeed.producerId
     )
@@ -60,9 +61,10 @@ class AgreementApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        logger.error(
-          "Error while adding an agreement {} for consumer {} to e-service {} of the producer {} - {}",
+        logger.info(
+          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {} - {}",
           agreementSeed.consumerId,
+          agreementSeed.descriptorId,
           agreementSeed.eserviceId,
           agreementSeed.producerId,
           statusReply.getError.getMessage

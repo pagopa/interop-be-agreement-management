@@ -125,6 +125,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '409':
+          description: Agreement already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
     get:
       tags:
         - agreement
@@ -208,7 +214,7 @@ paths:
         description: the updated attribute
         required: true
   '/agreements/{agreement_id}/activate':
-    patch:
+    post:
       security:
         - bearerAuth: [ ]
       summary: Activate Agreement
@@ -248,7 +254,7 @@ paths:
       tags:
         - agreement
   '/agreements/{agreement_id}/suspend':
-    patch:
+    post:
       security:
         - bearerAuth: [ ]
       summary: Suspend Agreement

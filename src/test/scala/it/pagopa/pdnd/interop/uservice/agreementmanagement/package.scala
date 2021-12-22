@@ -55,7 +55,7 @@ package object agreementmanagement extends MockFactory {
         HttpRequest(
           uri = s"$url/$path",
           method = verb,
-          entity = HttpEntity(ContentTypes.`application/json`, data),
+          entity = if (verb == HttpMethods.GET) HttpEntity.Empty else HttpEntity(ContentTypes.`application/json`, data),
           headers = authorization
         )
       ),

@@ -64,7 +64,7 @@ trait SpecHelper {
     data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
       .to[MessageEntity]
       .map(_.dataBytes)
-    activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.PATCH))
+    activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.POST))
       .to[Agreement]
   } yield activated
 
@@ -74,7 +74,7 @@ trait SpecHelper {
     data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
       .to[MessageEntity]
       .map(_.dataBytes)
-    suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.PATCH))
+    suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.POST))
       .to[Agreement]
   } yield suspended
 

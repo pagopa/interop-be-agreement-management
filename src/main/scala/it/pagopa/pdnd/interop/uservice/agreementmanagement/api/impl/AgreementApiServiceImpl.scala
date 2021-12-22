@@ -5,7 +5,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.onSuccess
+import akka.http.scaladsl.server.Directives.{onComplete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import cats.implicits.toTraverseOps
@@ -23,6 +23,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent._
+import scala.util.{Failure, Success}
 
 class AgreementApiServiceImpl(
   system: ActorSystem[_],
@@ -58,18 +59,28 @@ class AgreementApiServiceImpl(
     )
     val agreement: PersistentAgreement         = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
     val result: Future[StatusReply[Agreement]] = createAgreement(agreement)
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => addAgreement200(statusReply.getValue)
-      case statusReply if statusReply.isError =>
-        logger.info(
-          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {} - {}",
+    onComplete(result) {
+      case Success(statusReply) if statusReply.isSuccess => addAgreement200(statusReply.getValue)
+      case Success(statusReply) =>
+        logger.error(
+          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
           agreementSeed.consumerId,
           agreementSeed.descriptorId,
           agreementSeed.eserviceId,
           agreementSeed.producerId,
-          statusReply.getError.getMessage
+          statusReply.getError
         )
-        addAgreement400(problemOf(StatusCodes.BadRequest, "0001", statusReply.getError))
+        addAgreement409(problemOf(StatusCodes.Conflict, "0009", statusReply.getError))
+      case Failure(ex) =>
+        logger.error(
+          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
+          agreementSeed.consumerId,
+          agreementSeed.descriptorId,
+          agreementSeed.eserviceId,
+          agreementSeed.producerId,
+          ex
+        )
+        addAgreement400(problemOf(StatusCodes.BadRequest, "0001", ex))
     }
   }
 
@@ -249,7 +260,7 @@ class AgreementApiServiceImpl(
         )
         updateAgreementVerifiedAttribute404(
           problemOf(StatusCodes.NotFound, "0007", statusReply.getError, "Verified Attribute not found")
-
+        )
     }
   }
 

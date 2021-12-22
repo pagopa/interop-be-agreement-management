@@ -63,22 +63,22 @@ class AgreementApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess => addAgreement200(statusReply.getValue)
       case Success(statusReply) =>
         logger.error(
-          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {} - {}",
+          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
           agreementSeed.consumerId,
           agreementSeed.descriptorId,
           agreementSeed.eserviceId,
           agreementSeed.producerId,
-          statusReply.getError.getMessage
+          statusReply.getError
         )
         addAgreement409(problemOf(StatusCodes.Conflict, "0009", statusReply.getError))
       case Failure(ex) =>
         logger.error(
-          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {} - {}",
+          "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
           agreementSeed.consumerId,
           agreementSeed.descriptorId,
           agreementSeed.eserviceId,
           agreementSeed.producerId,
-          ex.getMessage
+          ex
         )
         addAgreement400(problemOf(StatusCodes.BadRequest, "0001", ex))
     }

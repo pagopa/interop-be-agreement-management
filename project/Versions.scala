@@ -12,7 +12,6 @@ object Versions {
   lazy val kamonVersion                = "2.1.17"
   lazy val logbackVersion              = "1.2.9"
   lazy val mustacheVersion             = "0.9.0"
-  lazy val openapi4jVersion            = "1.0.7"
   lazy val postgresVersion             = "42.2.21"
   lazy val projectionVersion           = "1.2.1"
   lazy val s3Persistence               = "1.0.27"
@@ -20,6 +19,7 @@ object Versions {
   lazy val scalapbVersion              = "0.11.1"
   lazy val scalatestVersion            = "3.2.8"
   lazy val slickProjectionVersion      = "1.2.2"
+  lazy val swaggerValidatorVersion     = "2.23.0"
 }
 
 object PDNDVersions {

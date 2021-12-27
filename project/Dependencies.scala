@@ -80,11 +80,6 @@ object Dependencies {
     lazy val jdbc      = namespace % "postgresql" % postgresVersion
   }
 
-  private[this] object atlassian {
-    lazy val namespace        = "com.atlassian.oai"
-    lazy val swaggerValidator = namespace % "swagger-request-validator-core" % swaggerValidatorVersion
-  }
-
   private[this] object scalatest {
     lazy val namespace = "org.scalatest"
     lazy val core      = namespace %% "scalatest" % scalatestVersion
@@ -134,7 +129,6 @@ object Dependencies {
       akka.s3Snapshot             % Compile,
       akka.slf4j                  % Compile,
       akka.stream                 % Compile,
-      atlassian.swaggerValidator  % Compile,
       awssdk.s3                   % Compile,
       cats.core                   % Compile,
       kamon.bundle                % Compile,

@@ -7,7 +7,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiMarsh
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
 import spray.json._
 
-class AgreementApiMarshallerImpl extends AgreementApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
+object AgreementApiMarshallerImpl extends AgreementApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
 
   override implicit def fromEntityUnmarshallerAgreementSeed: FromEntityUnmarshaller[AgreementSeed] =
     sprayJsonUnmarshaller[AgreementSeed]

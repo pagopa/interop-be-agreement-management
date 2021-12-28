@@ -11,13 +11,13 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.pdnd.interop.uservice.agreementmanagement._
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApi
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
   AgreementApiServiceImpl
 }
-import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.{AgreementApi, AgreementApiMarshaller}
-import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
   Agreement,
   AgreementSeed,
@@ -42,7 +42,6 @@ class AgreementApiServiceSpec
     with SpecConfiguration
     with SpecHelper {
 
-  val agreementApiMarshaller: AgreementApiMarshaller = new AgreementApiMarshallerImpl
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
@@ -64,7 +63,7 @@ class AgreementApiServiceSpec
 
     val agreementApi = new AgreementApi(
       new AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
-      agreementApiMarshaller,
+      AgreementApiMarshallerImpl,
       wrappingDirective
     )
 

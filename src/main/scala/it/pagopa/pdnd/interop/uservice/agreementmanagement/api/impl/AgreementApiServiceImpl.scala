@@ -14,6 +14,7 @@ import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextField
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
+import it.pagopa.pdnd.interop.uservice.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
@@ -70,7 +71,7 @@ class AgreementApiServiceImpl(
           agreementSeed.producerId,
           statusReply.getError
         )
-        addAgreement409(problemOf(StatusCodes.Conflict, "0009", statusReply.getError))
+        addAgreement409(problemOf(StatusCodes.Conflict, AddAgreementConflict))
       case Failure(ex) =>
         logger.error(
           "Error while adding an agreement for consumer {} to descriptor {} of e-service {} from the producer {}",
@@ -80,7 +81,7 @@ class AgreementApiServiceImpl(
           agreementSeed.producerId,
           ex
         )
-        addAgreement400(problemOf(StatusCodes.BadRequest, "0001", ex))
+        addAgreement400(problemOf(StatusCodes.BadRequest, AddAgreementBadRequest))
     }
   }
 
@@ -106,12 +107,12 @@ class AgreementApiServiceImpl(
     val result: Future[StatusReply[Option[Agreement]]] = commander.ask(ref => GetAgreement(agreementId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        statusReply.getValue.fold(getAgreement404(problemOf(StatusCodes.NotFound, "0002")))(agreement =>
+        statusReply.getValue.fold(getAgreement404(problemOf(StatusCodes.NotFound, GetAgreementNotFound)))(agreement =>
           getAgreement200(agreement)
         )
       case statusReply if statusReply.isError =>
         logger.error("Error in getting agreement {}", agreementId, statusReply.getError)
-        getAgreement400(problemOf(StatusCodes.BadRequest, "0003", statusReply.getError))
+        getAgreement400(problemOf(StatusCodes.BadRequest, GetAgreementBadRequest))
     }
   }
 
@@ -126,7 +127,7 @@ class AgreementApiServiceImpl(
       case statusReply if statusReply.isSuccess => activateAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         logger.error("Error in activating agreement {}", agreementId, statusReply.getError)
-        activateAgreement404(problemOf(StatusCodes.NotFound, "0004", statusReply.getError))
+        activateAgreement404(problemOf(StatusCodes.NotFound, ActivateAgreementNotFound))
     }
   }
 
@@ -148,7 +149,7 @@ class AgreementApiServiceImpl(
       case statusReply if statusReply.isSuccess => suspendAgreement200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         logger.error("Error in suspending agreement {}", agreementId, statusReply.getError)
-        suspendAgreement404(problemOf(StatusCodes.NotFound, "0005", statusReply.getError))
+        suspendAgreement404(problemOf(StatusCodes.NotFound, SuspendAgreementNotFound))
     }
   }
 
@@ -210,7 +211,7 @@ class AgreementApiServiceImpl(
           state,
           error
         )
-        getAgreements400(problemOf(StatusCodes.BadRequest, "0006", error, "Error on agreements retrieve"))
+        getAgreements400(problemOf(StatusCodes.BadRequest, GetAgreementsBadRequest))
     }
 
   }
@@ -258,9 +259,7 @@ class AgreementApiServiceImpl(
           verifiedAttributeSeed.id,
           statusReply.getError
         )
-        updateAgreementVerifiedAttribute404(
-          problemOf(StatusCodes.NotFound, "0007", statusReply.getError, "Verified Attribute not found")
-        )
+        updateAgreementVerifiedAttribute404(problemOf(StatusCodes.NotFound, AgreementVerifiedAttributeNotFound))
     }
   }
 
@@ -286,7 +285,7 @@ class AgreementApiServiceImpl(
           agreementSeed,
           statusReply.getError.getMessage
         )
-        upgradeAgreementById400(problemOf(StatusCodes.NotFound, "0008", statusReply.getError))
+        upgradeAgreementById400(problemOf(StatusCodes.NotFound, UpdateAgreementBadRequest))
     }
   }
 

@@ -13,6 +13,7 @@ import scala.annotation.tailrec
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import it.pagopa.pdnd.interop.commons.utils.SprayCommonFormats.{offsetDateTimeFormat, uuidFormat}
+import it.pagopa.pdnd.interop.commons.utils.errors.ComponentError
 
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
@@ -38,17 +39,19 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
     readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
-  def problemOf(
-    httpError: StatusCode,
-    errorCode: String,
-    exception: Throwable = new RuntimeException(),
-    defaultMessage: String = "Unknown error"
-  ): Problem =
+  final val serviceErrorCodePrefix: String = "004"
+  final val defaultProblemType: String     = "about:blank"
+
+  def problemOf(httpError: StatusCode, error: ComponentError, defaultMessage: String = "Unknown error"): Problem =
     Problem(
-      `type` = "about:blank",
+      `type` = defaultProblemType,
       status = httpError.intValue,
       title = httpError.defaultMessage,
-      errors =
-        Seq(ProblemError(code = s"004-$errorCode", detail = Option(exception.getMessage).getOrElse(defaultMessage)))
+      errors = Seq(
+        ProblemError(
+          code = s"$serviceErrorCodePrefix-${error.code}",
+          detail = Option(error.getMessage).getOrElse(defaultMessage)
+        )
+      )
     )
 }

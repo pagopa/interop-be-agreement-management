@@ -24,7 +24,7 @@ object AgreementPersistentBehavior {
     context: ActorContext[Command]
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
     val idleTimeout =
-      context.system.settings.config.getDuration("uservice-agreement-management.idle-timeout")
+      context.system.settings.config.getDuration("agreement-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddAgreement(newAgreement, replyTo) =>
@@ -146,7 +146,7 @@ object AgreementPersistentBehavior {
       context.log.info(s"Starting Agreement Shard ${persistenceId.id}")
       val numberOfEvents =
         context.system.settings.config
-          .getInt("uservice-agreement-management.number-of-events-before-snapshot")
+          .getInt("agreement-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,

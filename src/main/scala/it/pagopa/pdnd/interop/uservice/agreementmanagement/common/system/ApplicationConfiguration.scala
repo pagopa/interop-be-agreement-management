@@ -9,6 +9,6 @@ object ApplicationConfiguration {
 
   def serverPort: Int = config.getInt("uservice-agreement-management.port")
 
-  def jwtAudience: Set[String] = config.getStringList("uservice-party-management.jwt.audience").asScala.toSet
+  def jwtAudience: Set[String] = config.getStringList("uservice-agreement-management.jwt.audience").asScala.toSet
 
 }

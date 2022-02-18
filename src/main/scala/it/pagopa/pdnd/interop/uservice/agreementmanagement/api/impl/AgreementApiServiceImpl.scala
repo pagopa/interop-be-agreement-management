@@ -9,9 +9,9 @@ import akka.http.scaladsl.server.Directives.{onComplete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import cats.implicits.toTraverseOps
-import com.typesafe.scalalogging.Logger
+import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.pdnd.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApiService
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.error.AgreementManagementErrors._
@@ -26,15 +26,17 @@ import org.slf4j.LoggerFactory
 import scala.concurrent._
 import scala.util.{Failure, Success}
 
-class AgreementApiServiceImpl(
+final case class AgreementApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
-  UUIDSupplier: UUIDSupplier
+  UUIDSupplier: UUIDSupplier,
+  dateTimeSupplier: OffsetDateTimeSupplier
 )(implicit ec: ExecutionContext)
     extends AgreementApiService {
 
-  val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
+  val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
 
   private val settings: ClusterShardingSettings = entity.settings match {
     case None    => ClusterShardingSettings(system)
@@ -58,7 +60,7 @@ class AgreementApiServiceImpl(
       agreementSeed.eserviceId,
       agreementSeed.producerId
     )
-    val agreement: PersistentAgreement         = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier)
+    val agreement: PersistentAgreement         = PersistentAgreement.fromAPI(agreementSeed, UUIDSupplier, dateTimeSupplier)
     val result: Future[StatusReply[Agreement]] = createAgreement(agreement)
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess => addAgreement200(statusReply.getValue)
@@ -272,7 +274,7 @@ class AgreementApiServiceImpl(
     logger.info("Updating agreement {}, with data {}", agreementId, agreementSeed)
     val result = for {
       _ <- deactivateAgreementById(agreementId, StateChangeDetails(changedBy = None))
-      persistentAgreement = PersistentAgreement.fromAPIWithActiveState(agreementSeed, UUIDSupplier)
+      persistentAgreement = PersistentAgreement.fromAPIWithActiveState(agreementSeed, UUIDSupplier, dateTimeSupplier)
       activeAgreement <- createAgreement(persistentAgreement)
     } yield activeAgreement
 

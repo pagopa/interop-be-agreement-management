@@ -24,6 +24,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.{
   SpecHelper,
   emptyData,
   makeRequest,
+  mockDateTimeSupplier,
   mockUUIDSupplier
 }
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -61,7 +62,7 @@ class AgreementListApiServiceSpec
     sharding.init(persistentEntity)
 
     val agreementApi = new AgreementApi(
-      new AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
+      AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier, mockDateTimeSupplier),
       AgreementApiMarshallerImpl,
       wrappingDirective
     )

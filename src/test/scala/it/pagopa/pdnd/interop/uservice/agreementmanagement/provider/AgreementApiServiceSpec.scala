@@ -62,7 +62,7 @@ class AgreementApiServiceSpec
     sharding.init(persistentEntity)
 
     val agreementApi = new AgreementApi(
-      new AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
+      AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier, mockDateTimeSupplier),
       AgreementApiMarshallerImpl,
       wrappingDirective
     )
@@ -113,6 +113,7 @@ class AgreementApiServiceSpec
         )
       )
       (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+      (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
 
       val response: Future[Agreement] = createAgreement(agreementSeed)
 
@@ -234,6 +235,7 @@ class AgreementApiServiceSpec
     //and its upgrade
     val updateAgreementId = UUID.randomUUID()
     (() => mockUUIDSupplier.get).expects().returning(updateAgreementId).once()
+    (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     val _ = upgradeAgreement(agreementId.toString, agreementSeed).futureValue
 
     //when we retrieve the original agreement. it should have its state changed to "inactive"

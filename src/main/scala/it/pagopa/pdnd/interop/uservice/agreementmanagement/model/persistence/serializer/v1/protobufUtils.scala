@@ -1,7 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1
 
 import cats.implicits.toTraverseOps
-import it.pagopa.pdnd.interop.commons.utils.TypeConversions.{OffsetDateTimeOps, StringOps}
+import it.pagopa.pdnd.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementState,
@@ -26,6 +26,8 @@ object protobufUtils {
       descriptorId <- protobufAgreement.descriptorId.toUUID
       producerId   <- protobufAgreement.producerId.toUUID
       consumerId   <- protobufAgreement.consumerId.toUUID
+      createdAt    <- protobufAgreement.createdAt.toOffsetDateTime
+      updatedAt    <- protobufAgreement.updatedAt.traverse(_.toOffsetDateTime)
       attributes   <- protobufAgreement.verifiedAttributes.traverse(deserializeVerifiedAttribute)
     } yield PersistentAgreement(
       id = id,
@@ -36,7 +38,9 @@ object protobufUtils {
       state = status,
       verifiedAttributes = attributes,
       suspendedByConsumer = protobufAgreement.suspendedByConsumer,
-      suspendedByProducer = protobufAgreement.suspendedByProducer
+      suspendedByProducer = protobufAgreement.suspendedByProducer,
+      createdAt = createdAt,
+      updatedAt = updatedAt
     )
     agreement.toEither
   }
@@ -53,7 +57,9 @@ object protobufUtils {
       state = toProtobufAgreementState(persistentAgreement.state),
       verifiedAttributes = attributes,
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
-      suspendedByProducer = persistentAgreement.suspendedByProducer
+      suspendedByProducer = persistentAgreement.suspendedByProducer,
+      createdAt = persistentAgreement.createdAt.toMillis,
+      updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
     )
 
     protobufEntity.toEither

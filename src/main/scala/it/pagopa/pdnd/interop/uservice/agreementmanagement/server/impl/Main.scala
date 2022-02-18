@@ -18,11 +18,11 @@ import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.pdnd.interop.commons.jwt.service.JWTReader
 import it.pagopa.pdnd.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
-import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, PublicKeysHolder}
+import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
 import it.pagopa.pdnd.interop.commons.utils.OpenapiUtils
 import it.pagopa.pdnd.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.pdnd.interop.commons.utils.service.impl.UUIDSupplierImpl
+import it.pagopa.pdnd.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
+import it.pagopa.pdnd.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApi
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
@@ -48,9 +48,9 @@ object Main extends App {
   val dependenciesLoaded: Try[JWTReader] = for {
     keyset <- JWTConfiguration.jwtReader.loadKeyset()
     jwtValidator = new DefaultJWTReader with PublicKeysHolder {
-      var publicKeyset = keyset
+      var publicKeyset: Map[KID, SerializedKey] = keyset
       override protected val claimsVerifier: DefaultJWTClaimsVerifier[SecurityContext] =
-        getClaimsVerifier(audience = ApplicationConfiguration.jwtAudience)
+        getClaimsVerifier()
     }
   } yield jwtValidator
 
@@ -107,10 +107,11 @@ object Main extends App {
           )
         }
 
-        val uuidSupplier: UUIDSupplier = new UUIDSupplierImpl
+        val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
+        val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
 
         val agreementApi = new AgreementApi(
-          new AgreementApiServiceImpl(context.system, sharding, agreementPersistenceEntity, uuidSupplier),
+          AgreementApiServiceImpl(context.system, sharding, agreementPersistenceEntity, uuidSupplier, dateTimeSupplier),
           AgreementApiMarshallerImpl,
           jwtValidator.OAuth2JWTValidatorAsContexts
         )

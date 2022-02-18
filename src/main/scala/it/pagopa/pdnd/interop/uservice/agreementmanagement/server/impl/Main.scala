@@ -59,11 +59,12 @@ object Main extends App {
 
   Kamon.init()
 
-  def buildPersistentEntity(): Entity[Command, ShardingEnvelope[Command]] =
+  def buildPersistentEntity(dateTimeSupplier: OffsetDateTimeSupplier): Entity[Command, ShardingEnvelope[Command]] =
     Entity(typeKey = AgreementPersistentBehavior.TypeKey) { entityContext =>
       AgreementPersistentBehavior(
         entityContext.shard,
-        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
+        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+        dateTimeSupplier
       )
     }
 
@@ -82,7 +83,11 @@ object Main extends App {
 
         val sharding: ClusterSharding = ClusterSharding(context.system)
 
-        val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] = buildPersistentEntity()
+        val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
+        val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
+
+        val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
+          buildPersistentEntity(dateTimeSupplier)
 
         val _ = sharding.init(agreementPersistenceEntity)
 
@@ -106,9 +111,6 @@ object Main extends App {
             stopMessage = ProjectionBehavior.Stop
           )
         }
-
-        val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
-        val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
 
         val agreementApi = new AgreementApi(
           AgreementApiServiceImpl(context.system, sharding, agreementPersistenceEntity, uuidSupplier, dateTimeSupplier),

@@ -6,6 +6,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
+import it.pagopa.pdnd.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementState,
@@ -21,7 +22,8 @@ object AgreementPersistentBehavior {
 
   def commandHandler(
     shard: ActorRef[ClusterSharding.ShardCommand],
-    context: ActorContext[Command]
+    context: ActorContext[Command],
+    dateTimeSupplier: OffsetDateTimeSupplier
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
     val idleTimeout =
       context.system.settings.config.getDuration("agreement-management.idle-timeout")
@@ -53,7 +55,7 @@ object AgreementPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
-            replyTo ! StatusReply.Error[Agreement](s"Attribute ${attributeId} not found for agreement ${agreementId}.")
+            replyTo ! StatusReply.Error[Agreement](s"Attribute $attributeId not found for agreement $agreementId.")
             Effect.none[VerifiedAttributeUpdated, State]
           }
 
@@ -67,13 +69,13 @@ object AgreementPersistentBehavior {
         agreement
           .map { agreement =>
             val updatedAgreement =
-              updateAgreementState(agreement, PersistentAgreementState.Active, stateChangeDetails)
+              updateAgreementState(agreement, PersistentAgreementState.Active, stateChangeDetails)(dateTimeSupplier)
             Effect
               .persist(AgreementActivated(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
-            replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
+            replyTo ! StatusReply.Error[Agreement](s"Agreement $agreementId not found.")
             Effect.none[AgreementActivated, State]
           }
 
@@ -82,13 +84,13 @@ object AgreementPersistentBehavior {
         agreement
           .map { agreement =>
             val updatedAgreement =
-              updateAgreementState(agreement, PersistentAgreementState.Suspended, stateChangeDetails)
+              updateAgreementState(agreement, PersistentAgreementState.Suspended, stateChangeDetails)(dateTimeSupplier)
             Effect
               .persist(AgreementSuspended(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
-            replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
+            replyTo ! StatusReply.Error[Agreement](s"Agreement $agreementId not found.")
             Effect.none[AgreementSuspended, State]
           }
 
@@ -97,13 +99,13 @@ object AgreementPersistentBehavior {
         agreement
           .map { agreement =>
             val updatedAgreement =
-              updateAgreementState(agreement, PersistentAgreementState.Inactive, stateChangeDetails)
+              updateAgreementState(agreement, PersistentAgreementState.Inactive, stateChangeDetails)(dateTimeSupplier)
             Effect
               .persist(AgreementDeactivated(updatedAgreement))
               .thenRun((_: State) => replyTo ! StatusReply.Success(PersistentAgreement.toAPI(updatedAgreement)))
           }
           .getOrElse {
-            replyTo ! StatusReply.Error[Agreement](s"Agreement ${agreementId} not found.")
+            replyTo ! StatusReply.Error[Agreement](s"Agreement $agreementId not found.")
             Effect.none[AgreementDeactivated, State]
           }
 
@@ -141,7 +143,11 @@ object AgreementPersistentBehavior {
   val TypeKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("uservice-agreement-management-persistence-agreement")
 
-  def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[Command] = {
+  def apply(
+    shard: ActorRef[ClusterSharding.ShardCommand],
+    persistenceId: PersistenceId,
+    dateTimeSupplier: OffsetDateTimeSupplier
+  ): Behavior[Command] = {
     Behaviors.setup { context =>
       context.log.info(s"Starting Agreement Shard ${persistenceId.id}")
       val numberOfEvents =
@@ -150,7 +156,7 @@ object AgreementPersistentBehavior {
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,
-        commandHandler = commandHandler(shard, context),
+        commandHandler = commandHandler(shard, context, dateTimeSupplier),
         eventHandler = eventHandler
       ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
         .withTagger(_ => Set(persistenceId.id))
@@ -162,17 +168,20 @@ object AgreementPersistentBehavior {
     persistentAgreement: PersistentAgreement,
     state: PersistentAgreementState,
     stateChangeDetails: StateChangeDetails
-  ): PersistentAgreement = {
+  )(dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreement = {
 
+    val timestamp   = Some(dateTimeSupplier.get)
     def isSuspended = state == PersistentAgreementState.Suspended
 
     stateChangeDetails.changedBy match {
       case Some(changedBy) =>
         changedBy match {
-          case ChangedBy.CONSUMER => persistentAgreement.copy(state = state, suspendedByConsumer = Some(isSuspended))
-          case ChangedBy.PRODUCER => persistentAgreement.copy(state = state, suspendedByProducer = Some(isSuspended))
+          case ChangedBy.CONSUMER =>
+            persistentAgreement.copy(state = state, suspendedByConsumer = Some(isSuspended), updatedAt = timestamp)
+          case ChangedBy.PRODUCER =>
+            persistentAgreement.copy(state = state, suspendedByProducer = Some(isSuspended), updatedAt = timestamp)
         }
-      case None => persistentAgreement.copy(state = state)
+      case None => persistentAgreement.copy(state = state, updatedAt = timestamp)
     }
 
   }

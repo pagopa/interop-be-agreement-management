@@ -68,6 +68,7 @@ trait SpecHelper {
     data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
       .to[MessageEntity]
       .map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.POST))
       .to[Agreement]
   } yield activated
@@ -78,6 +79,7 @@ trait SpecHelper {
     data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
       .to[MessageEntity]
       .map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.POST))
       .to[Agreement]
   } yield suspended
@@ -86,7 +88,9 @@ trait SpecHelper {
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[Agreement] = for {
-    data      <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
 

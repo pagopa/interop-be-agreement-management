@@ -20,7 +20,7 @@ spec:
         - name: regcred
       containers:
         - name: {{name}}
-          image: 505630707203.dkr.ecr.eu-central-1.amazonaws.com/interop-be-agreement-management:0.1.1-snapshot
+          image: {{repository}}/{{name}}:{{version}}
           command: ["bin/{{name}}"]
           args: ["-Dconfig.override_with_env_vars=true"]
           imagePullPolicy: Always

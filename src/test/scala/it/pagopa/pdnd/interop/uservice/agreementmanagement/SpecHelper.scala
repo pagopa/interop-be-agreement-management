@@ -6,11 +6,14 @@ import akka.http.scaladsl.model.{HttpMethods, MessageEntity}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.model._
 
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait SpecHelper {
+
+  final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
   object AgreementOne {
     val agreementId: UUID  = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9210")
@@ -45,7 +48,8 @@ trait SpecHelper {
   def createAgreement(
     seed: AgreementSeed
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    data      <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
@@ -64,6 +68,7 @@ trait SpecHelper {
     data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
       .to[MessageEntity]
       .map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.POST))
       .to[Agreement]
   } yield activated
@@ -74,6 +79,7 @@ trait SpecHelper {
     data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
       .to[MessageEntity]
       .map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.POST))
       .to[Agreement]
   } yield suspended
@@ -82,7 +88,9 @@ trait SpecHelper {
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[Agreement] = for {
-    data      <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
 

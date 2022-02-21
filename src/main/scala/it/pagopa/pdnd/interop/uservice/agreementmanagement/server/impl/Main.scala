@@ -18,11 +18,11 @@ import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.pdnd.interop.commons.jwt.service.JWTReader
 import it.pagopa.pdnd.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
-import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, PublicKeysHolder}
+import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
 import it.pagopa.pdnd.interop.commons.utils.OpenapiUtils
 import it.pagopa.pdnd.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.pdnd.interop.commons.utils.service.impl.UUIDSupplierImpl
+import it.pagopa.pdnd.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
+import it.pagopa.pdnd.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.AgreementApi
 import it.pagopa.pdnd.interop.uservice.agreementmanagement.api.impl.{
   AgreementApiMarshallerImpl,
@@ -48,7 +48,7 @@ object Main extends App {
   val dependenciesLoaded: Try[JWTReader] = for {
     keyset <- JWTConfiguration.jwtReader.loadKeyset()
     jwtValidator = new DefaultJWTReader with PublicKeysHolder {
-      var publicKeyset = keyset
+      var publicKeyset: Map[KID, SerializedKey] = keyset
       override protected val claimsVerifier: DefaultJWTClaimsVerifier[SecurityContext] =
         getClaimsVerifier(audience = ApplicationConfiguration.jwtAudience)
     }
@@ -59,11 +59,12 @@ object Main extends App {
 
   Kamon.init()
 
-  def buildPersistentEntity(): Entity[Command, ShardingEnvelope[Command]] =
+  def buildPersistentEntity(dateTimeSupplier: OffsetDateTimeSupplier): Entity[Command, ShardingEnvelope[Command]] =
     Entity(typeKey = AgreementPersistentBehavior.TypeKey) { entityContext =>
       AgreementPersistentBehavior(
         entityContext.shard,
-        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
+        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+        dateTimeSupplier
       )
     }
 
@@ -82,7 +83,11 @@ object Main extends App {
 
         val sharding: ClusterSharding = ClusterSharding(context.system)
 
-        val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] = buildPersistentEntity()
+        val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
+        val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
+
+        val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
+          buildPersistentEntity(dateTimeSupplier)
 
         val _ = sharding.init(agreementPersistenceEntity)
 
@@ -107,10 +112,8 @@ object Main extends App {
           )
         }
 
-        val uuidSupplier: UUIDSupplier = new UUIDSupplierImpl
-
         val agreementApi = new AgreementApi(
-          new AgreementApiServiceImpl(context.system, sharding, agreementPersistenceEntity, uuidSupplier),
+          AgreementApiServiceImpl(context.system, sharding, agreementPersistenceEntity, uuidSupplier, dateTimeSupplier),
           AgreementApiMarshallerImpl,
           jwtValidator.OAuth2JWTValidatorAsContexts
         )

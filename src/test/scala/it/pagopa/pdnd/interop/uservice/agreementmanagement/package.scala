@@ -16,7 +16,7 @@ import it.pagopa.pdnd.interop.uservice.agreementmanagement.model.{
   StateChangeDetails,
   VerifiedAttributeSeed
 }
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.pdnd.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Await
@@ -28,7 +28,8 @@ package object agreementmanagement extends MockFactory {
     s"http://localhost:18088/pdnd-interop-uservice-agreement-management/${buildinfo.BuildInfo.interfaceVersion}"
   final val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken("token")))
 
-  val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
+  val mockUUIDSupplier: UUIDSupplier               = mock[UUIDSupplier]
+  val mockDateTimeSupplier: OffsetDateTimeSupplier = mock[OffsetDateTimeSupplier]
 
   val emptyData: Source[ByteString, NotUsed] = Source.empty[ByteString]
 

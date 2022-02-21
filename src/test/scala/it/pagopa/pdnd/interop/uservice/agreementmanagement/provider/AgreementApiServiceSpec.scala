@@ -56,13 +56,13 @@ class AgreementApiServiceSpec
   implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-    val persistentEntity = Main.buildPersistentEntity()
+    val persistentEntity = Main.buildPersistentEntity(mockDateTimeSupplier)
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
 
     val agreementApi = new AgreementApi(
-      new AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
+      AgreementApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier, mockDateTimeSupplier),
       AgreementApiMarshallerImpl,
       wrappingDirective
     )
@@ -81,11 +81,9 @@ class AgreementApiServiceSpec
   }
 
   override def afterAll(): Unit = {
-    println("****** Cleaning resources ********")
     bindServer.foreach(_.foreach(_.unbind()))
     ActorTestKit.shutdown(httpSystem, 5.seconds)
     super.afterAll()
-    println("Resources cleaned")
   }
 
   "Processing a request payload" must {
@@ -165,7 +163,7 @@ class AgreementApiServiceSpec
       activatedAgreement.state shouldBe AgreementState.ACTIVE
     }
 
-    "should verify an attribute properly" in {
+    "verify an attribute properly" in {
       //given an agreement with an attribute not yet verified
       val agreementId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
       val attributeId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9284"
@@ -179,10 +177,9 @@ class AgreementApiServiceSpec
           Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = None, validityTimespan = None))
       )
       (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(agreementId)).once()
-      val data     = Await.result(Marshal(agreementSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
-      val response = makeRequest(data, "agreements", HttpMethods.POST)
 
-      val bodyResponse: Agreement = Await.result(Unmarshal(response.entity).to[Agreement], Duration.Inf)
+      val bodyResponse: Agreement = createAgreement(agreementSeed).futureValue
+
       bodyResponse.verifiedAttributes
         .find(p => p.id.toString == attributeId)
         .get

@@ -34,7 +34,6 @@ pipeline {
     stage('Test and Deploy µservice') {
       agent { label 'sbt-template' }
       environment {
-        NEXUS = 'gateway.interop.pdnd.dev'
         DOCKER_REPO = "${env.DOCKER_REPO}"
         MAVEN_REPO = "${env.MAVEN_REPO}"
         ECR_RW = credentials('ecr-rw')

@@ -34,6 +34,7 @@ pipeline {
     stage('Test and Deploy µservice') {
       agent { label 'sbt-template' }
       environment {
+        NEXUS = "${env.NEXUS}"
         DOCKER_REPO = "${env.DOCKER_REPO}"
         MAVEN_REPO = "${env.MAVEN_REPO}"
         NEXUS_CREDENTIALS = credentials('pdnd-nexus')

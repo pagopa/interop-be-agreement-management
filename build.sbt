@@ -94,7 +94,7 @@ lazy val client = project
 
 lazy val root = (project in file("."))
   .settings(
-    name := "pdnd-interop-uservice-agreement-management",
+    name := "interop-be-agreement-management",
     Test / parallelExecution := false,
     scalafmtOnCompile := true,
     dockerBuildOptions ++= Seq("--network=host"),
@@ -106,9 +106,9 @@ lazy val root = (project in file("."))
       if (buildVersion == "latest")
         buildVersion
       else
-        s"v$buildVersion"
+        s"$buildVersion"
     }".toLowerCase,
-    Docker / packageName := s"services/${name.value}",
+    Docker / packageName := s"${name.value}",
     Docker / dockerExposedPorts := Seq(8080),
     Docker / maintainer := "https://pagopa.it",
     dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")

@@ -1,4 +1,4 @@
-import PDNDVersions.commonsVersion
+import PagopaVersions.commonsVersion
 import Versions._
 import sbt._
 

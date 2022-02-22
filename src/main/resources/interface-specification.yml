@@ -11,7 +11,7 @@ info:
   x-api-id: an x-api-id
   x-summary: an x-summary
 servers:
-  - url: '/pdnd-interop-uservice-agreement-management/{{version}}'
+  - url: '/agreement-management/{{version}}'
     description: This service is agreement manager
 tags:
   - name: agreement

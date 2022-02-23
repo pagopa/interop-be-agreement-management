@@ -92,7 +92,7 @@ object Main extends App {
           case Some(s) => s
         }
         val persistence =
-          classicSystem.classicSystem.settings.config.getString("uservice-agreement-management.persistence")
+          classicSystem.classicSystem.settings.config.getString("agreement-management.persistence")
         if (persistence == "jdbc-journal") {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")

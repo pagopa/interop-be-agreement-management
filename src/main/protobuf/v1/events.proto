@@ -4,7 +4,7 @@ import "scalapb/scalapb.proto";
 import "v1/agreement.proto";
 
 option (scalapb.options) = {
-  package_name: "it.pagopa.pdnd.interop.uservice.agreementmanagement.model.persistence.serializer.v1"
+  package_name: "it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1"
   no_default_values_in_constructor : true
 };
 

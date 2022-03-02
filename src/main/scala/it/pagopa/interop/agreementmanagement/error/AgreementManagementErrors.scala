@@ -1,20 +1,18 @@
 package it.pagopa.interop.agreementmanagement.error
 
+import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreementState
 import it.pagopa.interop.commons.utils.errors.ComponentError
 
 object AgreementManagementErrors {
-  case object AddAgreementConflict   extends ComponentError("0001", "Agreement already existing")
-  case object AddAgreementBadRequest extends ComponentError("0002", "Error while creating agreement - bad request")
+  case class AgreementConflict(agreementId: String)
+      extends ComponentError("0001", s"Agreement $agreementId already existing")
 
-  case object GetAgreementNotFound   extends ComponentError("0003", "Agreement not found")
-  case object GetAgreementBadRequest extends ComponentError("0004", "Error while retrieving agreement - bad request")
+  case class AgreementNotFound(agreementId: String) extends ComponentError("0002", s"Agreement $agreementId not found")
 
-  case object ActivateAgreementNotFound extends ComponentError("0005", "Error while activating agreement - not found")
-  case object SuspendAgreementNotFound  extends ComponentError("0006", "Error while suspending agreement - not found")
+  case class AgreementNotInExpectedState(agreementId: String, state: PersistentAgreementState)
+      extends ComponentError("0003", s"Agreement $agreementId not in expected state (current state: ${state.toString})")
 
-  case object GetAgreementsBadRequest extends ComponentError("0007", "Error while getting agreements - bad request")
-  case object AgreementVerifiedAttributeNotFound
-      extends ComponentError("0008", "Error while getting updating agreement verified attributes - not found")
+  case class GenericError(operation: String, resourceId: String, error: String)
+      extends ComponentError("0004", s"Error while $operation $resourceId - $error")
 
-  case object UpdateAgreementBadRequest extends ComponentError("0009", "Error while updating agreement - bad request")
 }

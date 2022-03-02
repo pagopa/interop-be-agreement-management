@@ -24,8 +24,10 @@ import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 import scala.reflect.ClassTag
 import scala.util.{Success, Failure}
 import org.slf4j.Logger
+import java.util.UUID
 
 object ApiInvoker {
+  val CORRELATION_ID_HEADER: String                        = "X-Correlation-Id"
   def apply()(implicit system: ActorSystem): ApiInvoker =
     apply(DefaultFormats ++ Serializers.all)
   def apply(serializers: Iterable[Serializer[_]])(implicit system: ActorSystem): ApiInvoker =
@@ -247,13 +249,18 @@ class ApiInvoker(formats: Formats)(implicit system: ActorSystem) extends CustomC
     */
     def invoke[T](
       request: ApiRequest[T],
-      message: String, pf: (Logger, String) => PartialFunction[Throwable, Future[T]] = defaultInvocationRecovery)(implicit m: Manifest[T], logger: Logger): Future[T] =
-      execute[T](request)
+      message: String,
+      customHeaders: Map[String, String],
+      pf: (Logger, String) => PartialFunction[Throwable, Future[T]] = defaultInvocationRecovery)(implicit m: Manifest[T], logger: Logger): Future[T] = {
+        val correlationId = customHeaders.getOrElse(CORRELATION_ID_HEADER, UUID.randomUUID().toString)
+        val customH       = customHeaders + (CORRELATION_ID_HEADER -> correlationId)
+        execute[T](request.copy(headerParams = request.headerParams ++ customH))
         .map { response =>
           logger.info("{} - Status code: {}", message, response.code)
           response.content
         }
         .recoverWith { pf(logger, message) }
+     }
 
      private def defaultInvocationRecovery[T]: (Logger, String) => PartialFunction[Throwable, Future[T]] = (logger, message) => {
         case ex @ ApiError(code, apiMessage, response, throwable, _) =>

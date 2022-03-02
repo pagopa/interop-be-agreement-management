@@ -170,8 +170,7 @@ final case class AgreementApiServiceImpl(
 
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess =>
-        val out = PersistentAgreement.toAPI(statusReply.getValue)
-        suspendAgreement200(out)
+        suspendAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply) =>
         logger.error(s"Error while $operationLabel $agreementId - ${statusReply.getError.getMessage}")
         statusReply.getError match {

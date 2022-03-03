@@ -1,7 +1,14 @@
 package it.pagopa.interop.agreementmanagement.model.agreement
 
+import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors.AgreementNotInExpectedState
+import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreement.{
+  ACTIVABLE_STATES,
+  SUSPENDABLE_STATES,
+  DEACTIVABLE_STATES
+}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import it.pagopa.interop.agreementmanagement.model.{Agreement, AgreementSeed}
+import cats.implicits._
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -18,9 +25,35 @@ final case class PersistentAgreement(
   suspendedByProducer: Option[Boolean],
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime]
-)
+) {
+  def isActivable: Either[Throwable, Unit] = {
+    val error: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(id.toString, state))
+    error.unlessA(ACTIVABLE_STATES.contains(state))
+  }
+
+  def isSuspendable: Either[Throwable, Unit] = {
+    val error: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(id.toString, state))
+    error.unlessA(SUSPENDABLE_STATES.contains(state))
+  }
+
+  def isDeactivable: Either[Throwable, Unit] = {
+    val error: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(id.toString, state))
+    error.unlessA(DEACTIVABLE_STATES.contains(state))
+  }
+
+}
 
 object PersistentAgreement {
+
+  val ACTIVABLE_STATES: Set[PersistentAgreementState] =
+    Set(PersistentAgreementState.Pending, PersistentAgreementState.Suspended)
+
+  val SUSPENDABLE_STATES: Set[PersistentAgreementState] =
+    Set(PersistentAgreementState.Active, PersistentAgreementState.Suspended)
+
+  val DEACTIVABLE_STATES: Set[PersistentAgreementState] =
+    Set(PersistentAgreementState.Active, PersistentAgreementState.Suspended)
+
   def fromAPI(
     agreement: AgreementSeed,
     uuidSupplier: UUIDSupplier,

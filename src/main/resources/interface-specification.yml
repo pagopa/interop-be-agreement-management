@@ -179,7 +179,7 @@ paths:
         name: agreement_id
         in: path
         required: true
-    patch:
+    post:
       security:
         - bearerAuth: [ ]
       tags:
@@ -205,7 +205,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      description: patches the verified attribute of the agreement as specified in the operation payload.
+      description: updates the verified attribute of the agreement as specified in the operation payload.
       requestBody:
         content:
           application/json:

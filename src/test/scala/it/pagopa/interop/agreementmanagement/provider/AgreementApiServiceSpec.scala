@@ -4,26 +4,21 @@ import akka.actor
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.interop.agreementmanagement._
 import it.pagopa.interop.agreementmanagement.api.AgreementApi
 import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
-import it.pagopa.interop.agreementmanagement.model.{
-  Agreement,
-  AgreementSeed,
-  AgreementState,
-  ChangedBy,
-  VerifiedAttributeSeed
-}
+import it.pagopa.interop.agreementmanagement.model.persistence.AgreementPersistentBehavior
+import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.server.Controller
-import it.pagopa.interop.agreementmanagement.server.impl.Main
+import it.pagopa.interop.agreementmanagement.server.impl.Main.behaviorFactory
+import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
@@ -54,7 +49,7 @@ class AgreementApiServiceSpec
   implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-    val persistentEntity = Main.buildPersistentEntity(mockDateTimeSupplier)
+    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory)
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)

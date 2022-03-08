@@ -60,12 +60,12 @@ object Main extends App {
   Kamon.init()
 
   lazy val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
-    val i = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
+    val index = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
     AgreementPersistentBehavior(
       entityContext.shard,
       PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
       OffsetDateTimeSupplierImpl,
-      projectionTag(i)
+      projectionTag(index)
     )
   }
 

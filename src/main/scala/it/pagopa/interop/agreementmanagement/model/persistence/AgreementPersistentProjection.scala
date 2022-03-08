@@ -11,6 +11,7 @@ import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
 import akka.projection.slick.{SlickHandler, SlickProjection}
+import org.slf4j.LoggerFactory
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
@@ -37,11 +38,14 @@ final case class AgreementPersistentProjection(
 }
 
 class ProjectionHandler(tag: String) extends SlickHandler[EventEnvelope[Event]] {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
   override def process(envelope: EventEnvelope[Event]) = {
     envelope.event match {
       case _ =>
-        println(s"This is the envelope event payload > ${envelope.event}")
-        println(s"On tagged projection > $tag")
+        logger.debug("This is the envelope event payload > {}", envelope.event)
+        logger.debug("On tagged projection > {}", tag)
         DBIOAction.successful(Done)
     }
   }

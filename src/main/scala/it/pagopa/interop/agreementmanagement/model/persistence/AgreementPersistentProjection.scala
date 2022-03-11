@@ -2,8 +2,6 @@ package it.pagopa.interop.agreementmanagement.model.persistence
 
 import akka.Done
 import akka.actor.typed.ActorSystem
-import akka.cluster.sharding.typed.ShardingEnvelope
-import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
 import akka.projection.ProjectionId
@@ -16,11 +14,7 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
-final case class AgreementPersistentProjection(
-  system: ActorSystem[_],
-  entity: Entity[Command, ShardingEnvelope[Command]],
-  dbConfig: DatabaseConfig[JdbcProfile]
-) {
+class AgreementPersistentProjection(system: ActorSystem[_], dbConfig: DatabaseConfig[JdbcProfile]) {
 
   def sourceProvider(tag: String): SourceProvider[Offset, EventEnvelope[Event]] =
     EventSourcedProvider

@@ -243,6 +243,7 @@ class ApiInvoker(formats: Formats)(implicit system: ActorSystem) extends CustomC
     * @param request the API request to be performed
     * @param message the string message to be logged when this request occur
     * @param pf Partial Function to customize the recover behavior of this invocation. It has a default implementation doing some vanilla logging of the error.
+    * @param contextHeaders a map containing all the headers required for this context
     * @return a future containing the expected response.
     * <br/>
     * <code>pf</code> accepts two parameters, namely the current logger passed implicitly and the <code>message</code> as defined in the input parameter here.
@@ -250,10 +251,10 @@ class ApiInvoker(formats: Formats)(implicit system: ActorSystem) extends CustomC
     def invoke[T](
       request: ApiRequest[T],
       message: String,
-      customHeaders: Map[String, String],
+      contextHeaders: Map[String, String],
       pf: (Logger, String) => PartialFunction[Throwable, Future[T]] = defaultInvocationRecovery)(implicit m: Manifest[T], logger: Logger): Future[T] = {
-        val correlationId = customHeaders.getOrElse(CORRELATION_ID_HEADER, UUID.randomUUID().toString)
-        val customH       = customHeaders + (CORRELATION_ID_HEADER -> correlationId)
+        val correlationId = contextHeaders.get(CORRELATION_ID_HEADER).find(_.nonEmpty).getOrElse(UUID.randomUUID().toString)
+        val customH       = contextHeaders + (CORRELATION_ID_HEADER -> correlationId)
         execute[T](request.copy(headerParams = request.headerParams ++ customH))
         .map { response =>
           logger.info("{} - Status code: {}", message, response.code)

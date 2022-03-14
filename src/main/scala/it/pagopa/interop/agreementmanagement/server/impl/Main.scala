@@ -94,12 +94,13 @@ object Main extends App {
 
         val persistence =
           classicSystem.classicSystem.settings.config.getString("agreement-management.persistence")
-        if (persistence == "jdbc-journal") {
+        val enabled = false
+        if (persistence == "jdbc-journal" && enabled) {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
           val agreementPersistentProjection =
-            new AgreementPersistentProjection(context.system, agreementPersistenceEntity, dbConfig)
+            new AgreementPersistentProjection(context.system, dbConfig)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "agreement-projections",

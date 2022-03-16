@@ -21,7 +21,8 @@ import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImp
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration.{
   numberOfProjectionTags,
-  projectionTag
+  projectionTag,
+  projectionsEnabled
 }
 import it.pagopa.interop.agreementmanagement.model.persistence.{
   AgreementPersistentBehavior,
@@ -92,10 +93,7 @@ object Main extends App {
 
         val _ = sharding.init(agreementPersistenceEntity)
 
-        val persistence =
-          classicSystem.classicSystem.settings.config.getString("agreement-management.persistence")
-        val enabled = false
-        if (persistence == "jdbc-journal" && enabled) {
+        if (projectionsEnabled) {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 

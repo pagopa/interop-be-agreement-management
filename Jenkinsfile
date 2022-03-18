@@ -1,82 +1,81 @@
-//common helper for invoking SBT tasks
 void sbtAction(String task) {
-  echo "Executing ${task} on SBT"
-  sh '''
-      echo "realm=Sonatype Nexus Repository Manager\nhost=${NEXUS}\nuser=${NEXUS_CREDENTIALS_USR}\npassword=${NEXUS_CREDENTIALS_PSW}" > ~/.sbt/.credentials
-     '''
-  //using both interpolation and string concatenation to avoid Jenkins security warnings
-  sh 'sbt -Dsbt.log.noformat=true -Djavax.net.ssl.trustStore=./PDNDTrustStore -Djavax.net.ssl.trustStorePassword=${PDND_TRUST_STORE_PSW} generateCode "project root" ' + "${task}"
+    sh '''
+        echo "
+        realm=Sonatype Nexus Repository Manager
+        host=${NEXUS}
+        user=${NEXUS_CREDENTIALS_USR}
+        password=${NEXUS_CREDENTIALS_PSW}" > ~/.sbt/.credentials
+        '''
+    sh "sbt -Dsbt.log.noformat=true ${task}"
+} 
+
+void updateGithubCommit(String status) {
+  def token = '${GITHUB_PAT_PSW}'
+  sh """
+    curl --silent --show-error \
+      "https://api.github.com/repos/pagopa/${REPO_NAME}/statuses/${GIT_COMMIT}" \
+      --header "Content-Type: application/json" \
+      --header "Authorization: token ${token}" \
+      --request POST \
+      --data "{\\"state\\": \\"${status}\\",\\"context\\": \\"Jenkins Continuous Integration\\", \\"description\\": \\"Build ${BUILD_DISPLAY_NAME}\\"}" &> /dev/null
+  """
+}
+
+void ecrLogin() {
+  withCredentials([usernamePassword(credentialsId: 'ecr-rw', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+    sh '''
+    aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REPO
+    '''
+  }
 }
 
 pipeline {
-
-  agent none
-
+  agent { label 'sbt-template' }
+    environment {
+    NEXUS = "${env.NEXUS}"
+    DOCKER_REPO = "${env.DOCKER_REPO}"
+    MAVEN_REPO = "${env.MAVEN_REPO}"
+    GITHUB_PAT = credentials('github-pat')
+    NEXUS_CREDENTIALS = credentials('pdnd-nexus')
+    ECR_RW = credentials('ecr-rw')
+    // GIT_URL has the shape git@github.com:pagopa/REPO_NAME.git so we extract from it
+    REPO_NAME="""${sh(returnStdout:true, script: 'echo ${GIT_URL} | sed "s_git@github\\.com:pagopa/\\(.*\\)\\.git_\\1_g"')}""".trim()
+  }
   stages {
-    stage('Initializing build') {
-      agent { label 'sbt-template' }
-      environment {
-        PDND_TRUST_STORE_PSW = credentials('pdnd-interop-trust-psw')
-      }
+    stage('Test') {
       steps {
-        withCredentials([file(credentialsId: 'pdnd-interop-trust-cert', variable: 'pdnd_certificate')]) {
-          sh '''
-             cat \$pdnd_certificate > gateway.interop.pdnd.dev.cer
-             keytool -import -file gateway.interop.pdnd.dev.cer -alias pdnd-interop-gateway -keystore PDNDTrustStore -storepass ${PDND_TRUST_STORE_PSW} -noprompt
-             cp $JAVA_HOME/jre/lib/security/cacerts main_certs
-             keytool -importkeystore -srckeystore main_certs -destkeystore PDNDTrustStore -srcstorepass ${PDND_TRUST_STORE_PSW} -deststorepass ${PDND_TRUST_STORE_PSW}
-           '''
-          stash includes: "PDNDTrustStore", name: "pdnd_trust_store"
+        container('sbt-container') {
+          updateGithubCommit 'pending'
+          sbtAction 'test'
         }
       }
     }
-
-    stage('Test and Deploy µservice') {
-      agent { label 'sbt-template' }
-      environment {
-        NEXUS = "${env.NEXUS}"
-        NEXUS_CREDENTIALS = credentials('pdnd-nexus')
-        DOCKER_REPO = "${env.DOCKER_REPO}"
-        MAVEN_REPO = "${env.MAVEN_REPO}"
-        ECR_RW = credentials('ecr-rw')
-        PDND_TRUST_STORE_PSW = credentials('pdnd-interop-trust-psw')
+    stage('Publish Client on Nexus and Docker Image on ECR') {
+      when {
+        anyOf {
+          branch pattern: "[0-9]+\\.[0-9]+\\.x", comparator: "REGEXP"
+          buildingTag()
+        }
       }
       steps {
         container('sbt-container') {
-          unstash "pdnd_trust_store"
           script {
-            sh '''
-            export AWS_ACCESS_KEY_ID=$ECR_RW_USR
-            export AWS_SECRET_ACCESS_KEY=$ECR_RW_PSW
-            aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REPO
-            '''
-            sbtAction 'test docker:publish "project client" publish'
+            ecrLogin()
+            sbtAction 'docker:publish "project client" publish'
           }
         }
       }
     }
-
-    stage('Apply Kubernetes files') {
-      agent { label 'sbt-template' }
-      environment {
-        POSTGRES = credentials('postgres-db')
-        DOCKER_REPO = "${env.DOCKER_REPO}"
-        MAIN_AUDIENCE = "${env.MAIN_AUDIENCE}"
-        REPLICAS_NR = 1
-      }
-      steps {
-        container('sbt-container') {
-          withKubeConfig([credentialsId: 'kube-config']) {
-            sh '''
-              cd kubernetes
-              chmod u+x undeploy.sh
-              chmod u+x deploy.sh
-              ./undeploy.sh
-              ./deploy.sh
-            '''
-          }
-        }
-      }
+  }
+  post {
+    success { 
+      updateGithubCommit 'success'
+    }
+    failure { 
+      updateGithubCommit 'failure'
+    }
+    aborted { 
+      updateGithubCommit 'error'
     }
   }
 }

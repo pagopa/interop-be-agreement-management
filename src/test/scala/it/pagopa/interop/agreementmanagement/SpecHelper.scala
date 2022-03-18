@@ -62,10 +62,11 @@ trait SpecHelper {
     result
   }
 
-  def activateAgreement(
-    agreement: Agreement
-  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
+  def activateAgreement(agreement: Agreement, changedBy: Option[ChangedBy] = Some(ChangedBy.CONSUMER))(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Agreement] = for {
+    data <- Marshal(StateChangeDetails(changedBy = changedBy))
       .to[MessageEntity]
       .map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
@@ -73,10 +74,11 @@ trait SpecHelper {
       .to[Agreement]
   } yield activated
 
-  def suspendAgreement(
-    agreement: Agreement
-  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
-    data <- Marshal(StateChangeDetails(changedBy = Some(ChangedBy.CONSUMER)))
+  def suspendAgreement(agreement: Agreement, changedBy: Option[ChangedBy] = Some(ChangedBy.CONSUMER))(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Agreement] = for {
+    data <- Marshal(StateChangeDetails(changedBy = changedBy))
       .to[MessageEntity]
       .map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
@@ -134,14 +136,13 @@ trait SpecHelper {
       )
     )
 
-    val pending   = createAgreement(agreementSeed1)
-    val activated = createAgreement(agreementSeed2).flatMap(activateAgreement)
-    val suspended = createAgreement(agreementSeed3).flatMap(suspendAgreement)
-
     val complete = for {
-      _ <- pending
-      _ <- activated
-      _ <- suspended
+      _         <- createAgreement(agreementSeed1)
+      pending1  <- createAgreement(agreementSeed2)
+      _         <- activateAgreement(pending1)
+      pending2  <- createAgreement(agreementSeed3)
+      activated <- activateAgreement(pending2)
+      _         <- suspendAgreement(activated)
     } yield ()
 
     Await.result(complete, Duration.Inf)

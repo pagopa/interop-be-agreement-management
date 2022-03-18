@@ -4,20 +4,21 @@ import akka.actor
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.interop.agreementmanagement._
 import it.pagopa.interop.agreementmanagement.api.AgreementApi
 import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
-import it.pagopa.interop.agreementmanagement.model.{Agreement, AgreementSeed, AgreementState, VerifiedAttributeSeed}
+import it.pagopa.interop.agreementmanagement.model.persistence.AgreementPersistentBehavior
+import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.server.Controller
-import it.pagopa.interop.agreementmanagement.server.impl.Main
+import it.pagopa.interop.agreementmanagement.server.impl.Main.behaviorFactory
+import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
@@ -48,7 +49,7 @@ class AgreementApiServiceSpec
   implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-    val persistentEntity = Main.buildPersistentEntity(mockDateTimeSupplier)
+    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory)
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
@@ -155,6 +156,230 @@ class AgreementApiServiceSpec
       activatedAgreement.state shouldBe AgreementState.ACTIVE
     }
 
+    "suspend an agreement properly, changed by consumer" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse              <- createAgreement(agreementSeed)
+        activateAgreementResponse <- activateAgreement(bodyResponse)
+        suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
+      } yield suspendByConsumer
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.SUSPENDED
+      bodyResponse.suspendedByConsumer shouldBe Some(true)
+      bodyResponse.suspendedByProducer shouldBe None
+
+    }
+
+    "suspend an agreement properly, changed by producer" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse              <- createAgreement(agreementSeed)
+        activateAgreementResponse <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
+        suspendByProducer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.PRODUCER))
+      } yield suspendByProducer
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.SUSPENDED
+      bodyResponse.suspendedByConsumer shouldBe None
+      bodyResponse.suspendedByProducer shouldBe Some(true)
+
+    }
+
+    "suspend an agreement properly, changed by consumer and producer" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse              <- createAgreement(agreementSeed)
+        activateAgreementResponse <- activateAgreement(bodyResponse)
+        suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
+        suspendByProducer         <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PRODUCER))
+      } yield suspendByProducer
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.SUSPENDED
+      bodyResponse.suspendedByConsumer shouldBe Some(true)
+      bodyResponse.suspendedByProducer shouldBe Some(true)
+
+    }
+
+    "activate an agreement (suspended by consumer - activated by consumer)" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse <- createAgreement(agreementSeed)
+        activated    <- activateAgreement(bodyResponse, Some(ChangedBy.CONSUMER))
+        suspended    <- suspendAgreement(activated, Some(ChangedBy.CONSUMER))
+        reActivated  <- activateAgreement(suspended, Some(ChangedBy.CONSUMER))
+      } yield reActivated
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.ACTIVE
+      bodyResponse.suspendedByConsumer shouldBe Some(false)
+      bodyResponse.suspendedByProducer shouldBe None
+
+    }
+
+    "activate an agreement (suspended by producer - activated by producer)" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse <- createAgreement(agreementSeed)
+        activated    <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
+        suspended    <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
+        reActivated  <- activateAgreement(suspended, Some(ChangedBy.PRODUCER))
+      } yield reActivated
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.ACTIVE
+
+    }
+
+    "remain suspended (suspended by producer - activated by consumer)" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse          <- createAgreement(agreementSeed)
+        activated             <- activateAgreement(bodyResponse, Some(ChangedBy.CONSUMER))
+        suspendedByConsumer   <- suspendAgreement(activated, Some(ChangedBy.CONSUMER))
+        suspendedByProducer   <- suspendAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
+        reActivatedByConsumer <- activateAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
+      } yield reActivatedByConsumer
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.SUSPENDED
+      bodyResponse.suspendedByConsumer shouldBe Some(false)
+      bodyResponse.suspendedByProducer shouldBe Some(true)
+
+    }
+
+    "remain suspended (suspended by consumer - activated by producer)" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse          <- createAgreement(agreementSeed)
+        activated             <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
+        suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
+        suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
+        reActivatedByProducer <- activateAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
+      } yield reActivatedByProducer
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.SUSPENDED
+      bodyResponse.suspendedByConsumer shouldBe Some(true)
+      bodyResponse.suspendedByProducer shouldBe Some(false)
+
+    }
+
+    "activate an agreement properly (suspended by producer and consumer - activated by producer and consumer)" in {
+      //given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty
+      )
+      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+
+      val response: Future[Agreement] = for {
+        bodyResponse          <- createAgreement(agreementSeed)
+        activated             <- activateAgreement(bodyResponse)
+        suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
+        suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
+        reActivatedByProducer <- activateAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
+        reActivatedByConsumer <- activateAgreement(reActivatedByProducer, Some(ChangedBy.CONSUMER))
+      } yield reActivatedByConsumer
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+
+      bodyResponse.state shouldBe AgreementState.ACTIVE
+      bodyResponse.suspendedByConsumer shouldBe Some(false)
+      bodyResponse.suspendedByProducer shouldBe Some(false)
+
+    }
+
     "verify an attribute properly" in {
       //given an agreement with an attribute not yet verified
       val agreementId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
@@ -187,7 +412,7 @@ class AgreementApiServiceSpec
       val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
       //when the verification occurs
-      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$agreementId/attribute", HttpMethods.PATCH)
+      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$agreementId/attribute", HttpMethods.POST)
 
       //it should set its verified attribute to true and setup a verification date also.
       updatedAgreementResponse.status shouldBe StatusCodes.OK

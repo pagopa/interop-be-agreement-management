@@ -11,4 +11,7 @@ object ApplicationConfiguration {
 
   lazy val jwtAudience: Set[String] = config.getStringList("agreement-management.jwt.audience").asScala.toSet
 
+  lazy val numberOfProjectionTags: Int = config.getInt("akka.cluster.sharding.number-of-shards")
+  def projectionTag(index: Int)        = s"interop-be-agreement-management-persistence|$index"
+  lazy val projectionsEnabled: Boolean = config.getBoolean("akka.projection.enabled")
 }

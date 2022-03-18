@@ -18,7 +18,7 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization
-
+import it.pagopa.interop.commons.utils.{CORRELATION_ID_HEADER, admittableHeaders}
 import scala.collection.immutable
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 import scala.reflect.ClassTag
@@ -27,7 +27,6 @@ import org.slf4j.Logger
 import java.util.UUID
 
 object ApiInvoker {
-  val CORRELATION_ID_HEADER: String                        = "X-Correlation-Id"
   def apply()(implicit system: ActorSystem): ApiInvoker =
     apply(DefaultFormats ++ Serializers.all)
   def apply(serializers: Iterable[Serializer[_]])(implicit system: ActorSystem): ApiInvoker =
@@ -243,7 +242,7 @@ class ApiInvoker(formats: Formats)(implicit system: ActorSystem) extends CustomC
     * @param request the API request to be performed
     * @param message the string message to be logged when this request occur
     * @param pf Partial Function to customize the recover behavior of this invocation. It has a default implementation doing some vanilla logging of the error.
-    * @param contextHeaders a map containing all the headers required for this context
+    * @param contexts a sequence containing the contexts for this request invocation
     * @return a future containing the expected response.
     * <br/>
     * <code>pf</code> accepts two parameters, namely the current logger passed implicitly and the <code>message</code> as defined in the input parameter here.
@@ -251,10 +250,12 @@ class ApiInvoker(formats: Formats)(implicit system: ActorSystem) extends CustomC
     def invoke[T](
       request: ApiRequest[T],
       message: String,
-      contextHeaders: Map[String, String],
-      pf: (Logger, String) => PartialFunction[Throwable, Future[T]] = defaultInvocationRecovery)(implicit m: Manifest[T], logger: Logger): Future[T] = {
-        val correlationId = contextHeaders.get(CORRELATION_ID_HEADER).find(_.nonEmpty).getOrElse(UUID.randomUUID().toString)
-        val customH       = contextHeaders + (CORRELATION_ID_HEADER -> correlationId)
+      contexts: Seq[(String, String)],
+      pf: (Logger, String) => PartialFunction[Throwable, Future[T]] = defaultInvocationRecovery
+      )(implicit m: Manifest[T], logger: Logger): Future[T] = {
+        val contextHeaders = admittableHeaders(contexts)
+        val correlationId  = contextHeaders.get(CORRELATION_ID_HEADER).find(_.nonEmpty).getOrElse(UUID.randomUUID().toString)
+        val customH        = contextHeaders + (CORRELATION_ID_HEADER -> correlationId)
         execute[T](request.copy(headerParams = request.headerParams ++ customH))
         .map { response =>
           logger.info("{} - Status code: {}", message, response.code)

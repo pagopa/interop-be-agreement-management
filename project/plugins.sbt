@@ -12,7 +12,7 @@ addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.5.1")
 
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.16")
 
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.6")
 

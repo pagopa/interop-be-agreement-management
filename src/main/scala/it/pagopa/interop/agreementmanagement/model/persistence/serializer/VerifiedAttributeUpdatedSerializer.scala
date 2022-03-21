@@ -26,7 +26,7 @@ class VerifiedAttributeUpdatedSerializer extends SerializerWithStringManifest {
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case VerifiedAttributeUpdatedManifest :: `version1` :: Nil =>
       deserialize(v1.events.VerifiedAttributeUpdatedV1, bytes, manifest, currentVersion)
-    case _ =>
+    case _                                                     =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "
       )

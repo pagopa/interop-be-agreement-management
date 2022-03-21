@@ -19,7 +19,7 @@ import scala.concurrent.duration.Duration
 
 package object agreementmanagement extends MockFactory {
 
-  final lazy val url: String =
+  final lazy val url: String                  =
     s"http://localhost:18088/agreement-management/${buildinfo.BuildInfo.interfaceVersion}"
   final val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken("token")))
 

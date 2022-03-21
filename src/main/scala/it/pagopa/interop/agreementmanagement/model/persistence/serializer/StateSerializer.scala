@@ -26,7 +26,7 @@ class StateSerializer extends SerializerWithStringManifest {
     manifest.split('|').toList match {
       case StateManifest :: `version1` :: Nil =>
         deserialize(v1.state.StateV1, bytes, manifest, currentVersion)
-      case _ =>
+      case _                                  =>
         throw new NotSerializableException(
           s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "
         )

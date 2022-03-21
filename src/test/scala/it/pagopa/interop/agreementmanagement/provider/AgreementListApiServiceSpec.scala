@@ -40,8 +40,8 @@ class AgreementListApiServiceSpec
     with SpecConfiguration
     with SpecHelper {
 
-  var controller: Option[Controller]                 = None
-  var bindServer: Option[Future[Http.ServerBinding]] = None
+  var controller: Option[Controller]                                    = None
+  var bindServer: Option[Future[Http.ServerBinding]]                    = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
     SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
 

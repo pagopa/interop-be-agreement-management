@@ -197,7 +197,7 @@ object AgreementPersistentBehavior {
             )
             persistentAgreement.copy(state = newState, suspendedByProducer = Some(isSuspended), updatedAt = timestamp)
         }
-      case None => persistentAgreement.copy(state = state, updatedAt = timestamp)
+      case None            => persistentAgreement.copy(state = state, updatedAt = timestamp)
     }
 
   }

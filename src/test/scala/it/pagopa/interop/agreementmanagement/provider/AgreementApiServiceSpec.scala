@@ -35,8 +35,8 @@ class AgreementApiServiceSpec
     with SpecConfiguration
     with SpecHelper {
 
-  var controller: Option[Controller]                 = None
-  var bindServer: Option[Future[Http.ServerBinding]] = None
+  var controller: Option[Controller]                                    = None
+  var bindServer: Option[Future[Http.ServerBinding]]                    = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
     SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
 
@@ -129,7 +129,7 @@ class AgreementApiServiceSpec
     }
 
     "activate an agreement properly" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.fromString("d1040ff3-7fbc-4b29-9081-b1b53f72d386")
 
       val agreementSeed = AgreementSeed(
@@ -147,17 +147,17 @@ class AgreementApiServiceSpec
       bodyResponse.verifiedAttributes shouldBe empty
       bodyResponse.state shouldBe AgreementState.PENDING
 
-      //when the activation occurs
+      // when the activation occurs
       val activateAgreementResponse = activateAgreement(bodyResponse)
 
-      //the agreement should change its status to "active"
+      // the agreement should change its status to "active"
       val activatedAgreement = Await.result(activateAgreementResponse, Duration.Inf)
 
       activatedAgreement.state shouldBe AgreementState.ACTIVE
     }
 
     "suspend an agreement properly, changed by consumer" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -184,7 +184,7 @@ class AgreementApiServiceSpec
     }
 
     "suspend an agreement properly, changed by producer" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -211,7 +211,7 @@ class AgreementApiServiceSpec
     }
 
     "suspend an agreement properly, changed by consumer and producer" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -239,7 +239,7 @@ class AgreementApiServiceSpec
     }
 
     "activate an agreement (suspended by consumer - activated by consumer)" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -267,7 +267,7 @@ class AgreementApiServiceSpec
     }
 
     "activate an agreement (suspended by producer - activated by producer)" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -293,7 +293,7 @@ class AgreementApiServiceSpec
     }
 
     "remain suspended (suspended by producer - activated by consumer)" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -322,7 +322,7 @@ class AgreementApiServiceSpec
     }
 
     "remain suspended (suspended by consumer - activated by producer)" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -351,7 +351,7 @@ class AgreementApiServiceSpec
     }
 
     "activate an agreement properly (suspended by producer and consumer - activated by producer and consumer)" in {
-      //given a pending agreement
+      // given a pending agreement
       val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
@@ -381,7 +381,7 @@ class AgreementApiServiceSpec
     }
 
     "verify an attribute properly" in {
-      //given an agreement with an attribute not yet verified
+      // given an agreement with an attribute not yet verified
       val agreementId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
       val attributeId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9284"
 
@@ -411,10 +411,10 @@ class AgreementApiServiceSpec
         VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = Some(true), validityTimespan = None)
       val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
 
-      //when the verification occurs
+      // when the verification occurs
       val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$agreementId/attribute", HttpMethods.POST)
 
-      //it should set its verified attribute to true and setup a verification date also.
+      // it should set its verified attribute to true and setup a verification date also.
       updatedAgreementResponse.status shouldBe StatusCodes.OK
       val updatedAgreement = Await.result(Unmarshal(updatedAgreementResponse.entity).to[Agreement], Duration.Inf)
       val updatedAttribute = updatedAgreement.verifiedAttributes.find(p => p.id.toString == attributeId).get
@@ -425,7 +425,7 @@ class AgreementApiServiceSpec
   }
 
   "upgrade an agreement properly" in {
-    //given a pending agreement
+    // given a pending agreement
     val agreementId = UUID.randomUUID()
 
     val agreementSeed = AgreementSeed(
@@ -442,19 +442,19 @@ class AgreementApiServiceSpec
     bodyResponse.verifiedAttributes shouldBe empty
     bodyResponse.state shouldBe AgreementState.PENDING
 
-    //after its activation
+    // after its activation
     val _ = activateAgreement(bodyResponse).futureValue
 
-    //and its upgrade
+    // and its upgrade
     val updateAgreementId = UUID.randomUUID()
     (() => mockUUIDSupplier.get).expects().returning(updateAgreementId).once()
-    val _ = upgradeAgreement(agreementId.toString, agreementSeed).futureValue
+    val _                 = upgradeAgreement(agreementId.toString, agreementSeed).futureValue
 
-    //when we retrieve the original agreement. it should have its state changed to "inactive"
+    // when we retrieve the original agreement. it should have its state changed to "inactive"
     val inactiveAgreement = getAgreement(agreementId.toString).futureValue
     inactiveAgreement.state shouldBe AgreementState.INACTIVE
 
-    //when we retrieve the updated agreement, it should have its state changed to "active"
+    // when we retrieve the updated agreement, it should have its state changed to "active"
     val activeAgreement = getAgreement(updateAgreementId.toString).futureValue
     activeAgreement.state shouldBe AgreementState.ACTIVE
   }

@@ -4,12 +4,7 @@ import com.typesafe.sbt.packager.docker.Cmd
 ThisBuild / scalaVersion := "2.13.6"
 ThisBuild / organization := "it.pagopa"
 ThisBuild / organizationName := "Pagopa S.p.A."
-ThisBuild / libraryDependencies := Dependencies.Jars.`server`.map(m =>
-  if (scalaVersion.value.startsWith("3.0"))
-    m.withDottyCompat(scalaVersion.value)
-  else
-    m
-)
+ThisBuild / libraryDependencies := Dependencies.Jars.`server`
 
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
 ThisBuild / version := ComputeVersion.version
@@ -84,12 +79,7 @@ lazy val client = project
     name := "interop-be-agreement-management-client",
     scalacOptions := Seq(),
     scalafmtOnCompile := true,
-    libraryDependencies := Dependencies.Jars.client.map(m =>
-      if (scalaVersion.value.startsWith("3.0"))
-        m.withDottyCompat(scalaVersion.value)
-      else
-        m
-    ),
+    libraryDependencies := Dependencies.Jars.client,
     updateOptions := updateOptions.value.withGigahorse(false),
     Docker / publish := {},
     publishTo := {

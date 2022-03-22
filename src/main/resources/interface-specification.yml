@@ -21,6 +21,9 @@ tags:
       url: 'http://swagger.io'
 paths:
   '/agreement/{agreement_id}':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     get:
       tags:
         - agreement
@@ -55,6 +58,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/agreements/{agreementId}/upgrade':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: [ ]
@@ -98,6 +104,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   /agreements:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: [ ]
@@ -174,6 +183,8 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/agreements/{agreement_id}/attribute':
     parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
       - schema:
           type: string
         name: agreement_id
@@ -214,6 +225,9 @@ paths:
         description: the updated attribute
         required: true
   '/agreements/{agreement_id}/activate':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: [ ]
@@ -254,6 +268,9 @@ paths:
       tags:
         - agreement
   '/agreements/{agreement_id}/suspend':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: [ ]
@@ -295,6 +312,18 @@ paths:
         - agreement
       description: suspends the agreement by id
 components:
+  parameters:
+    CorrelationIdHeader:
+      in: header
+      name: X-Correlation-Id
+      required: true
+      schema:
+        type: string
+    IpAddress:
+      in: header
+      name: X-Forwarded-For
+      schema:
+        type: string
   schemas:
     StateChangeDetails:
       type: object

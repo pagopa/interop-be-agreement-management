@@ -149,8 +149,7 @@ object Dependencies {
       akka.httpJson4s % Compile,
       akka.slf4j      % Compile,
       json4s.jackson  % Compile,
-      json4s.ext      % Compile,
-      pagopa.commons  % Compile
+      json4s.ext      % Compile
     )
   }
 }

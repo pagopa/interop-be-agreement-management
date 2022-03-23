@@ -7,14 +7,14 @@ import it.pagopa.interop.agreementmanagement.model.{StateChangeDetails, Verified
 
 sealed trait Command
 
-case object Idle extends Command
+case object Idle                                                                                        extends Command
 final case class AddAgreement(agreement: PersistentAgreement, replyTo: ActorRef[StatusReply[PersistentAgreement]])
     extends Command
 final case class UpdateVerifiedAttribute(
   agreementId: String,
   verifiedAttribute: VerifiedAttributeSeed,
   replyTo: ActorRef[StatusReply[PersistentAgreement]]
-)                                                                                                       extends Command
+) extends Command
 final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply[PersistentAgreement]]) extends Command
 final case class ActivateAgreement(
   agreementId: String,

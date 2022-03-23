@@ -40,8 +40,8 @@ class AgreementListApiServiceSpec
     with SpecConfiguration
     with SpecHelper {
 
-  var controller: Option[Controller]                 = None
-  var bindServer: Option[Future[Http.ServerBinding]] = None
+  var controller: Option[Controller]                                    = None
+  var bindServer: Option[Future[Http.ServerBinding]]                    = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
     SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
 
@@ -81,11 +81,11 @@ class AgreementListApiServiceSpec
   }
 
   override def afterAll(): Unit = {
-    println("****** Cleaning resources ********")
+    // println("****** Cleaning resources ********")
     bindServer.foreach(_.foreach(_.unbind()))
     ActorTestKit.shutdown(httpSystem, 5.seconds)
     super.afterAll()
-    println("Resources cleaned")
+    // println("Resources cleaned")
   }
 
   "Listing agreements " must {

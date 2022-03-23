@@ -89,7 +89,7 @@ object protobufUtils {
     )
   }
 
-  def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1 =
+  def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1        =
     status match {
       case PersistentAgreementState.Pending   => AgreementStateV1.PENDING
       case PersistentAgreementState.Active    => AgreementStateV1.ACTIVE
@@ -98,10 +98,10 @@ object protobufUtils {
     }
   def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
     status match {
-      case AgreementStateV1.PENDING   => Success(PersistentAgreementState.Pending)
-      case AgreementStateV1.ACTIVE    => Success(PersistentAgreementState.Active)
-      case AgreementStateV1.SUSPENDED => Success(PersistentAgreementState.Suspended)
-      case AgreementStateV1.INACTIVE  => Success(PersistentAgreementState.Inactive)
+      case AgreementStateV1.PENDING             => Success(PersistentAgreementState.Pending)
+      case AgreementStateV1.ACTIVE              => Success(PersistentAgreementState.Active)
+      case AgreementStateV1.SUSPENDED           => Success(PersistentAgreementState.Suspended)
+      case AgreementStateV1.INACTIVE            => Success(PersistentAgreementState.Inactive)
       case AgreementStateV1.Unrecognized(value) =>
         Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }

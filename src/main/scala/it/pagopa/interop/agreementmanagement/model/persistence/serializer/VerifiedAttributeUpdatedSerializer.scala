@@ -16,17 +16,20 @@ class VerifiedAttributeUpdatedSerializer extends SerializerWithStringManifest {
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
-  final val VerifiedAttributeUpdatedManifest: String = classOf[VerifiedAttributeUpdated].getName
+  final val className: String = classOf[VerifiedAttributeUpdated].getName
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case event: VerifiedAttributeUpdated =>
-      serialize(event, VerifiedAttributeUpdatedManifest, currentVersion)
+    case event: VerifiedAttributeUpdated => serialize(event, className, currentVersion)
+    case _                               =>
+      throw new NotSerializableException(
+        s"Unable to serialize object of type [[${o.getClass.getName}]] for manifest [[$className]] and version [[$currentVersion]]"
+      )
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
-    case VerifiedAttributeUpdatedManifest :: `version1` :: Nil =>
+    case `className` :: `version1` :: Nil =>
       deserialize(v1.events.VerifiedAttributeUpdatedV1, bytes, manifest, currentVersion)
-    case _ =>
+    case _                                =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "
       )

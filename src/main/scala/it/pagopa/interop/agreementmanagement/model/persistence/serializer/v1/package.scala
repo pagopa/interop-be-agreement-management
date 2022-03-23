@@ -18,7 +18,7 @@ import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.sta
 
 package object v1 {
 
-  //type alias for traverse type inference
+  // type alias for traverse type inference
   type ThrowableOr[A] = Either[Throwable, A]
 
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =

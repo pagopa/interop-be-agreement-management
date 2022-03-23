@@ -53,14 +53,8 @@ trait SpecHelper {
     agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
-  def getAgreement(id: String)(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = {
-
-    val response = makeRequest(emptyData, s"agreement/$id", HttpMethods.GET)
-    val result = for {
-      agreement <- Unmarshal(response).to[Agreement]
-    } yield agreement
-    result
-  }
+  def getAgreement(id: String)(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
+    Unmarshal(makeRequest(emptyData, s"agreement/$id", HttpMethods.GET)).to[Agreement]
 
   def activateAgreement(agreement: Agreement, changedBy: Option[ChangedBy] = Some(ChangedBy.CONSUMER))(implicit
     ec: ExecutionContext,

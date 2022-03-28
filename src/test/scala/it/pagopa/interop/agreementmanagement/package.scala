@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -14,6 +14,7 @@ import it.pagopa.interop.agreementmanagement.model.{Agreement, AgreementSeed, St
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import org.scalamock.scalatest.MockFactory
 
+import java.net.InetAddress
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -21,7 +22,12 @@ package object agreementmanagement extends MockFactory {
 
   final lazy val url: String                  =
     s"http://localhost:18088/agreement-management/${buildinfo.BuildInfo.interfaceVersion}"
-  final val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken("token")))
+  final val requestHeaders: Seq[HttpHeader] =
+    Seq(
+      headers.Authorization(OAuth2BearerToken("token")),
+      headers.RawHeader("X-Correlation-Id", "test-id"),
+      headers.`X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
+    )
 
   val mockUUIDSupplier: UUIDSupplier               = mock[UUIDSupplier]
   val mockDateTimeSupplier: OffsetDateTimeSupplier = mock[OffsetDateTimeSupplier]
@@ -52,7 +58,7 @@ package object agreementmanagement extends MockFactory {
           uri = s"$url/$path",
           method = verb,
           entity = HttpEntity(ContentTypes.`application/json`, data),
-          headers = authorization
+          headers = requestHeaders
         )
       ),
       Duration.Inf

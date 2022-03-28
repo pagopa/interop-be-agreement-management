@@ -13,7 +13,7 @@ final case class PersistentVerifiedAttribute(
 )
 
 object PersistentVerifiedAttribute {
-  def fromAPI(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute =
+  def fromAPI(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute    =
     PersistentVerifiedAttribute(
       id = attribute.id,
       verified = attribute.verified,

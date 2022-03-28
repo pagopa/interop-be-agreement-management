@@ -35,11 +35,6 @@ object Dependencies {
     lazy val testkit          = namespace            %% "akka-actor-testkit-typed"     % akkaVersion
   }
 
-  private[this] object awssdk {
-    lazy val namespace = "software.amazon.awssdk"
-    lazy val s3        = namespace % "s3" % awsSdkVersion
-  }
-
   lazy val Protobuf = "protobuf"
 
   private[this] object scalaprotobuf {
@@ -129,7 +124,6 @@ object Dependencies {
       akka.s3Snapshot             % Compile,
       akka.slf4j                  % Compile,
       akka.stream                 % Compile,
-      awssdk.s3                   % Compile,
       cats.core                   % Compile,
       kamon.bundle                % Compile,
       kamon.prometheus            % Compile,

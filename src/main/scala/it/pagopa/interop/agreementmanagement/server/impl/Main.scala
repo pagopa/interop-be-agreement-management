@@ -63,7 +63,7 @@ object Main extends App {
 
   val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   val queueWriter: QueueWriter     =
-    QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.purposeToJson)(ec)
+    QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.agreementToJson)(ec)
 
   Kamon.init()
 

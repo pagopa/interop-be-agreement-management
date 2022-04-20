@@ -7,7 +7,7 @@ import it.pagopa.interop.commons.utils.SprayCommonFormats._
 import it.pagopa.interop.commons.queue.message.ProjectableEvent
 object AgreementEventsSerde {
 
-  val purposeToJson: PartialFunction[ProjectableEvent, JsValue] = {
+  val agreementToJson: PartialFunction[ProjectableEvent, JsValue] = {
     case x @ VerifiedAttributeUpdated(_) => x.toJson
     case x @ AgreementAdded(_)           => x.toJson
     case x @ AgreementActivated(_)       => x.toJson
@@ -15,7 +15,7 @@ object AgreementEventsSerde {
     case x @ AgreementDeactivated(_)     => x.toJson
   }
 
-  val jsonToPurpose: PartialFunction[String, JsValue => ProjectableEvent] = {
+  val jsonToAgreement: PartialFunction[String, JsValue => ProjectableEvent] = {
     case `verifiedAttributeUpdated` => _.convertTo[VerifiedAttributeUpdated]
     case `agreementAdded`           => _.convertTo[AgreementAdded]
     case `agreementActivated`       => _.convertTo[AgreementActivated]

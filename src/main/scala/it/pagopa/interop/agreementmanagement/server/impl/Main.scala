@@ -43,6 +43,10 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.Try
+import scala.concurrent.ExecutionContext
+import java.util.concurrent.Executors
+import it.pagopa.interop.commons.queue.QueueWriter
+import it.pagopa.interop.agreementmanagement.model.persistence.AgreementEventsSerde
 
 object Main extends App {
 
@@ -56,6 +60,10 @@ object Main extends App {
   } yield jwtValidator
 
   val jwtValidator = dependenciesLoaded.get // THIS IS THE END OF THE WORLD. Exceptions are welcomed here.
+
+  val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  val queueWriter: QueueWriter     =
+    QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.purposeToJson)(ec)
 
   Kamon.init()
 
@@ -97,7 +105,7 @@ object Main extends App {
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
           val agreementPersistentProjection =
-            new AgreementPersistentProjection(context.system, dbConfig)
+            new AgreementPersistentProjection(dbConfig, queueWriter, ec)(context.system)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "agreement-projections",

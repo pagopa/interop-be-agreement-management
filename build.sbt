@@ -76,7 +76,7 @@ lazy val generated = project
 lazy val models = project
   .in(file("models"))
   .settings(
-    name              := "interop-be-purpose-management-models",
+    name              := "interop-be-agreement-management-models",
     scalacOptions     := Seq(),
     scalafmtOnCompile := true,
     Docker / publish  := {},

@@ -7,11 +7,12 @@ object ApplicationConfiguration {
 
   val serverPort: Int = config.getInt("agreement-management.port")
 
-  val jwtAudience: Set[String] = config.getString("agreement-management.jwt.audience").split(",").toSet
+  val jwtAudience: Set[String] =
+    config.getString("agreement-management.jwt.audience").split(",").toSet.filter(_.nonEmpty)
 
   val numberOfProjectionTags: Int = config.getInt("akka.cluster.sharding.number-of-shards")
   def projectionTag(index: Int)   = s"interop-be-agreement-management-persistence|$index"
   val projectionsEnabled: Boolean = config.getBoolean("akka.projection.enabled")
 
-  require(jwtAudience.nonEmpty, "Cannot have an empty audience")
+  require(jwtAudience.nonEmpty, "Audience cannot be empty")
 }

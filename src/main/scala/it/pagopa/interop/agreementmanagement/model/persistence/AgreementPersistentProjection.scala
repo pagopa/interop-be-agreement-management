@@ -18,6 +18,8 @@ import scala.concurrent.ExecutionContext
 import it.pagopa.interop.commons.queue.message.Message
 import java.util.UUID
 import it.pagopa.interop.commons.queue.message.ProjectableEvent
+import org.slf4j.LoggerFactory
+import scala.util.{Failure, Success}
 
 class AgreementPersistentProjection(
   dbConfig: DatabaseConfig[JdbcProfile],
@@ -41,7 +43,16 @@ class AgreementPersistentProjection(
 class ProjectionHandler(queueWriter: QueueWriter)(implicit ec: ExecutionContext)
     extends SlickHandler[EventEnvelope[Event]] {
 
-  def innerSend(message: Message): DBIO[Done] = DBIOAction.from(queueWriter.send(message).as(Done))
+  private val logger = LoggerFactory.getLogger(getClass)
+
+  def innerSend(message: Message): DBIO[Done] = DBIOAction.from {
+    val future = queueWriter.send(message)
+    future.onComplete {
+      case Failure(e) => logger.error(e.getMessage())
+      case Success(_) => logger.debug(s"Wrote on queue: $message")
+    }
+    future.as(Done)
+  }
 
   val message: EventEnvelope[Event] => ((String, ProjectableEvent) => Message) = envelope => { case (kind, event) =>
     Message(UUID.randomUUID(), envelope.persistenceId, envelope.sequenceNr, envelope.timestamp, kind, event)

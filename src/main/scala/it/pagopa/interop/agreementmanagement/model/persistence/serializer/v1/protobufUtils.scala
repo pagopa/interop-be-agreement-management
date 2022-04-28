@@ -2,11 +2,7 @@ package it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1
 
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
-import it.pagopa.interop.agreementmanagement.model.agreement.{
-  PersistentAgreement,
-  PersistentAgreementState,
-  PersistentVerifiedAttribute
-}
+import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement.{
   AgreementStateV1,
   AgreementV1,
@@ -91,17 +87,17 @@ object protobufUtils {
 
   def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1        =
     status match {
-      case PersistentAgreementState.Pending   => AgreementStateV1.PENDING
-      case PersistentAgreementState.Active    => AgreementStateV1.ACTIVE
-      case PersistentAgreementState.Suspended => AgreementStateV1.SUSPENDED
-      case PersistentAgreementState.Inactive  => AgreementStateV1.INACTIVE
+      case Pending   => AgreementStateV1.PENDING
+      case Active    => AgreementStateV1.ACTIVE
+      case Suspended => AgreementStateV1.SUSPENDED
+      case Inactive  => AgreementStateV1.INACTIVE
     }
   def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
     status match {
-      case AgreementStateV1.PENDING             => Success(PersistentAgreementState.Pending)
-      case AgreementStateV1.ACTIVE              => Success(PersistentAgreementState.Active)
-      case AgreementStateV1.SUSPENDED           => Success(PersistentAgreementState.Suspended)
-      case AgreementStateV1.INACTIVE            => Success(PersistentAgreementState.Inactive)
+      case AgreementStateV1.PENDING             => Success(Pending)
+      case AgreementStateV1.ACTIVE              => Success(Active)
+      case AgreementStateV1.SUSPENDED           => Success(Suspended)
+      case AgreementStateV1.INACTIVE            => Success(Inactive)
       case AgreementStateV1.Unrecognized(value) =>
         Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }

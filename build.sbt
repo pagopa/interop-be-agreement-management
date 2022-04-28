@@ -70,7 +70,7 @@ ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val generated = project
   .in(file("generated"))
-  .settings(scalacOptions := Seq(), scalafmtOnCompile := true, skip in publish := true)
+  .settings(scalacOptions := Seq(), scalafmtOnCompile := true, publish / skip := true)
   .setupBuildInfo
 
 lazy val models = project
@@ -124,7 +124,7 @@ lazy val root = (project in file("."))
     Docker / dockerExposedPorts := Seq(8080),
     Docker / maintainer         := "https://pagopa.it",
     dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}"),
-    skip in publish             := true
+    publish / skip              := true
   )
   .aggregate(client, models)
   .dependsOn(generated, models)

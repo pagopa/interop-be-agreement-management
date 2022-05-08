@@ -88,7 +88,7 @@ trait Dependencies {
   def agreementApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit
     actorSystem: ActorSystem[_],
     ec: ExecutionContext
-  ) = new AgreementApi(
+  ): AgreementApi = new AgreementApi(
     AgreementApiServiceImpl(actorSystem, sharding, agreementPersistenceEntity, uuidSupplier, dateTimeSupplier),
     AgreementApiMarshallerImpl,
     jwtReader.OAuth2JWTValidatorAsContexts

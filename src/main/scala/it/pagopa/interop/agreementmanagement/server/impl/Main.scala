@@ -48,6 +48,8 @@ object Main extends App with Dependencies {
       )
       cluster.subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
+      if (ApplicationConfiguration.projectionsEnabled) initProjections()
+
       logger.info(renderBuildInfo(BuildInfo))
       logger.info(s"Started cluster at ${cluster.selfMember.address}")
 

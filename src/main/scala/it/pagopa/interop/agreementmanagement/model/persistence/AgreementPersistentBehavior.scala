@@ -134,7 +134,7 @@ object AgreementPersistentBehavior {
     dateTimeSupplier: OffsetDateTimeSupplier,
     projectionTag: String
   ): Behavior[Command] = Behaviors.setup { context =>
-    context.log.info(s"Starting Agreement Shard ${persistenceId.id}")
+    context.log.debug(s"Starting Agreement Shard ${persistenceId.id}")
     val numberOfEvents =
       context.system.settings.config
         .getInt("agreement-management.number-of-events-before-snapshot")

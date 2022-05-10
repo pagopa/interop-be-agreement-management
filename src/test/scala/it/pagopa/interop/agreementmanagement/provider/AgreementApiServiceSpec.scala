@@ -17,7 +17,7 @@ import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImp
 import it.pagopa.interop.agreementmanagement.model.persistence.AgreementPersistentBehavior
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.server.Controller
-import it.pagopa.interop.agreementmanagement.server.impl.Main.behaviorFactory
+import it.pagopa.interop.agreementmanagement.server.impl.Dependencies
 import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -31,6 +31,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
   */
 class AgreementApiServiceSpec
     extends ScalaTestWithActorTestKit(SpecConfiguration.config)
+    with Dependencies
     with AnyWordSpecLike
     with SpecConfiguration
     with SpecHelper {

@@ -15,6 +15,7 @@ import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
+import java.time.Duration
 
 object AgreementPersistentBehavior {
 
@@ -23,9 +24,9 @@ object AgreementPersistentBehavior {
     context: ActorContext[Command],
     dateTimeSupplier: OffsetDateTimeSupplier
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
-    val idleTimeout =
-      context.system.settings.config.getDuration("agreement-management.idle-timeout")
+    val idleTimeout: Duration = context.system.settings.config.getDuration("agreement-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
+
     command match {
       case AddAgreement(newAgreement, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] = state.agreements
@@ -39,18 +40,16 @@ object AgreementPersistentBehavior {
       case UpdateVerifiedAttribute(agreementId, updateVerifiedAttribute, replyTo) =>
         val attributeId = updateVerifiedAttribute.id.toString
 
-        val agreementUpdated: Either[AgreementNotFound, PersistentAgreement] =
-          for {
-            agreement <- state
-              .getAgreementContainingVerifiedAttribute(agreementId, attributeId)
-              .toRight(AgreementNotFound(agreementId))
-          } yield state.updateAgreementContent(agreement, PersistentVerifiedAttribute.fromAPI(updateVerifiedAttribute))
+        val agreementUpdated: Either[AgreementNotFound, PersistentAgreement] = for {
+          agreement <- state
+            .getAgreementContainingVerifiedAttribute(agreementId, attributeId)
+            .toRight(AgreementNotFound(agreementId))
+        } yield state.updateAgreementContent(agreement, PersistentVerifiedAttribute.fromAPI(updateVerifiedAttribute))
 
-        agreementUpdated
-          .fold(
-            handleFailure[VerifiedAttributeUpdated](_)(replyTo),
-            persistStateAndReply(_, VerifiedAttributeUpdated)(replyTo)
-          )
+        agreementUpdated.fold(
+          handleFailure[VerifiedAttributeUpdated](_)(replyTo),
+          persistStateAndReply(_, VerifiedAttributeUpdated)(replyTo)
+        )
 
       case GetAgreement(agreementId, replyTo) =>
         val agreement: Either[AgreementNotFound, PersistentAgreement] =
@@ -103,7 +102,7 @@ object AgreementPersistentBehavior {
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
-        context.log.info(s"Passivate shard: ${shard.path.name}")
+        context.log.debug(s"Passivated shard: ${shard.path.name}")
         Effect.none[Event, State]
     }
   }
@@ -115,9 +114,8 @@ object AgreementPersistentBehavior {
 
   def persistStateAndReply[T](purpose: PersistentAgreement, eventBuilder: PersistentAgreement => T)(
     replyTo: ActorRef[StatusReply[PersistentAgreement]]
-  ): EffectBuilder[T, State] = Effect
-    .persist(eventBuilder(purpose))
-    .thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
+  ): EffectBuilder[T, State] =
+    Effect.persist(eventBuilder(purpose)).thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
@@ -128,29 +126,26 @@ object AgreementPersistentBehavior {
       case VerifiedAttributeUpdated(agreement) => state.updateAgreement(agreement)
     }
 
-  val TypeKey: EntityTypeKey[Command] =
-    EntityTypeKey[Command]("interop-be-agreement-management-persistence")
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-agreement-management-persistence")
 
   def apply(
     shard: ActorRef[ClusterSharding.ShardCommand],
     persistenceId: PersistenceId,
     dateTimeSupplier: OffsetDateTimeSupplier,
     projectionTag: String
-  ): Behavior[Command] = {
-    Behaviors.setup { context =>
-      context.log.info(s"Starting Agreement Shard ${persistenceId.id}")
-      val numberOfEvents =
-        context.system.settings.config
-          .getInt("agreement-management.number-of-events-before-snapshot")
-      EventSourcedBehavior[Command, Event, State](
-        persistenceId = persistenceId,
-        emptyState = State.empty,
-        commandHandler = commandHandler(shard, context, dateTimeSupplier),
-        eventHandler = eventHandler
-      ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
-        .withTagger(_ => Set(projectionTag))
-        .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
-    }
+  ): Behavior[Command] = Behaviors.setup { context =>
+    context.log.debug(s"Starting Agreement Shard ${persistenceId.id}")
+    val numberOfEvents =
+      context.system.settings.config
+        .getInt("agreement-management.number-of-events-before-snapshot")
+    EventSourcedBehavior[Command, Event, State](
+      persistenceId = persistenceId,
+      emptyState = State.empty,
+      commandHandler = commandHandler(shard, context, dateTimeSupplier),
+      eventHandler = eventHandler
+    ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
+      .withTagger(_ => Set(projectionTag))
+      .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
   }
 
   private def updateAgreementState(
@@ -188,12 +183,10 @@ object AgreementPersistentBehavior {
     suspendedByProducer: Option[Boolean],
     suspendedByConsumer: Option[Boolean],
     newState: PersistentAgreementState
-  ): PersistentAgreementState = {
-    (newState, suspendedByProducer, suspendedByConsumer) match {
-      case (Active, Some(true), _) => Suspended
-      case (Active, _, Some(true)) => Suspended
-      case _                       => newState
-    }
+  ): PersistentAgreementState = (newState, suspendedByProducer, suspendedByConsumer) match {
+    case (Active, Some(true), _) => Suspended
+    case (Active, _, Some(true)) => Suspended
+    case _                       => newState
   }
 
   def getModifiedAgreement(

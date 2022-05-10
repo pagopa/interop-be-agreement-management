@@ -26,7 +26,6 @@ object Adapters {
     def isDeactivable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
       .withRight[Unit]
       .unlessA(DEACTIVABLE_STATES.contains(p.state))
-
   }
 
   implicit class PersistentAgreementObjectWrapper(private val p: PersistentAgreement.type) extends AnyVal {
@@ -35,55 +34,51 @@ object Adapters {
       agreement: AgreementSeed,
       uuidSupplier: UUIDSupplier,
       dateTimeSupplier: OffsetDateTimeSupplier
-    ): PersistentAgreement =
-      PersistentAgreement(
-        id = uuidSupplier.get,
-        eserviceId = agreement.eserviceId,
-        descriptorId = agreement.descriptorId,
-        producerId = agreement.producerId,
-        consumerId = agreement.consumerId,
-        state = Pending,
-        verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
-        suspendedByConsumer = None,
-        suspendedByProducer = None,
-        createdAt = dateTimeSupplier.get,
-        updatedAt = None
-      )
+    ): PersistentAgreement = PersistentAgreement(
+      id = uuidSupplier.get,
+      eserviceId = agreement.eserviceId,
+      descriptorId = agreement.descriptorId,
+      producerId = agreement.producerId,
+      consumerId = agreement.consumerId,
+      state = Pending,
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      suspendedByConsumer = None,
+      suspendedByProducer = None,
+      createdAt = dateTimeSupplier.get,
+      updatedAt = None
+    )
 
     def fromAPIWithActiveState(
       agreement: AgreementSeed,
       uuidSupplier: UUIDSupplier,
       dateTimeSupplier: OffsetDateTimeSupplier
-    ): PersistentAgreement =
-      PersistentAgreement(
-        id = uuidSupplier.get,
-        eserviceId = agreement.eserviceId,
-        descriptorId = agreement.descriptorId,
-        producerId = agreement.producerId,
-        consumerId = agreement.consumerId,
-        state = Active,
-        verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
-        suspendedByConsumer = None,
-        suspendedByProducer = None,
-        createdAt = dateTimeSupplier.get,
-        updatedAt = None
-      )
+    ): PersistentAgreement = PersistentAgreement(
+      id = uuidSupplier.get,
+      eserviceId = agreement.eserviceId,
+      descriptorId = agreement.descriptorId,
+      producerId = agreement.producerId,
+      consumerId = agreement.consumerId,
+      state = Active,
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      suspendedByConsumer = None,
+      suspendedByProducer = None,
+      createdAt = dateTimeSupplier.get,
+      updatedAt = None
+    )
 
-    def toAPI(persistentAgreement: PersistentAgreement): Agreement = {
-      Agreement(
-        id = persistentAgreement.id,
-        eserviceId = persistentAgreement.eserviceId,
-        descriptorId = persistentAgreement.descriptorId,
-        producerId = persistentAgreement.producerId,
-        consumerId = persistentAgreement.consumerId,
-        state = persistentAgreement.state.toApi,
-        verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
-        suspendedByConsumer = persistentAgreement.suspendedByConsumer,
-        suspendedByProducer = persistentAgreement.suspendedByProducer,
-        createdAt = persistentAgreement.createdAt,
-        updatedAt = persistentAgreement.updatedAt
-      )
-    }
+    def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
+      id = persistentAgreement.id,
+      eserviceId = persistentAgreement.eserviceId,
+      descriptorId = persistentAgreement.descriptorId,
+      producerId = persistentAgreement.producerId,
+      consumerId = persistentAgreement.consumerId,
+      state = persistentAgreement.state.toApi,
+      verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
+      suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+      suspendedByProducer = persistentAgreement.suspendedByProducer,
+      createdAt = persistentAgreement.createdAt,
+      updatedAt = persistentAgreement.updatedAt
+    )
   }
 
   implicit class PersistentAgreementStateWrapper(private val p: PersistentAgreementState) extends AnyVal {
@@ -115,13 +110,12 @@ object Adapters {
       },
       validityTimespan = attribute.validityTimespan
     )
-    def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute =
-      VerifiedAttribute(
-        id = persistedAttribute.id,
-        verified = persistedAttribute.verified,
-        verificationDate = persistedAttribute.verificationDate,
-        validityTimespan = persistedAttribute.validityTimespan
-      )
+    def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute = VerifiedAttribute(
+      id = persistedAttribute.id,
+      verified = persistedAttribute.verified,
+      verificationDate = persistedAttribute.verificationDate,
+      validityTimespan = persistedAttribute.validityTimespan
+    )
   }
 
 }

@@ -94,6 +94,10 @@ object Dependencies {
     lazy val core      = namespace %% "cats-core" % catsVersion
   }
 
+  private[this] object mongodb {
+    lazy val scalaDriver = "org.mongodb.scala" %% "mongo-scala-driver" % mongodbScalaDriverVersion
+  }
+
   private[this] object pagopa {
     lazy val namespace    = "it.pagopa"
     lazy val commons      = namespace %% "interop-commons-utils"         % commonsVersion
@@ -134,6 +138,7 @@ object Dependencies {
       kamon.bundle                % Compile,
       kamon.prometheus            % Compile,
       logback.classic             % Compile,
+      mongodb.scalaDriver         % Compile,
       mustache.mustache           % Compile,
       pagopa.commons              % Compile,
       pagopa.commonsJWT           % Compile,

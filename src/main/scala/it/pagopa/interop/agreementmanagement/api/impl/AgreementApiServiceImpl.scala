@@ -22,6 +22,9 @@ import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupp
 import scala.concurrent._
 import scala.util.{Failure, Success}
 import akka.util.Timeout
+import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, authorizeInterop, hasPermissions}
+import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.OperationForbidden
+
 import scala.concurrent.duration._
 
 final case class AgreementApiServiceImpl(
@@ -41,6 +44,13 @@ final case class AgreementApiServiceImpl(
 
   @inline private def getShard(id: String): String = Math.abs(id.hashCode % settings.numberOfShards).toString
 
+  private[this] def authorize(roles: String*)(
+    route: => Route
+  )(implicit contexts: Seq[(String, String)], toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route =
+    authorizeInterop(hasPermissions(roles: _*), problemOf(StatusCodes.Forbidden, OperationForbidden)) {
+      route
+    }
+
   /** Code: 200, Message: Agreement created, DataType: Agreement
     * Code: 405, Message: Invalid input, DataType: Problem
     */
@@ -48,7 +58,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Adding an agreement"
 
@@ -126,7 +136,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
     val operationLabel: String = "Activating agreement"
 
     logger.info(s"$operationLabel $agreementId")
@@ -159,7 +169,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Suspending agreement"
 
@@ -278,7 +288,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Updating agreement"
 
@@ -313,7 +323,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Updating agreement"
 

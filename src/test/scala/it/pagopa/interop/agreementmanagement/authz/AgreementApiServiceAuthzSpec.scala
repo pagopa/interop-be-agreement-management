@@ -2,15 +2,14 @@ package it.pagopa.interop.agreementmanagement.authz
 
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.Entity
+import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiMarshallerImpl._
 import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiServiceImpl
 import it.pagopa.interop.agreementmanagement.model.persistence.Command
+import it.pagopa.interop.agreementmanagement.model.{AgreementSeed, StateChangeDetails, VerifiedAttributeSeed}
 import it.pagopa.interop.agreementmanagement.server.impl.Main.agreementPersistenceEntity
 import it.pagopa.interop.agreementmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
-import it.pagopa.interop.commons.utils.USER_ROLES
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import org.scalatest.wordspec.AnyWordSpecLike
-import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiMarshallerImpl._
-import it.pagopa.interop.agreementmanagement.model.{AgreementSeed, StateChangeDetails, VerifiedAttributeSeed}
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -46,135 +45,49 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
         verifiedAttributes = Seq.empty
       )
 
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(contexts.toMap.get(USER_ROLES).toString, endpoint.asRequest, service.addAgreement(fakeSeed))
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(invalidCtx.toMap.get(USER_ROLES).toString, endpoint.asRequest, service.addAgreement(fakeSeed))
-      })
+      validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.addAgreement(fakeSeed) })
     }
 
     "accept authorized roles for getAgreement" in {
       val endpoint = AuthorizedRoutes.endpoints("getAgreement")
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(contexts.toMap.get(USER_ROLES).toString, endpoint.asRequest, service.getAgreement("fake"))
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(invalidCtx.toMap.get(USER_ROLES).toString, endpoint.asRequest, service.getAgreement("fake"))
-      })
+      validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.getAgreement("fake") })
     }
 
     "accept authorized roles for activateAgreement" in {
       val endpoint = AuthorizedRoutes.endpoints("activateAgreement")
 
-      val fakeStateDetails = StateChangeDetails()
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.activateAgreement("fake", StateChangeDetails()) }
+      )
 
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.activateAgreement("fake", fakeStateDetails)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.activateAgreement("fake", fakeStateDetails)
-        )
-      })
     }
 
     "accept authorized roles for suspendAgreement" in {
       val endpoint = AuthorizedRoutes.endpoints("suspendAgreement")
 
-      val fakeStateDetails = StateChangeDetails()
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.suspendAgreement("fake", fakeStateDetails)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.suspendAgreement("fake", fakeStateDetails)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.suspendAgreement("fake", StateChangeDetails()) }
+      )
     }
 
     "accept authorized roles for getAgreements" in {
       val endpoint = AuthorizedRoutes.endpoints("getAgreements")
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.getAgreements(None, None, None, None, None)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.getAgreements(None, None, None, None, None)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.getAgreements(None, None, None, None, None) }
+      )
     }
 
     "accept authorized roles for updateAgreementVerifiedAttribute" in {
       val endpoint = AuthorizedRoutes.endpoints("updateAgreementVerifiedAttribute")
 
       val fakeSeed = VerifiedAttributeSeed(id = UUID.randomUUID())
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updateAgreementVerifiedAttribute("test", fakeSeed)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updateAgreementVerifiedAttribute("test", fakeSeed)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.updateAgreementVerifiedAttribute("test", fakeSeed) }
+      )
     }
 
     "accept authorized roles for upgradeAgreementById" in {
@@ -188,25 +101,10 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
         verifiedAttributes = Seq.empty
       )
 
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.upgradeAgreementById("test", fakeSeed)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.upgradeAgreementById("test", fakeSeed)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.upgradeAgreementById("test", fakeSeed) }
+      )
     }
 
   }

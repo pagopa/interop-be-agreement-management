@@ -10,7 +10,13 @@ import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import it.pagopa.interop.agreementmanagement.api.impl._
-import it.pagopa.interop.agreementmanagement.model.{Agreement, AgreementSeed, StateChangeDetails, VerifiedAttributeSeed}
+import it.pagopa.interop.agreementmanagement.model.{
+  Agreement,
+  AgreementDocumentSeed,
+  AgreementSeed,
+  StateChangeDetails,
+  VerifiedAttributeSeed
+}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import org.scalamock.scalatest.MockFactory
 
@@ -48,6 +54,9 @@ package object agreementmanagement extends MockFactory {
 
   implicit def fromEntityUnmarshallerAgreement: FromEntityUnmarshaller[Agreement] =
     sprayJsonUnmarshaller[Agreement]
+
+  implicit def toEntityMarshallerAgreementDocumentSeed: ToEntityMarshaller[AgreementDocumentSeed] =
+    sprayJsonMarshaller[AgreementDocumentSeed]
 
   def makeRequest(data: Source[ByteString, Any], path: String, verb: HttpMethod)(implicit
     actorSystem: ActorSystem

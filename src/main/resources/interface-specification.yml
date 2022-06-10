@@ -20,7 +20,7 @@ tags:
       description: Find out more
       url: 'http://swagger.io'
 paths:
-  '/agreement/{agreement_id}':
+  '/agreements/{agreement_id}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
@@ -53,6 +53,52 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '404':
           description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/agreements/{agreement_id}/documents':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      tags:
+        - agreement
+      summary: Create the agreement document
+      operationId: addAgreementDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: agreement_id
+          in: path
+          description: the agreement id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: A Agreement Document seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgreementDocumentSeed'
+        required: true
+      responses:
+        '204':
+          description: Agreement Document create
+        '400':
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Agreement Document already exists
           content:
             application/problem+json:
               schema:
@@ -407,6 +453,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        document:
+          $ref: '#/components/schemas/AgreementDocument'
       required:
         - id
         - eserviceId
@@ -417,6 +465,33 @@ components:
         - verifiedAttributes
         - createdAt
       description: business representation of an agreement
+    AgreementDocumentSeed:
+      type: object
+      properties:
+        contentType:
+          type: string
+        path:
+          type: string
+      required:
+        - contentType
+        - path
+      description:  agreement document seed
+    AgreementDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contentType:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - contentType
+        - createdAt
+      description: business representation of an agreement document
     Agreements:
       type: array
       items:

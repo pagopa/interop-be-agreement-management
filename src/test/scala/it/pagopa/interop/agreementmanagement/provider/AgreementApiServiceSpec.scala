@@ -8,7 +8,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.agreementmanagement._
@@ -20,6 +20,7 @@ import it.pagopa.interop.agreementmanagement.server.Controller
 import it.pagopa.interop.agreementmanagement.server.impl.Dependencies
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -457,6 +458,46 @@ class AgreementApiServiceSpec
     // when we retrieve the updated agreement, it should have its state changed to "active"
     val activeAgreement = getAgreement(updateAgreementId.toString).futureValue
     activeAgreement.state shouldBe AgreementState.ACTIVE
+  }
+
+  "add a document to an agreement" in {
+    val agreementId  = UUID.randomUUID()
+    val eserviceId   = UUID.randomUUID()
+    val descriptorId = UUID.randomUUID()
+    val producerId   = UUID.randomUUID()
+    val consumerId   = UUID.randomUUID()
+    val documentId   = UUID.randomUUID()
+
+    val attributeId1 = UUID.randomUUID()
+    val attributeId2 = UUID.randomUUID()
+    val attributeId3 = UUID.randomUUID()
+
+    val agreementSeed = AgreementSeed(
+      eserviceId = eserviceId,
+      descriptorId = descriptorId,
+      producerId = producerId,
+      consumerId = consumerId,
+      verifiedAttributes = Seq(
+        VerifiedAttributeSeed(id = attributeId1, verified = Some(true), validityTimespan = None),
+        VerifiedAttributeSeed(id = attributeId2, verified = None, validityTimespan = None),
+        VerifiedAttributeSeed(id = attributeId3, verified = Some(false), validityTimespan = Some(123L))
+      )
+    )
+
+    val agreementDocumentSeed = AgreementDocumentSeed(contentType = "contentType", path = "path")
+
+    (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+    (() => mockUUIDSupplier.get).expects().returning(documentId).once()
+    (() => mockDateTimeSupplier.get).expects().returning(OffsetDateTime.now).once()
+
+    val response: Future[HttpResponse] = for {
+      bodyResponse <- createAgreement(agreementSeed)
+      activated    <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
+      response     <- addAgreementDocument(activated.id, agreementDocumentSeed)
+    } yield response
+
+    val bodyResponse = Await.result(response, Duration.Inf)
+    bodyResponse.status shouldBe StatusCodes.NoContent
   }
 
 }

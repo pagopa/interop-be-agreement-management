@@ -37,6 +37,15 @@ object AgreementPersistentBehavior {
         agreement
           .fold(handleFailure[AgreementAdded](_)(replyTo), persistStateAndReply(_, AgreementAdded)(replyTo))
 
+      case AddAgreementDocument(agreementId, agreementDocument, replyTo) =>
+        val agreement: Either[AgreementNotFound, PersistentAgreement] = state.agreements
+          .get(agreementId)
+          .map(found => found.copy(document = Some(agreementDocument)))
+          .toRight(AgreementNotFound(agreementId))
+
+        agreement
+          .fold(handleFailure[AgreementAdded](_)(replyTo), persistStateAndReply(_, AgreementDocumentAdded)(replyTo))
+
       case UpdateVerifiedAttribute(agreementId, updateVerifiedAttribute, replyTo) =>
         val attributeId = updateVerifiedAttribute.id.toString
 
@@ -120,6 +129,7 @@ object AgreementPersistentBehavior {
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case AgreementAdded(agreement)           => state.add(agreement)
+      case AgreementDocumentAdded(agreement)   => state.updateAgreement(agreement)
       case AgreementActivated(agreement)       => state.updateAgreement(agreement)
       case AgreementSuspended(agreement)       => state.updateAgreement(agreement)
       case AgreementDeactivated(agreement)     => state.updateAgreement(agreement)

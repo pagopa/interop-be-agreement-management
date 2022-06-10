@@ -45,7 +45,8 @@ object Adapters {
       suspendedByConsumer = None,
       suspendedByProducer = None,
       createdAt = dateTimeSupplier.get,
-      updatedAt = None
+      updatedAt = None,
+      document = None
     )
 
     def fromAPIWithActiveState(
@@ -63,7 +64,8 @@ object Adapters {
       suspendedByConsumer = None,
       suspendedByProducer = None,
       createdAt = dateTimeSupplier.get,
-      updatedAt = None
+      updatedAt = None,
+      document = None
     )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
@@ -77,7 +79,8 @@ object Adapters {
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
       createdAt = persistentAgreement.createdAt,
-      updatedAt = persistentAgreement.updatedAt
+      updatedAt = persistentAgreement.updatedAt,
+      document = persistentAgreement.document.map(PersistentAgreementDocument.toAPI)
     )
   }
 
@@ -116,6 +119,28 @@ object Adapters {
       verificationDate = persistedAttribute.verificationDate,
       validityTimespan = persistedAttribute.validityTimespan
     )
+  }
+
+  implicit class PersistentAgreementDocumentObjectWrapper(private val p: PersistentAgreementDocument.type)
+      extends AnyVal {
+
+    def fromAPI(
+      agreementDocument: AgreementDocumentSeed,
+      uuidSupplier: UUIDSupplier,
+      dateTimeSupplier: OffsetDateTimeSupplier
+    ): PersistentAgreementDocument = PersistentAgreementDocument(
+      id = uuidSupplier.get,
+      contentType = agreementDocument.contentType,
+      path = agreementDocument.path,
+      createdAt = dateTimeSupplier.get
+    )
+
+    def toAPI(persistentAgreementDocument: PersistentAgreementDocument): AgreementDocument =
+      AgreementDocument(
+        id = persistentAgreementDocument.id,
+        contentType = persistentAgreementDocument.contentType,
+        createdAt = persistentAgreementDocument.createdAt
+      )
   }
 
 }

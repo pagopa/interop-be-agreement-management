@@ -4,6 +4,7 @@ import cats.implicits.toTraverseOps
 import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement.{
+  AgreementDocumentV1,
   AgreementStateV1,
   AgreementV1,
   VerifiedAttributeV1
@@ -25,6 +26,7 @@ object protobufUtils {
       createdAt    <- protobufAgreement.createdAt.toOffsetDateTime
       updatedAt    <- protobufAgreement.updatedAt.traverse(_.toOffsetDateTime)
       attributes   <- protobufAgreement.verifiedAttributes.traverse(deserializeVerifiedAttribute)
+      document     <- protobufAgreement.document.traverse(deserializeAgreementDocument)
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
@@ -36,7 +38,8 @@ object protobufUtils {
       suspendedByConsumer = protobufAgreement.suspendedByConsumer,
       suspendedByProducer = protobufAgreement.suspendedByProducer,
       createdAt = createdAt,
-      updatedAt = updatedAt
+      updatedAt = updatedAt,
+      document = document
     )
     agreement.toEither
   }
@@ -55,7 +58,8 @@ object protobufUtils {
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
       createdAt = persistentAgreement.createdAt.toMillis,
-      updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
+      updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
+      document = persistentAgreement.document.map(toProtobufAgreementDocument)
     )
 
     protobufEntity.toEither
@@ -85,13 +89,26 @@ object protobufUtils {
     )
   }
 
-  def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1        =
+  def deserializeAgreementDocument(agreementDocument: AgreementDocumentV1): Try[PersistentAgreementDocument] = {
+    for {
+      id        <- agreementDocument.id.toUUID
+      createdAt <- agreementDocument.createdAt.toOffsetDateTime
+    } yield PersistentAgreementDocument(
+      id = id,
+      contentType = agreementDocument.contentType,
+      path = agreementDocument.path,
+      createdAt = createdAt
+    )
+  }
+
+  def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1 =
     status match {
       case Pending   => AgreementStateV1.PENDING
       case Active    => AgreementStateV1.ACTIVE
       case Suspended => AgreementStateV1.SUSPENDED
       case Inactive  => AgreementStateV1.INACTIVE
     }
+
   def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
     status match {
       case AgreementStateV1.PENDING             => Success(Pending)
@@ -101,5 +118,13 @@ object protobufUtils {
       case AgreementStateV1.Unrecognized(value) =>
         Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }
+
+  def toProtobufAgreementDocument(document: PersistentAgreementDocument): AgreementDocumentV1 =
+    AgreementDocumentV1(
+      id = document.id.toString,
+      contentType = document.contentType,
+      path = document.path,
+      createdAt = document.createdAt.toMillis
+    )
 
 }

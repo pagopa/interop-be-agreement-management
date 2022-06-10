@@ -2,20 +2,33 @@ package it.pagopa.interop.agreementmanagement.model.persistence
 
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
-import it.pagopa.interop.agreementmanagement.model.agreement.{PersistentAgreement, PersistentAgreementState}
+import it.pagopa.interop.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementDocument,
+  PersistentAgreementState
+}
 import it.pagopa.interop.agreementmanagement.model.{StateChangeDetails, VerifiedAttributeSeed}
 
 sealed trait Command
 
-case object Idle                                                                                        extends Command
+case object Idle extends Command
 final case class AddAgreement(agreement: PersistentAgreement, replyTo: ActorRef[StatusReply[PersistentAgreement]])
     extends Command
+
+final case class AddAgreementDocument(
+  agreementId: String,
+  agreementDocument: PersistentAgreementDocument,
+  replyTo: ActorRef[StatusReply[PersistentAgreement]]
+) extends Command
+
 final case class UpdateVerifiedAttribute(
   agreementId: String,
   verifiedAttribute: VerifiedAttributeSeed,
   replyTo: ActorRef[StatusReply[PersistentAgreement]]
 ) extends Command
+
 final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply[PersistentAgreement]]) extends Command
+
 final case class ActivateAgreement(
   agreementId: String,
   stateChangeDetails: StateChangeDetails,

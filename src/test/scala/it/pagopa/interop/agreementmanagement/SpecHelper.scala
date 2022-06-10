@@ -2,7 +2,7 @@ package it.pagopa.interop.agreementmanagement
 
 import akka.actor
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, MessageEntity}
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, MessageEntity}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.agreementmanagement.model._
 
@@ -89,6 +89,16 @@ trait SpecHelper {
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
+
+  def addAgreementDocument(agreementId: UUID, agreementDocumentSeed: AgreementDocumentSeed)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[HttpResponse] = for {
+    data <- Marshal(agreementDocumentSeed)
+      .to[MessageEntity]
+      .map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+  } yield makeRequest(data, s"agreements/${agreementId.toString}/documents", HttpMethods.POST)
 
   def prepareDataForListingTests(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Unit = {
     (() => mockUUIDSupplier.get).expects().returning(AgreementOne.agreementId).once()

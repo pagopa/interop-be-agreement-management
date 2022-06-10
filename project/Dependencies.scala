@@ -20,6 +20,7 @@ object Dependencies {
     lazy val http                   = namespace              %% "akka-http"                     % akkaHttpVersion
     lazy val httpJson               = namespace              %% "akka-http-spray-json"          % akkaHttpVersion
     lazy val httpJson4s             = "de.heikoseeberger"    %% "akka-http-json4s"              % httpJson4sVersion
+    lazy val httpTestkit            = namespace              %% "akka-http-testkit"             % akkaHttpVersion
     lazy val management          = "com.lightbend.akka.management" %% "akka-management" % akkaManagementVersion
     lazy val managementLogLevels =
       "com.lightbend.akka.management" %% "akka-management-loglevels-logback" % akkaManagementVersion
@@ -143,7 +144,8 @@ object Dependencies {
       scalaprotobuf.core          % Protobuf,
       scalatest.core              % Test,
       scalamock.core              % Test,
-      akka.testkit                % Test
+      akka.testkit                % Test,
+      akka.httpTestkit            % Test
     )
 
     val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commons, pagopa.commonsQueue).map(_ % Compile)

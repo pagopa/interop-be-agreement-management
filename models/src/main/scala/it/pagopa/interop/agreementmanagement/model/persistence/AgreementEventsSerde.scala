@@ -10,6 +10,7 @@ object AgreementEventsSerde {
   val agreementToJson: PartialFunction[ProjectableEvent, JsValue] = {
     case x @ VerifiedAttributeUpdated(_) => x.toJson
     case x @ AgreementAdded(_)           => x.toJson
+    case x @ AgreementDocumentAdded(_)   => x.toJson
     case x @ AgreementActivated(_)       => x.toJson
     case x @ AgreementSuspended(_)       => x.toJson
     case x @ AgreementDeactivated(_)     => x.toJson
@@ -18,6 +19,7 @@ object AgreementEventsSerde {
   val jsonToAgreement: PartialFunction[String, JsValue => ProjectableEvent] = {
     case `verifiedAttributeUpdated` => _.convertTo[VerifiedAttributeUpdated]
     case `agreementAdded`           => _.convertTo[AgreementAdded]
+    case `agreementDocumentAdded`   => _.convertTo[AgreementDocumentAdded]
     case `agreementActivated`       => _.convertTo[AgreementActivated]
     case `agreementSuspended`       => _.convertTo[AgreementSuspended]
     case `agreementDeactivated`     => _.convertTo[AgreementDeactivated]
@@ -26,6 +28,7 @@ object AgreementEventsSerde {
   def getKind(e: Event): String = e match {
     case VerifiedAttributeUpdated(_) => verifiedAttributeUpdated
     case AgreementAdded(_)           => agreementAdded
+    case AgreementDocumentAdded(_)   => agreementDocumentAdded
     case AgreementActivated(_)       => agreementActivated
     case AgreementSuspended(_)       => agreementSuspended
     case AgreementDeactivated(_)     => agreementDeactivated
@@ -33,6 +36,7 @@ object AgreementEventsSerde {
 
   private val verifiedAttributeUpdated: String = "verified_attribute_updated"
   private val agreementAdded: String           = "agreement_added"
+  private val agreementDocumentAdded: String   = "agreement_document_added"
   private val agreementActivated: String       = "agreement_activated"
   private val agreementSuspended: String       = "agreement_suspended"
   private val agreementDeactivated: String     = "agreement_deactivated"
@@ -58,11 +62,13 @@ object AgreementEventsSerde {
   private implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat4(
     PersistentVerifiedAttribute.apply
   )
-  private implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat11(PersistentAgreement.apply)
-  private implicit val vauFormat: RootJsonFormat[VerifiedAttributeUpdated] = jsonFormat1(VerifiedAttributeUpdated.apply)
-  private implicit val aadFormat: RootJsonFormat[AgreementAdded]           = jsonFormat1(AgreementAdded.apply)
-  private implicit val aacFormat: RootJsonFormat[AgreementActivated]       = jsonFormat1(AgreementActivated.apply)
-  private implicit val asFormat: RootJsonFormat[AgreementSuspended]        = jsonFormat1(AgreementSuspended.apply)
-  private implicit val adFormat: RootJsonFormat[AgreementDeactivated]      = jsonFormat1(AgreementDeactivated.apply)
+  private implicit val padFormat: RootJsonFormat[PersistentAgreementDocument] = jsonFormat4(PersistentAgreementDocument)
+  private implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat12(PersistentAgreement.apply)
+  private implicit val vauFormat: RootJsonFormat[VerifiedAttributeUpdated]    = jsonFormat1(VerifiedAttributeUpdated)
+  private implicit val aadFormat: RootJsonFormat[AgreementAdded]              = jsonFormat1(AgreementAdded)
+  private implicit val adadFormat: RootJsonFormat[AgreementDocumentAdded]     = jsonFormat1(AgreementDocumentAdded)
+  private implicit val aacFormat: RootJsonFormat[AgreementActivated]          = jsonFormat1(AgreementActivated)
+  private implicit val asFormat: RootJsonFormat[AgreementSuspended]           = jsonFormat1(AgreementSuspended)
+  private implicit val adFormat: RootJsonFormat[AgreementDeactivated]         = jsonFormat1(AgreementDeactivated)
 
 }

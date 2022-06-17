@@ -12,6 +12,10 @@ message AgreementAddedV1 {
   required AgreementV1 agreement = 1;
 }
 
+message AgreementDocumentAddedV1 {
+  required AgreementV1 agreement = 1;
+}
+
 message VerifiedAttributeUpdatedV1 {
   required AgreementV1 agreement = 1;
 }

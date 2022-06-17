@@ -13,7 +13,11 @@ import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.interop.agreementmanagement.model._
-import it.pagopa.interop.agreementmanagement.model.agreement.{PersistentAgreement, PersistentAgreementState}
+import it.pagopa.interop.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementDocument,
+  PersistentAgreementState
+}
 import it.pagopa.interop.agreementmanagement.model.persistence._
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
@@ -124,6 +128,43 @@ final case class AgreementApiServiceImpl(
         logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound => getAgreement404(problemOf(StatusCodes.NotFound, ex))
+          case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
+        }
+      case Failure(ex)                                   =>
+        logger.error(s"Error while $operationLabel $agreementId", ex)
+        internalServerError(operationLabel, agreementId, ex.getMessage)
+    }
+  }
+
+  /**
+   * Code: 204, Message: Agreement Document create
+   * Code: 400, Message: Bad request, DataType: Problem
+   * Code: 404, Message: Agreement not found, DataType: Problem
+   * Code: 409, Message: Agreement Document already exists, DataType: Problem
+   */
+  override def addAgreementDocument(agreementId: String, agreementDocumentSeed: AgreementDocumentSeed)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val operationLabel: String = "Adding agreement document"
+
+    logger.info(s"$operationLabel $agreementId")
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+
+    val agreementDocument: PersistentAgreementDocument =
+      PersistentAgreementDocument.fromAPI(agreementDocumentSeed, UUIDSupplier, dateTimeSupplier)
+
+    val result: Future[StatusReply[PersistentAgreement]] =
+      commander.ask(ref => AddAgreementDocument(agreementId, agreementDocument, ref))
+
+    onComplete(result) {
+      case Success(statusReply) if statusReply.isSuccess => addAgreementDocument204
+      case Success(statusReply)                          =>
+        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
+        statusReply.getError match {
+          case ex: AgreementNotFound => activateAgreement404(problemOf(StatusCodes.NotFound, ex))
           case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>

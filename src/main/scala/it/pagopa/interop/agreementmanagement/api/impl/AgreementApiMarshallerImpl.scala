@@ -9,6 +9,9 @@ import spray.json._
 
 object AgreementApiMarshallerImpl extends AgreementApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
 
+  override implicit def fromEntityUnmarshallerAgreementDocumentSeed: FromEntityUnmarshaller[AgreementDocumentSeed] =
+    sprayJsonUnmarshaller[AgreementDocumentSeed]
+
   override implicit def fromEntityUnmarshallerAgreementSeed: FromEntityUnmarshaller[AgreementSeed] =
     sprayJsonUnmarshaller[AgreementSeed]
 

@@ -3,13 +3,7 @@ package it.pagopa.interop.agreementmanagement.model.persistence.serializer
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.interop.agreementmanagement.model.persistence._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events.{
-  AgreementActivatedV1,
-  AgreementAddedV1,
-  AgreementDeactivatedV1,
-  AgreementSuspendedV1,
-  VerifiedAttributeUpdatedV1
-}
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.protobufUtils.{
   toPersistentAgreement,
   toProtobufAgreement
@@ -25,9 +19,9 @@ package object v1 {
     state => {
       for {
         agreements <- state.agreements
-          .traverse[ThrowableOr, (String, PersistentAgreement)] { case entry =>
+          .traverse[ThrowableOr, (String, PersistentAgreement)](entry =>
             toPersistentAgreement(entry.value).map(agreement => (entry.key, agreement))
-          }
+          )
           .map(_.toMap)
       } yield State(agreements)
     }
@@ -46,6 +40,14 @@ package object v1 {
 
   implicit def agreementAddedV1PersistEventSerializer: PersistEventSerializer[AgreementAdded, AgreementAddedV1] =
     event => toProtobufAgreement(event.agreement).map(ag => AgreementAddedV1.of(ag))
+
+  implicit def agreementDocumentAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementDocumentAddedV1, AgreementDocumentAdded] =
+    event => toPersistentAgreement(event.agreement).map(AgreementDocumentAdded)
+
+  implicit def agreementDocumentAddedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementDocumentAdded, AgreementDocumentAddedV1] =
+    event => toProtobufAgreement(event.agreement).map(ag => AgreementDocumentAddedV1.of(ag))
 
   implicit def verifiedAttributeUpdatedV1PersistEventDeserializer
     : PersistEventDeserializer[VerifiedAttributeUpdatedV1, VerifiedAttributeUpdated] =

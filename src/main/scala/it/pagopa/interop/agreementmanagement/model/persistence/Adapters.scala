@@ -139,6 +139,7 @@ object Adapters {
       AgreementDocument(
         id = persistentAgreementDocument.id,
         contentType = persistentAgreementDocument.contentType,
+        path = persistentAgreementDocument.path,
         createdAt = persistentAgreementDocument.createdAt
       )
   }

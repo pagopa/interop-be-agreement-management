@@ -484,12 +484,15 @@ components:
           format: uuid
         contentType:
           type: string
+        path:
+          type: string
         createdAt:
           type: string
           format: date-time
       required:
         - id
         - contentType
+        - path
         - createdAt
       description: business representation of an agreement document
     Agreements:

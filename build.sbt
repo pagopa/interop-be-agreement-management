@@ -10,6 +10,7 @@ ThisBuild / version := ComputeVersion.version
 
 ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-snapshots/"
 ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-releases/"
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
 

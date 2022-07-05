@@ -63,7 +63,7 @@ paths:
       - $ref: '#/components/parameters/IpAddress'
     post:
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       tags:
         - agreement
       summary: upgrades an agreement.
@@ -109,7 +109,7 @@ paths:
       - $ref: '#/components/parameters/IpAddress'
     post:
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       tags:
         - agreement
       summary: Add a new agreement
@@ -146,7 +146,7 @@ paths:
       summary: Retrieve a list of agreement
       operationId: getAgreements
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: producerId
@@ -192,7 +192,7 @@ paths:
         required: true
     post:
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       tags:
         - agreement
       summary: Update Verified Attribute
@@ -230,7 +230,7 @@ paths:
       - $ref: '#/components/parameters/IpAddress'
     post:
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       summary: Activate Agreement
       operationId: activateAgreement
       parameters:
@@ -240,11 +240,11 @@ paths:
           in: path
           required: true
       requestBody:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StateChangeDetails'
-          required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateChangeDetails'
+        required: true
       responses:
         '200':
           description: Agreement activated
@@ -273,7 +273,7 @@ paths:
       - $ref: '#/components/parameters/IpAddress'
     post:
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       summary: Suspend Agreement
       operationId: suspendAgreement
       parameters:

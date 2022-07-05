@@ -11,17 +11,21 @@ import akka.pattern.StatusReply
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
-import it.pagopa.interop.agreementmanagement.common.system._
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement.{PersistentAgreement, PersistentAgreementState}
 import it.pagopa.interop.agreementmanagement.model.persistence._
+import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
-import org.slf4j.LoggerFactory
 
 import scala.concurrent._
 import scala.util.{Failure, Success}
+import akka.util.Timeout
+import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, authorizeInterop, hasPermissions}
+import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.OperationForbidden
+
+import scala.concurrent.duration._
 
 final case class AgreementApiServiceImpl(
   system: ActorSystem[_],
@@ -32,15 +36,20 @@ final case class AgreementApiServiceImpl(
 )(implicit ec: ExecutionContext)
     extends AgreementApiService {
 
-  val logger: LoggerTakingImplicit[ContextFieldsToLog] =
-    Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
+  val logger: LoggerTakingImplicit[ContextFieldsToLog] = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-  private val settings: ClusterShardingSettings = entity.settings match {
-    case None    => ClusterShardingSettings(system)
-    case Some(s) => s
-  }
+  implicit val timeout: Timeout = 300.seconds
+
+  private val settings: ClusterShardingSettings = entity.settings.getOrElse(ClusterShardingSettings(system))
 
   @inline private def getShard(id: String): String = Math.abs(id.hashCode % settings.numberOfShards).toString
+
+  private[this] def authorize(roles: String*)(
+    route: => Route
+  )(implicit contexts: Seq[(String, String)], toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route =
+    authorizeInterop(hasPermissions(roles: _*), problemOf(StatusCodes.Forbidden, OperationForbidden)) {
+      route
+    }
 
   /** Code: 200, Message: Agreement created, DataType: Agreement
     * Code: 405, Message: Invalid input, DataType: Problem
@@ -49,7 +58,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Adding an agreement"
 
@@ -66,8 +75,8 @@ final case class AgreementApiServiceImpl(
       case Success(statusReply)                          =>
         logger.error(
           s"Error while $operationLabel  for consumer ${agreementSeed.consumerId} to descriptor ${agreementSeed.descriptorId} " +
-            s"of e-service ${agreementSeed.eserviceId} from the producer ${agreementSeed.producerId} " +
-            s"- ${statusReply.getError.getMessage}"
+            s"of e-service ${agreementSeed.eserviceId} from the producer ${agreementSeed.producerId} ",
+          statusReply.getError
         )
         statusReply.getError match {
           case ex: AgreementConflict => addAgreement409(problemOf(StatusCodes.Conflict, ex))
@@ -76,8 +85,8 @@ final case class AgreementApiServiceImpl(
       case Failure(ex)                                   =>
         logger.error(
           s"Error while $operationLabel  for consumer ${agreementSeed.consumerId} to descriptor ${agreementSeed.descriptorId} " +
-            s"of e-service ${agreementSeed.eserviceId} from the producer ${agreementSeed.producerId} " +
-            s"- ${ex.getMessage}"
+            s"of e-service ${agreementSeed.eserviceId} from the producer ${agreementSeed.producerId} ",
+          ex
         )
         internalServerError(operationLabel, agreement.id.toString, ex.getMessage)
     }
@@ -86,7 +95,6 @@ final case class AgreementApiServiceImpl(
   private def createAgreement(agreement: PersistentAgreement) = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreement.id.toString))
-
     commander.ask(ref => AddAgreement(agreement, ref))
   }
 
@@ -98,7 +106,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
 
     val operationLabel: String = "Getting agreement"
 
@@ -113,13 +121,13 @@ final case class AgreementApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess =>
         getAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId - ${statusReply.getError.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound => getAgreement404(problemOf(StatusCodes.NotFound, ex))
           case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId - ${ex.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
@@ -128,7 +136,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
     val operationLabel: String = "Activating agreement"
 
     logger.info(s"$operationLabel $agreementId")
@@ -138,14 +146,14 @@ final case class AgreementApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess =>
         activateAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId - ${statusReply.getError.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound           => activateAgreement404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => activateAgreement400(problemOf(StatusCodes.BadRequest, ex))
           case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId - ${ex.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
@@ -161,7 +169,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Suspending agreement"
 
@@ -173,14 +181,14 @@ final case class AgreementApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess =>
         suspendAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId - ${statusReply.getError.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound           => suspendAgreement404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => suspendAgreement400(problemOf(StatusCodes.BadRequest, ex))
           case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId - ${ex.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
@@ -204,7 +212,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
 
     val operationLabel: String = "Getting agreements for"
 
@@ -236,7 +244,8 @@ final case class AgreementApiServiceImpl(
       case Left(error)       =>
         logger.error(
           s"Error while $operationLabel consumer $consumerId to e-service $eserviceId of the producer $producerId " +
-            s"with the descriptor $descriptorId and state $state - ${error.getMessage}"
+            s"with the descriptor $descriptorId and state $state",
+          error
         )
         val resourceId: String =
           s"""
@@ -279,7 +288,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Updating agreement"
 
@@ -296,18 +305,15 @@ final case class AgreementApiServiceImpl(
         updateAgreementVerifiedAttribute200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply)                          =>
         logger.error(
-          s"Error while $operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id} " +
-            s"- ${statusReply.getError.getMessage}"
+          s"Error while $operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id}",
+          statusReply.getError
         )
         statusReply.getError match {
           case ex: AgreementNotFound => updateAgreementVerifiedAttribute404(problemOf(StatusCodes.NotFound, ex))
           case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>
-        logger.error(
-          s"Error while $operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id} " +
-            s"- ${ex.getMessage}"
-        )
+        logger.error(s"Error while $operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id}", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
@@ -317,7 +323,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = "Updating agreement"
 
@@ -333,16 +339,14 @@ final case class AgreementApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess =>
         upgradeAgreementById200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply)                          =>
-        logger.error(
-          s"Error while $operationLabel $agreementId, with data $agreementSeed - ${statusReply.getError.getMessage}"
-        )
+        logger.error(s"Error while $operationLabel $agreementId, with data $agreementSeed", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound           => upgradeAgreementById404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => upgradeAgreementById400(problemOf(StatusCodes.BadRequest, ex))
           case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId, with data $agreementSeed - ${ex.getMessage}")
+        logger.error(s"Error while $operationLabel $agreementId, with data $agreementSeed", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }

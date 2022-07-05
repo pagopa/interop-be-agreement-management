@@ -14,11 +14,10 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.agreementmanagement._
 import it.pagopa.interop.agreementmanagement.api.AgreementApi
 import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
-import it.pagopa.interop.agreementmanagement.model.persistence.AgreementPersistentBehavior
 import it.pagopa.interop.agreementmanagement.model._
+import it.pagopa.interop.agreementmanagement.model.persistence.AgreementPersistentBehavior
 import it.pagopa.interop.agreementmanagement.server.Controller
-import it.pagopa.interop.agreementmanagement.server.impl.Main.behaviorFactory
-import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.interop.agreementmanagement.server.impl.Dependencies
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
@@ -31,6 +30,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
   */
 class AgreementApiServiceSpec
     extends ScalaTestWithActorTestKit(SpecConfiguration.config)
+    with Dependencies
     with AnyWordSpecLike
     with SpecConfiguration
     with SpecHelper {
@@ -38,7 +38,7 @@ class AgreementApiServiceSpec
   var controller: Option[Controller]                                    = None
   var bindServer: Option[Future[Http.ServerBinding]]                    = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
-    SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
+    SecurityDirectives.authenticateOAuth2("SecurityRealm", AdminMockAuthenticator)
 
   val sharding: ClusterSharding = ClusterSharding(system)
 

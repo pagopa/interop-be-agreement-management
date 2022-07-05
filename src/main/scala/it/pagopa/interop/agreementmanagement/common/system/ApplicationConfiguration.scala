@@ -2,16 +2,18 @@ package it.pagopa.interop.agreementmanagement.common.system
 
 import com.typesafe.config.{Config, ConfigFactory}
 
-import scala.jdk.CollectionConverters.ListHasAsScala
-
 object ApplicationConfiguration {
-  lazy val config: Config = ConfigFactory.load()
+  System.setProperty("kanela.show-banner", "false")
+  val config: Config = ConfigFactory.load()
 
-  lazy val serverPort: Int = config.getInt("agreement-management.port")
+  val serverPort: Int          = config.getInt("agreement-management.port")
+  val jwtAudience: Set[String] =
+    config.getString("agreement-management.jwt.audience").split(",").toSet.filter(_.nonEmpty)
+  val queueUrl: String         = config.getString("agreement-management.persistence-events-queue-url")
 
-  lazy val jwtAudience: Set[String] = config.getStringList("agreement-management.jwt.audience").asScala.toSet
+  val numberOfProjectionTags: Int = config.getInt("akka.cluster.sharding.number-of-shards")
+  def projectionTag(index: Int)   = s"interop-be-agreement-management-persistence|$index"
+  val projectionsEnabled: Boolean = config.getBoolean("akka.projection.enabled")
 
-  lazy val numberOfProjectionTags: Int = config.getInt("akka.cluster.sharding.number-of-shards")
-  def projectionTag(index: Int)        = s"interop-be-agreement-management-persistence|$index"
-  lazy val projectionsEnabled: Boolean = config.getBoolean("akka.projection.enabled")
+  require(jwtAudience.nonEmpty, "Audience cannot be empty")
 }

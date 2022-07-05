@@ -15,8 +15,9 @@ import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImp
 import it.pagopa.interop.agreementmanagement.model.Agreement
 import it.pagopa.interop.agreementmanagement.model.persistence.AgreementPersistentBehavior
 import it.pagopa.interop.agreementmanagement.server.Controller
-import it.pagopa.interop.agreementmanagement.server.impl.Main.behaviorFactory
+import it.pagopa.interop.agreementmanagement.server.impl.Dependencies
 import it.pagopa.interop.agreementmanagement.{
+  AdminMockAuthenticator,
   SpecConfiguration,
   SpecHelper,
   emptyData,
@@ -24,7 +25,6 @@ import it.pagopa.interop.agreementmanagement.{
   mockDateTimeSupplier,
   mockUUIDSupplier
 }
-import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -36,6 +36,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
   */
 class AgreementListApiServiceSpec
     extends ScalaTestWithActorTestKit(SpecConfiguration.config)
+    with Dependencies
     with AnyWordSpecLike
     with SpecConfiguration
     with SpecHelper {
@@ -43,7 +44,7 @@ class AgreementListApiServiceSpec
   var controller: Option[Controller]                                    = None
   var bindServer: Option[Future[Http.ServerBinding]]                    = None
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
-    SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
+    SecurityDirectives.authenticateOAuth2("SecurityRealm", AdminMockAuthenticator)
 
   val sharding: ClusterSharding = ClusterSharding(system)
 

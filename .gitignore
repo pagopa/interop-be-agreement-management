@@ -13,3 +13,4 @@ generated/src
 client/src
 client/project/build.properties
 .env
+snapshots

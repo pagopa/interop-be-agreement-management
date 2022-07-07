@@ -88,7 +88,6 @@ lazy val models = project
   .in(file("models"))
   .settings(
     name                := "interop-be-agreement-management-models",
-    scalacOptions       := Seq(),
     libraryDependencies := Dependencies.Jars.models,
     scalafmtOnCompile   := true,
     Docker / publish    := {},

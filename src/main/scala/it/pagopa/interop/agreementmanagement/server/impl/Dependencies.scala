@@ -18,10 +18,12 @@ import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfigurat
   numberOfProjectionTags,
   projectionTag
 }
-import it.pagopa.interop.agreementmanagement.model.persistence.projection.AgreementCqrsProjection
+import it.pagopa.interop.agreementmanagement.model.persistence.projection.{
+  AgreementCqrsProjection,
+  AgreementNotificationProjection
+}
 import it.pagopa.interop.agreementmanagement.model.persistence.{
   AgreementEventsSerde,
-  AgreementNotificationProjection,
   AgreementPersistentBehavior,
   Command
 }

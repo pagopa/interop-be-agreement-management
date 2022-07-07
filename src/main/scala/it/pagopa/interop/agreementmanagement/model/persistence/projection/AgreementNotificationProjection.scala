@@ -1,4 +1,4 @@
-package it.pagopa.interop.agreementmanagement.model.persistence
+package it.pagopa.interop.agreementmanagement.model.persistence.projection
 
 import akka.Done
 import akka.actor.typed.ActorSystem
@@ -11,6 +11,7 @@ import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
 import akka.projection.slick.{SlickHandler, SlickProjection}
 import cats.syntax.all._
 import com.typesafe.scalalogging.Logger
+import it.pagopa.interop.agreementmanagement.model.persistence.{AgreementEventsSerde, Event}
 import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.queue.message.{Message, ProjectableEvent}
 import slick.basic.DatabaseConfig

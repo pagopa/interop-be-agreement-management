@@ -22,9 +22,11 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-final case class AgreementNotificationProjection(dbConfig: DatabaseConfig[JdbcProfile], queueWriter: QueueWriter)(
-  implicit system: ActorSystem[_]
-) {
+final case class AgreementNotificationProjection(
+  dbConfig: DatabaseConfig[JdbcProfile],
+  queueWriter: QueueWriter,
+  projectionId: String
+)(implicit system: ActorSystem[_]) {
 
   implicit val ec: ExecutionContext = system.executionContext
 
@@ -33,7 +35,7 @@ final case class AgreementNotificationProjection(dbConfig: DatabaseConfig[JdbcPr
       .eventsByTag[Event](system, readJournalPluginId = JdbcReadJournal.Identifier, tag = tag)
 
   def projection(tag: String): ExactlyOnceProjection[Offset, EventEnvelope[Event]] = SlickProjection.exactlyOnce(
-    projectionId = ProjectionId("agreement-notification-projections", tag),
+    projectionId = ProjectionId(projectionId, tag),
     sourceProvider = sourceProvider(tag),
     handler = () => NotificationProjectionHandler(queueWriter),
     databaseConfig = dbConfig

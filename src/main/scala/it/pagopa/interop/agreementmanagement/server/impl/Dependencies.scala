@@ -67,18 +67,21 @@ trait Dependencies {
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
     val mongoDbConfig                         = ApplicationConfiguration.mongoDb
 
-    val notificationProjection = AgreementNotificationProjection(dbConfig, queueWriter)
-    val cqrsProjection         = AgreementCqrsProjection.projection(dbConfig, mongoDbConfig)
+    val notificationProjectionId = "agreement-notification-projections"
+    val cqrsProjectionId         = "agreement-cqrs-projections"
+
+    val notificationProjection = AgreementNotificationProjection(dbConfig, queueWriter, notificationProjectionId)
+    val cqrsProjection         = AgreementCqrsProjection.projection(dbConfig, mongoDbConfig, cqrsProjectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "agreement-notification-projections",
+      name = notificationProjectionId,
       numberOfInstances = numberOfProjectionTags,
       behaviorFactory = (i: Int) => ProjectionBehavior(notificationProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "agreement-cqrs-projections",
+      name = cqrsProjectionId,
       numberOfInstances = numberOfProjectionTags,
       behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop

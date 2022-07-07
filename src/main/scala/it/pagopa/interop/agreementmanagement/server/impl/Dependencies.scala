@@ -66,7 +66,7 @@ trait Dependencies {
     val mongoDbConfig                         = ApplicationConfiguration.mongoDb
 
     val notificationProjection = AgreementNotificationProjection(dbConfig, queueWriter)
-    val cqrsProjection         = AgreementCqrsProjection(dbConfig, mongoDbConfig)
+    val cqrsProjection         = AgreementCqrsProjection.projection(dbConfig, mongoDbConfig)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = "agreement-notification-projections",

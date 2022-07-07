@@ -10,7 +10,6 @@ object Versions {
   lazy val json4sVersion               = "4.0.4"
   lazy val kamonVersion                = "2.5.5"
   lazy val logbackVersion              = "1.2.11"
-  lazy val mongodbScalaDriverVersion   = "4.6.0"
   lazy val mustacheVersion             = "0.9.10"
   lazy val postgresVersion             = "42.4.0"
   lazy val projectionVersion           = "1.2.1"

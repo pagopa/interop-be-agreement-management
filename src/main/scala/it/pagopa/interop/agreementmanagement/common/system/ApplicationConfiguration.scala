@@ -1,6 +1,7 @@
 package it.pagopa.interop.agreementmanagement.common.system
 
 import com.typesafe.config.{Config, ConfigFactory}
+import it.pagopa.interop.commons.cqrs.model.MongoDbConfig
 
 object ApplicationConfiguration {
   System.setProperty("kanela.show-banner", "false")

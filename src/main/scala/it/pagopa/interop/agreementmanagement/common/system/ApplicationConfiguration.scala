@@ -16,7 +16,8 @@ object ApplicationConfiguration {
   def projectionTag(index: Int)   = s"interop-be-agreement-management-persistence|$index"
   val projectionsEnabled: Boolean = config.getBoolean("akka.projection.enabled")
 
-  val mongoDb: MongoDbConfig = {
+  // Loaded only if projections are enabled
+  lazy val mongoDb: MongoDbConfig = {
     val connectionString: String = config.getString("cqrs-projection.db.connection-string")
     val dbName: String           = config.getString("cqrs-projection.db.name")
     val collectionName: String   = config.getString("cqrs-projection.db.collection-name")

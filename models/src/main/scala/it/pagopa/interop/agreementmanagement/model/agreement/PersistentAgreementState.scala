@@ -1,7 +1,5 @@
 package it.pagopa.interop.agreementmanagement.model.agreement
 
-import it.pagopa.interop.agreementmanagement.model._
-
 object PersistentAgreementState
 sealed trait PersistentAgreementState
 case object Pending   extends PersistentAgreementState

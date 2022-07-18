@@ -139,9 +139,8 @@ lazy val root = (project in file("."))
   )
   .aggregate(client, models)
   .dependsOn(generated, models)
-  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .enablePlugins(JavaAppPackaging)
   .setupBuildInfo
 
-javaAgents += "io.kamon" % "kanela-agent" % "1.0.14"
-Test / fork             := true
+Test / fork := true
 Test / javaOptions += "-Dconfig.file=src/test/resources/application-test.conf"

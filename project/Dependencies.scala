@@ -61,12 +61,6 @@ object Dependencies {
     lazy val classic   = namespace % "logback-classic" % logbackVersion
   }
 
-  private[this] object kamon {
-    lazy val namespace  = "io.kamon"
-    lazy val bundle     = namespace %% "kamon-bundle"     % kamonVersion
-    lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
-  }
-
   private[this] object spray {
     lazy val core = "io.spray" %% "spray-json" % sprayVersion
   }
@@ -132,8 +126,6 @@ object Dependencies {
       akka.slf4j                  % Compile,
       akka.stream                 % Compile,
       cats.core                   % Compile,
-      kamon.bundle                % Compile,
-      kamon.prometheus            % Compile,
       logback.classic             % Compile,
       mustache.mustache           % Compile,
       pagopa.commons              % Compile,

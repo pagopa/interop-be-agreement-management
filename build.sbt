@@ -1,13 +1,11 @@
 import ProjectSettings.ProjectFrom
 import com.typesafe.sbt.packager.docker.Cmd
 
-ThisBuild / scalaVersion     := "2.13.8"
-ThisBuild / organization     := "it.pagopa"
-ThisBuild / organizationName := "Pagopa S.p.A."
-
+ThisBuild / scalaVersion      := "2.13.8"
+ThisBuild / organization      := "it.pagopa"
+ThisBuild / organizationName  := "Pagopa S.p.A."
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
-ThisBuild / version := ComputeVersion.version
-
+ThisBuild / version           := ComputeVersion.version
 ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-snapshots/"
 ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-releases/"
 Global / onChangedBuildSource := ReloadOnSourceChanges
@@ -15,17 +13,10 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
 
 val packagePrefix = settingKey[String]("The package prefix derived from the uservice name")
-
-packagePrefix := name.value
-  .replaceFirst("interop-", "interop.")
-  .replaceFirst("be-", "")
-  .replaceAll("-", "")
+packagePrefix := name.value.replaceFirst("interop-", "interop.").replaceFirst("be-", "").replaceAll("-", "")
 
 val projectName = settingKey[String]("The project name prefix derived from the uservice name")
-
-projectName := name.value
-  .replaceFirst("interop-", "")
-  .replaceFirst("be-", "")
+projectName := name.value.replaceFirst("interop-", "").replaceFirst("be-", "")
 
 generateCode := {
   import sys.process._
@@ -59,11 +50,8 @@ generateCode := {
 Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value / "protobuf")
 
 cleanFiles += baseDirectory.value / "generated" / "src"
-
 cleanFiles += baseDirectory.value / "generated" / "target"
-
 cleanFiles += baseDirectory.value / "client" / "src"
-
 cleanFiles += baseDirectory.value / "client" / "target"
 
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
@@ -93,11 +81,8 @@ lazy val models = project
     Docker / publish    := {},
     publishTo           := {
       val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-
-      if (isSnapshot.value)
-        Some("snapshots" at nexus + "maven-snapshots/")
-      else
-        Some("releases" at nexus + "maven-releases/")
+      if (isSnapshot.value) Some("snapshots" at nexus + "maven-snapshots/")
+      else Some("releases" at nexus + "maven-releases/")
     }
   )
 
@@ -112,11 +97,8 @@ lazy val client = project
     Docker / publish    := {},
     publishTo           := {
       val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-
-      if (isSnapshot.value)
-        Some("snapshots" at nexus + "maven-snapshots/")
-      else
-        Some("releases" at nexus + "maven-releases/")
+      if (isSnapshot.value) Some("snapshots" at nexus + "maven-snapshots/")
+      else Some("releases" at nexus + "maven-releases/")
     }
   )
 

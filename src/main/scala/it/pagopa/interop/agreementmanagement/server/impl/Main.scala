@@ -12,7 +12,6 @@ import cats.syntax.all._
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.agreementmanagement.server.Controller
 import it.pagopa.interop.commons.logging.renderBuildInfo
-import kamon.Kamon
 import scala.concurrent.ExecutionContextExecutor
 import akka.actor.typed.ActorRef
 import scala.util.{Success, Failure}
@@ -24,13 +23,9 @@ import akka.actor.typed.DispatcherSelector
 
 object Main extends App with Dependencies {
 
-  Kamon.init()
-
   val logger: Logger = Logger(this.getClass())
 
-  System.setProperty("kanela.show-banner", "false")
-
-  val system: ActorSystem[Nothing] = ActorSystem[Nothing](
+  ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[Nothing]          = context.system
       implicit val executionContext: ExecutionContextExecutor = actorSystem.executionContext
@@ -62,7 +57,7 @@ object Main extends App with Dependencies {
       val serverBinding: Future[Http.ServerBinding] = for {
         jwtReader <- getJwtValidator()
         api        = agreementApi(sharding, jwtReader)
-        controller = new Controller(api, validationExceptionToRoute.some)(system.classicSystem)
+        controller = new Controller(api, validationExceptionToRoute.some)(actorSystem.classicSystem)
         binding <- Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
       } yield binding
 
@@ -78,7 +73,5 @@ object Main extends App with Dependencies {
     },
     BuildInfo.name
   )
-
-  system.whenTerminated.onComplete { case _ => Kamon.stop() }(scala.concurrent.ExecutionContext.global)
 
 }

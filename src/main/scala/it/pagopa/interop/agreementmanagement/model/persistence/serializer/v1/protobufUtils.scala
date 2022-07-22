@@ -1,7 +1,7 @@
 package it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1
 
 import cats.implicits.toTraverseOps
-import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
+import it.pagopa.interop.commons.utils.TypeConversions.{OffsetDateTimeOps, StringOps}
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement.{
   AgreementStateV1,
@@ -44,6 +44,8 @@ object protobufUtils {
   def toProtobufAgreement(persistentAgreement: PersistentAgreement): Either[Throwable, AgreementV1] = {
     val protobufEntity = for {
       attributes <- persistentAgreement.verifiedAttributes.traverse(serializeVerifiedAttribute)
+      createdAt  <- persistentAgreement.createdAt.asFormattedString
+      updatedAt  <- persistentAgreement.updatedAt.traverse(_.asFormattedString)
     } yield AgreementV1(
       id = persistentAgreement.id.toString,
       eserviceId = persistentAgreement.eserviceId.toString,
@@ -54,8 +56,8 @@ object protobufUtils {
       verifiedAttributes = attributes,
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
-      createdAt = persistentAgreement.createdAt.toMillis,
-      updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
+      createdAt = createdAt,
+      updatedAt = updatedAt
     )
 
     protobufEntity.toEither

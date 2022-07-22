@@ -14,89 +14,49 @@ import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agr
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.state._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer._
-import com.softwaremill.diffx.munit.DiffxAssertions._
+import com.softwaremill.diffx.munit.DiffxAssertions
 import com.softwaremill.diffx.generic.auto._
+import com.softwaremill.diffx.Diff
+import scala.reflect.runtime.universe.{typeOf, TypeTag}
 
-class PersistentSerializationSpec extends ScalaCheckSuite {
+class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
 
-  property("State is correctly deserialized") {
-    forAll(stateGen) { case (state, stateV1) =>
-      assertEqual(PersistEventDeserializer.from[StateV1, State](stateV1), Right(state))
+  serdeCheck[State, StateV1](stateGen, _.sorted)
+  deserCheck[State, StateV1](stateGen)
+  serdeCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
+  deserCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
+  serdeCheck[AgreementActivated, AgreementActivatedV1](agreementActivatedGen)
+  deserCheck[AgreementActivated, AgreementActivatedV1](agreementActivatedGen)
+  serdeCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
+  deserCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
+  serdeCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
+  deserCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
+  serdeCheck[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1](verifiedAttributeUpdatedGen)
+  deserCheck[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1](verifiedAttributeUpdatedGen)
+
+  // TODO move me in commons
+  def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit
+    e: PersistEventSerializer[A, B],
+    loc: munit.Location,
+    d: => Diff[Either[Throwable, B]]
+  ): Unit = property(s"${typeOf[A].typeSymbol.name.toString} is correctly serialized") {
+    forAll(gen) { case (state, stateV1) =>
+      implicit val diffX: Diff[Either[Throwable, B]] = d
+      assertEqual(PersistEventSerializer.to[A, B](state).map(adapter), Right(stateV1).map(adapter))
     }
   }
 
-  property("AgreementAdded is correctly deserialized") {
-    forAll(agreementAddedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventDeserializer.from[AgreementAddedV1, AgreementAdded](stateV1), Right(state))
+  // TODO move me in commons
+  def deserCheck[A, B: TypeTag](
+    gen: Gen[(A, B)]
+  )(implicit e: PersistEventDeserializer[B, A], loc: munit.Location, d: => Diff[Either[Throwable, A]]): Unit =
+    property(s"${typeOf[B].typeSymbol.name.toString} is correctly serialized") {
+      forAll(gen) { case (state, stateV1) =>
+        // * This is declared lazy in the signature to avoid a MethodTooBigException
+        implicit val diffX: Diff[Either[Throwable, A]] = d
+        assertEqual(PersistEventDeserializer.from[B, A](stateV1), Right(state))
+      }
     }
-  }
-
-  property("AgreementActivated is correctly deserialized") {
-    forAll(agreementActivatedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventDeserializer.from[AgreementActivatedV1, AgreementActivated](stateV1), Right(state))
-    }
-  }
-
-  property("AgreementSuspended is correctly deserialized") {
-    forAll(agreementSuspendedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventDeserializer.from[AgreementSuspendedV1, AgreementSuspended](stateV1), Right(state))
-    }
-  }
-
-  property("AgreementDeactivated is correctly deserialized") {
-    forAll(agreementDeactivatedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventDeserializer.from[AgreementDeactivatedV1, AgreementDeactivated](stateV1), Right(state))
-    }
-  }
-
-  property("VerifiedAttributeUpdated is correctly deserialized") {
-    forAll(verifiedAttributeUpdatedGen) { case (state, stateV1) =>
-      assertEqual(
-        PersistEventDeserializer.from[VerifiedAttributeUpdatedV1, VerifiedAttributeUpdated](stateV1),
-        Right(state)
-      )
-    }
-  }
-
-  property("State is correctly serialized") {
-    forAll(stateGen) { case (state, stateV1) =>
-      assertEqual(PersistEventSerializer.to[State, StateV1](state).map(_.sorted), Right(stateV1.sorted))
-    }
-  }
-
-  property("AgreementAdded is correctly serialized") {
-    forAll(agreementAddedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventSerializer.to[AgreementAdded, AgreementAddedV1](state), Right(stateV1))
-    }
-  }
-
-  property("AgreementActivated is correctly serialized") {
-    forAll(agreementActivatedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventSerializer.to[AgreementActivated, AgreementActivatedV1](state), Right(stateV1))
-    }
-  }
-
-  property("AgreementSuspended is correctly serialized") {
-    forAll(agreementSuspendedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventSerializer.to[AgreementSuspended, AgreementSuspendedV1](state), Right(stateV1))
-    }
-  }
-
-  property("AgreementDeactivated is correctly serialized") {
-    forAll(agreementDeactivatedGen) { case (state, stateV1) =>
-      assertEqual(PersistEventSerializer.to[AgreementDeactivated, AgreementDeactivatedV1](state), Right(stateV1))
-    }
-  }
-
-  property("VerifiedAttributeUpdated is correctly serialized") {
-    forAll(verifiedAttributeUpdatedGen) { case (state, stateV1) =>
-      assertEqual(
-        PersistEventSerializer.to[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1](state),
-        Right(stateV1)
-      )
-    }
-  }
-
 }
 
 object PersistentSerializationSpec {

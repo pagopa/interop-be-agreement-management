@@ -50,6 +50,7 @@ trait SpecHelper {
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+    _ = seed.verifiedAttributes.foreach(_ => (() => mockDateTimeSupplier.get).expects().returning(timestamp).once())
     agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
   } yield agreement
 

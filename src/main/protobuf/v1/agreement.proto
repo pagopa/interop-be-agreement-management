@@ -17,8 +17,8 @@ message AgreementV1 {
   repeated VerifiedAttributeV1 verifiedAttributes = 7;
   optional bool suspendedByConsumer = 8;
   optional bool suspendedByProducer = 9;
-  required string createdAt = 10;
-  optional string updatedAt = 11;
+  required int64 createdAt = 10;
+  optional int64 updatedAt = 11;
 }
 
 message VerifiedAttributeV1 {

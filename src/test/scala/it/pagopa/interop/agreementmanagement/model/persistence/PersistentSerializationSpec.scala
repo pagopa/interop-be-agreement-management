@@ -3,10 +3,10 @@ package it.pagopa.interop.agreementmanagement.model.persistence
 import cats.implicits._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen
-
 import munit.ScalaCheckSuite
 import PersistentSerializationSpec._
-import java.time.OffsetDateTime
+
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement._
@@ -17,7 +17,8 @@ import it.pagopa.interop.agreementmanagement.model.persistence.serializer._
 import com.softwaremill.diffx.munit.DiffxAssertions
 import com.softwaremill.diffx.generic.auto._
 import com.softwaremill.diffx.Diff
-import scala.reflect.runtime.universe.{typeOf, TypeTag}
+
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
 
@@ -66,11 +67,19 @@ object PersistentSerializationSpec {
     s <- Gen.containerOfN[List, Char](n, Gen.alphaNumChar)
   } yield s.foldLeft("")(_ + _)
 
-  val offsetDatetimeGen: Gen[(OffsetDateTime, String)] = for {
+  val offsetDatetimeStringGen: Gen[(OffsetDateTime, String)] = for {
     n <- Gen.chooseNum(0, 10000L)
-    now = OffsetDateTime.now()
+    now = OffsetDateTime.now(ZoneOffset.UTC)
     time <- Gen.oneOf(now.minusSeconds(n), now.plusSeconds(n))
   } yield (time, DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time))
+
+  val offsetDatetimeLongGen: Gen[(OffsetDateTime, Long)] = for {
+    n <- Gen.chooseNum(0, 10000L)
+    now      = OffsetDateTime.now(ZoneOffset.UTC)
+    // Truncate to millis precision
+    nowMills = now.withNano(now.getNano - (now.getNano % 1000000))
+    time <- Gen.oneOf(nowMills.minusSeconds(n), nowMills.plusSeconds(n))
+  } yield (time, time.toInstant.toEpochMilli)
 
   val persistentAgreementStateGen: Gen[(PersistentAgreementState, AgreementStateV1)] =
     Gen.oneOf((Pending, PENDING), (Active, ACTIVE), (Suspended, SUSPENDED), (Inactive, INACTIVE))
@@ -78,7 +87,7 @@ object PersistentSerializationSpec {
   val persistentVerifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
     id               <- Gen.uuid
     verified         <- Gen.option(Gen.oneOf(true, false))
-    (vDate, vDateS)  <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (vDate, vDateS)  <- Gen.option(offsetDatetimeStringGen).map(_.separate)
     validityTimespan <- Gen.option(Gen.posNum[Long])
   } yield (
     PersistentVerifiedAttribute(id, verified, vDate, validityTimespan),
@@ -86,17 +95,17 @@ object PersistentSerializationSpec {
   )
 
   val persistentAgreementGen: Gen[(PersistentAgreement, AgreementV1)] = for {
-    id                      <- Gen.uuid
-    eserviceId              <- Gen.uuid
-    descriptorId            <- Gen.uuid
-    producerId              <- Gen.uuid
-    consumerId              <- Gen.uuid
-    (state, stateV1)        <- persistentAgreementStateGen
-    (vattrs, vattrsV1)      <- Gen.listOf(persistentVerifiedAttributeGen).map(_.separate)
-    suspendedByConsumer     <- Gen.option(Gen.oneOf(true, false))
-    suspendedByProducer     <- Gen.option(Gen.oneOf(true, false))
-    (createdAt, createdAtS) <- offsetDatetimeGen
-    (updatedAt, updatedAtS) <- Gen.option(offsetDatetimeGen).map(_.separate)
+    id                       <- Gen.uuid
+    eserviceId               <- Gen.uuid
+    descriptorId             <- Gen.uuid
+    producerId               <- Gen.uuid
+    consumerId               <- Gen.uuid
+    (state, stateV1)         <- persistentAgreementStateGen
+    (vattrs, vattrsV1)       <- Gen.listOf(persistentVerifiedAttributeGen).map(_.separate)
+    suspendedByConsumer      <- Gen.option(Gen.oneOf(true, false))
+    suspendedByProducer      <- Gen.option(Gen.oneOf(true, false))
+    (createdAt, createdAtV1) <- offsetDatetimeLongGen
+    (updatedAt, updatedAtV1) <- Gen.option(offsetDatetimeLongGen).map(_.separate)
   } yield (
     PersistentAgreement(
       id = id,
@@ -121,8 +130,8 @@ object PersistentSerializationSpec {
       verifiedAttributes = vattrsV1,
       suspendedByConsumer = suspendedByConsumer,
       suspendedByProducer = suspendedByProducer,
-      createdAt = createdAtS,
-      updatedAt = updatedAtS
+      createdAt = createdAtV1,
+      updatedAt = updatedAtV1
     )
   )
 

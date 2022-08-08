@@ -129,19 +129,20 @@ object Dependencies {
       cats.core                   % Compile,
       logback.classic             % Compile,
       mustache.mustache           % Compile,
-      pagopa.commonsUtils         % Compile,
+      pagopa.commonsUtils         % "compile,it",
       pagopa.commonsJWT           % Compile,
       pagopa.commonsQueue         % Compile,
-      pagopa.commonsCqrs          % Compile,
-      postgres.jdbc               % Compile,
+      pagopa.commonsCqrs          % "compile,it",
+      postgres.jdbc               % "compile,it",
       scalaprotobuf.core          % Compile,
       scalaprotobuf.core          % Protobuf,
-      scalatest.core              % Test,
-      scalamock.core              % Test,
-      akka.testkit                % Test,
-      akka.httpTestkit            % Test,
+      scalatest.core              % "test,it",
+      scalamock.core              % "test,it",
+      akka.testkit                % "test,it",
+      akka.httpTestkit            % "test,it",
       "org.scalameta"            %% "munit-scalacheck"     % "0.7.29" % Test,
-      "com.softwaremill.diffx"   %% "diffx-munit"          % "0.7.0"  % Test
+      "com.softwaremill.diffx"   %% "diffx-munit"          % "0.7.0"  % Test,
+      "com.dimafeng"             %% "testcontainers-scala-scalatest" % testcontainersScalaVersion % IntegrationTest
     )
 
     val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commonsUtils, pagopa.commonsQueue).map(_ % Compile)

@@ -12,7 +12,7 @@ object JsonFormats {
         case JsString("Pending")   => Pending
         case JsString("Active")    => Active
         case JsString("Suspended") => Suspended
-        case JsString("Inactive ") => Inactive
+        case JsString("Inactive")  => Inactive
         case _ => deserializationError("Unable to deserialize json as a PersistentPurposeVersionState")
       }
 

@@ -44,7 +44,10 @@ object AgreementPersistentBehavior {
           agreement <- state
             .getAgreementContainingVerifiedAttribute(agreementId, attributeId)
             .toRight(AgreementNotFound(agreementId))
-        } yield state.updateAgreementContent(agreement, PersistentVerifiedAttribute.fromAPI(updateVerifiedAttribute))
+        } yield state.updateAgreementContent(
+          agreement,
+          PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)(updateVerifiedAttribute)
+        )
 
         agreementUpdated.fold(
           handleFailure[VerifiedAttributeUpdated](_)(replyTo),

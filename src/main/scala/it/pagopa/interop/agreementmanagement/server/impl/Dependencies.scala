@@ -59,9 +59,9 @@ trait Dependencies {
   val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
     Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory)
 
-  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+  def initProjections(blockingEc: ExecutionContext)(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     val queueWriter: QueueWriter =
-      QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.projectableAgreementToJson)
+      QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.projectableAgreementToJson)(blockingEc)
 
     val dbConfig: DatabaseConfig[JdbcProfile] =
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
@@ -88,9 +88,8 @@ trait Dependencies {
     )
   }
 
-  def getJwtValidator()(implicit ec: ExecutionContext): Future[JWTReader] = JWTConfiguration.jwtReader
+  def getJwtValidator(): Future[JWTReader] = JWTConfiguration.jwtReader
     .loadKeyset()
-    .toFuture
     .map(keyset =>
       new DefaultJWTReader with PublicKeysHolder {
         var publicKeyset: Map[KID, SerializedKey]                                        = keyset
@@ -98,6 +97,7 @@ trait Dependencies {
           getClaimsVerifier(audience = ApplicationConfiguration.jwtAudience)
       }
     )
+    .toFuture
 
   def agreementApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit
     actorSystem: ActorSystem[_],

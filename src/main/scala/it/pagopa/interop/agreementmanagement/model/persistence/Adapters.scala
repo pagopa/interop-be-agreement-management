@@ -1,11 +1,10 @@
 package it.pagopa.interop.agreementmanagement.model.persistence
 
 import cats.syntax.all._
-import it.pagopa.interop.commons.utils.service._
-import java.time.OffsetDateTime
+import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement._
-import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
+import it.pagopa.interop.commons.utils.service._
 
 object Adapters {
 
@@ -41,7 +40,8 @@ object Adapters {
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
       state = Pending,
-      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      verifiedAttributes =
+        agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)),
       suspendedByConsumer = None,
       suspendedByProducer = None,
       createdAt = dateTimeSupplier.get,
@@ -59,7 +59,8 @@ object Adapters {
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
       state = Active,
-      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      verifiedAttributes =
+        agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)),
       suspendedByConsumer = None,
       suspendedByProducer = None,
       createdAt = dateTimeSupplier.get,
@@ -101,11 +102,13 @@ object Adapters {
 
   implicit class PersistentVerifiedAttributeObjectWrapper(private val p: PersistentVerifiedAttribute.type)
       extends AnyVal {
-    def fromAPI(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute    = PersistentVerifiedAttribute(
+    def fromAPI(
+      dateTimeSupplier: OffsetDateTimeSupplier
+    )(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute = PersistentVerifiedAttribute(
       id = attribute.id,
       verified = attribute.verified,
       verificationDate = attribute.verified match {
-        case Some(_) => Some(OffsetDateTime.now())
+        case Some(_) => Some(dateTimeSupplier.get)
         case None    => None
       },
       validityTimespan = attribute.validityTimespan

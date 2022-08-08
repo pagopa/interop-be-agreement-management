@@ -12,7 +12,6 @@ import cats.syntax.all._
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.agreementmanagement.server.Controller
 import it.pagopa.interop.commons.logging.renderBuildInfo
-import kamon.Kamon
 import scala.concurrent.ExecutionContextExecutor
 import akka.actor.typed.ActorRef
 import scala.util.{Success, Failure}
@@ -20,17 +19,19 @@ import buildinfo.BuildInfo
 
 import com.typesafe.scalalogging.Logger
 import scala.concurrent.Future
+import akka.actor.typed.DispatcherSelector
 
 object Main extends App with Dependencies {
 
   val logger: Logger = Logger(this.getClass())
 
-  val system: ActorSystem[Nothing] = ActorSystem[Nothing](
+  ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[Nothing]          = context.system
       implicit val executionContext: ExecutionContextExecutor = actorSystem.executionContext
+      val selector: DispatcherSelector                        = DispatcherSelector.fromConfig("futures-dispatcher")
+      val blockingEc: ExecutionContextExecutor                = actorSystem.dispatchers.lookup(selector)
 
-      Kamon.init()
       AkkaManagement.get(actorSystem.classicSystem).start()
 
       val sharding: ClusterSharding = ClusterSharding(actorSystem)
@@ -48,7 +49,7 @@ object Main extends App with Dependencies {
       )
       cluster.subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
-      if (ApplicationConfiguration.projectionsEnabled) initProjections()
+      if (ApplicationConfiguration.projectionsEnabled) initProjections(blockingEc)
 
       logger.info(renderBuildInfo(BuildInfo))
       logger.info(s"Started cluster at ${cluster.selfMember.address}")
@@ -56,7 +57,7 @@ object Main extends App with Dependencies {
       val serverBinding: Future[Http.ServerBinding] = for {
         jwtReader <- getJwtValidator()
         api        = agreementApi(sharding, jwtReader)
-        controller = new Controller(api, validationExceptionToRoute.some)(system.classicSystem)
+        controller = new Controller(api, validationExceptionToRoute.some)(actorSystem.classicSystem)
         binding <- Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
       } yield binding
 
@@ -72,7 +73,5 @@ object Main extends App with Dependencies {
     },
     BuildInfo.name
   )
-
-  system.whenTerminated.onComplete { case _ => Kamon.stop() }(scala.concurrent.ExecutionContext.global)
 
 }

@@ -11,7 +11,7 @@ import it.pagopa.interop.agreementmanagement.util.{AuthorizedRoutes, ClusteredSc
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
 class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestRouteTest {
@@ -28,7 +28,7 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
         override def get: UUID = UUID.randomUUID()
       },
       new OffsetDateTimeSupplier {
-        override def get: OffsetDateTime = OffsetDateTime.now()
+        override def get: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
       }
     )
 

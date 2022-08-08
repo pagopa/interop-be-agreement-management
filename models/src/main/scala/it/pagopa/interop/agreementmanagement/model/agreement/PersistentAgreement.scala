@@ -1,7 +1,5 @@
 package it.pagopa.interop.agreementmanagement.model.agreement
 
-import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
-import cats.implicits._
 import java.time.OffsetDateTime
 import java.util.UUID
 

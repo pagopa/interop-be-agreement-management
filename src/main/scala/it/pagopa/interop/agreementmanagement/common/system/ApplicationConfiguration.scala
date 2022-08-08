@@ -4,7 +4,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import it.pagopa.interop.commons.cqrs.model.MongoDbConfig
 
 object ApplicationConfiguration {
-  System.setProperty("kanela.show-banner", "false")
   val config: Config = ConfigFactory.load()
 
   val serverPort: Int          = config.getInt("agreement-management.port")

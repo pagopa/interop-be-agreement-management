@@ -55,7 +55,7 @@ class AgreementListApiServiceSpec
   implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory)
+    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory(mockDateTimeSupplier))
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)

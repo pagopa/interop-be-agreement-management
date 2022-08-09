@@ -34,8 +34,8 @@ import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors
-import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
+import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -46,32 +46,36 @@ trait Dependencies {
   val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
 
-  val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
-    val index: Int = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
-    AgreementPersistentBehavior(
-      entityContext.shard,
-      PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-      OffsetDateTimeSupplierImpl,
-      projectionTag(index)
-    )
+  def behaviorFactory(offsetDateTimeSupplier: OffsetDateTimeSupplier): EntityContext[Command] => Behavior[Command] = {
+    entityContext =>
+      val index: Int = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
+      AgreementPersistentBehavior(
+        entityContext.shard,
+        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+        offsetDateTimeSupplier,
+        projectionTag(index)
+      )
   }
 
   val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
-    Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory)
+    Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory(dateTimeSupplier))
 
-  def initProjections(blockingEc: ExecutionContext)(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+  def initProjections(
+    blockingEc: ExecutionContext
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    initNotificationProjection(blockingEc)
+    initCqrsProjection
+  }
+
+  def initNotificationProjection(blockingEc: ExecutionContext)(implicit actorSystem: ActorSystem[_]): Unit = {
     val queueWriter: QueueWriter =
       QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.projectableAgreementToJson)(blockingEc)
 
     val dbConfig: DatabaseConfig[JdbcProfile] =
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
-    val mongoDbConfig                         = ApplicationConfiguration.mongoDb
 
     val notificationProjectionId = "agreement-notification-projections"
-    val cqrsProjectionId         = "agreement-cqrs-projections"
-
-    val notificationProjection = AgreementNotificationProjection(dbConfig, queueWriter, notificationProjectionId)
-    val cqrsProjection         = AgreementCqrsProjection.projection(dbConfig, mongoDbConfig, cqrsProjectionId)
+    val notificationProjection   = AgreementNotificationProjection(dbConfig, queueWriter, notificationProjectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = notificationProjectionId,
@@ -79,6 +83,15 @@ trait Dependencies {
       behaviorFactory = (i: Int) => ProjectionBehavior(notificationProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
+  }
+
+  def initCqrsProjection(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+    val mongoDbConfig                         = ApplicationConfiguration.mongoDb
+
+    val cqrsProjectionId = "agreement-cqrs-projections"
+    val cqrsProjection   = AgreementCqrsProjection.projection(dbConfig, mongoDbConfig, cqrsProjectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = cqrsProjectionId,

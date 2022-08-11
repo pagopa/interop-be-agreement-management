@@ -19,6 +19,7 @@ message AgreementV1 {
   optional bool suspendedByProducer = 9;
   required int64 createdAt = 10;
   optional int64 updatedAt = 11;
+  optional bool suspendedByPlatform = 12;
 }
 
 message VerifiedAttributeV1 {

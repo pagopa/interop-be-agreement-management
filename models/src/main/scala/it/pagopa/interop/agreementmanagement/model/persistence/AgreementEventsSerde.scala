@@ -55,10 +55,9 @@ object AgreementEventsSerde {
       }
     }
 
-  private implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat4(
-    PersistentVerifiedAttribute.apply
-  )
-  private implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat11(PersistentAgreement.apply)
+  private implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] =
+    jsonFormat4(PersistentVerifiedAttribute.apply)
+  private implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat12(PersistentAgreement.apply)
   private implicit val vauFormat: RootJsonFormat[VerifiedAttributeUpdated] = jsonFormat1(VerifiedAttributeUpdated.apply)
   private implicit val aadFormat: RootJsonFormat[AgreementAdded]           = jsonFormat1(AgreementAdded.apply)
   private implicit val aacFormat: RootJsonFormat[AgreementActivated]       = jsonFormat1(AgreementActivated.apply)

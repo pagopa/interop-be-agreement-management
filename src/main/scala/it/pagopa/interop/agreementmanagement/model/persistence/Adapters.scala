@@ -44,6 +44,7 @@ object Adapters {
         agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)),
       suspendedByConsumer = None,
       suspendedByProducer = None,
+      suspendedByPlatform = None,
       createdAt = dateTimeSupplier.get,
       updatedAt = None
     )
@@ -63,6 +64,7 @@ object Adapters {
         agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)),
       suspendedByConsumer = None,
       suspendedByProducer = None,
+      suspendedByPlatform = None,
       createdAt = dateTimeSupplier.get,
       updatedAt = None
     )
@@ -77,6 +79,7 @@ object Adapters {
       verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
+      suspendedByPlatform = persistentAgreement.suspendedByPlatform,
       createdAt = persistentAgreement.createdAt,
       updatedAt = persistentAgreement.updatedAt
     )

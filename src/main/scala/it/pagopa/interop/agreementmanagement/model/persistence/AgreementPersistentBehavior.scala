@@ -167,6 +167,7 @@ object AgreementPersistentBehavior {
             val newState = calcNewAgreementState(
               suspendedByProducer = persistentAgreement.suspendedByProducer,
               suspendedByConsumer = Some(isSuspended),
+              suspendedByPlatform = persistentAgreement.suspendedByPlatform,
               newState = state
             )
             persistentAgreement.copy(state = newState, suspendedByConsumer = Some(isSuspended), updatedAt = timestamp)
@@ -174,9 +175,18 @@ object AgreementPersistentBehavior {
             val newState = calcNewAgreementState(
               suspendedByProducer = Some(isSuspended),
               suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+              suspendedByPlatform = persistentAgreement.suspendedByPlatform,
               newState = state
             )
             persistentAgreement.copy(state = newState, suspendedByProducer = Some(isSuspended), updatedAt = timestamp)
+          case ChangedBy.PLATFORM =>
+            val newState = calcNewAgreementState(
+              suspendedByProducer = persistentAgreement.suspendedByProducer,
+              suspendedByConsumer = persistentAgreement.suspendedByConsumer,
+              suspendedByPlatform = Some(isSuspended),
+              newState = state
+            )
+            persistentAgreement.copy(state = newState, suspendedByPlatform = Some(isSuspended), updatedAt = timestamp)
         }
       case None            => persistentAgreement.copy(state = state, updatedAt = timestamp)
     }
@@ -185,12 +195,12 @@ object AgreementPersistentBehavior {
   def calcNewAgreementState(
     suspendedByProducer: Option[Boolean],
     suspendedByConsumer: Option[Boolean],
+    suspendedByPlatform: Option[Boolean],
     newState: PersistentAgreementState
-  ): PersistentAgreementState = (newState, suspendedByProducer, suspendedByConsumer) match {
-    case (Active, Some(true), _) => Suspended
-    case (Active, _, Some(true)) => Suspended
-    case _                       => newState
-  }
+  ): PersistentAgreementState =
+    (suspendedByProducer ++ suspendedByConsumer ++ suspendedByPlatform)
+      .collectFirst { case true if newState == Active => Suspended }
+      .getOrElse(newState)
 
   def getModifiedAgreement(
     state: State,

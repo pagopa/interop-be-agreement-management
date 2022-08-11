@@ -104,6 +104,7 @@ object PersistentSerializationSpec {
     (vattrs, vattrsV1)       <- Gen.listOf(persistentVerifiedAttributeGen).map(_.separate)
     suspendedByConsumer      <- Gen.option(Gen.oneOf(true, false))
     suspendedByProducer      <- Gen.option(Gen.oneOf(true, false))
+    suspendedByPlatform      <- Gen.option(Gen.oneOf(true, false))
     (createdAt, createdAtV1) <- offsetDatetimeLongGen
     (updatedAt, updatedAtV1) <- Gen.option(offsetDatetimeLongGen).map(_.separate)
   } yield (
@@ -117,6 +118,7 @@ object PersistentSerializationSpec {
       verifiedAttributes = vattrs,
       suspendedByConsumer = suspendedByConsumer,
       suspendedByProducer = suspendedByProducer,
+      suspendedByPlatform = suspendedByPlatform,
       createdAt = createdAt,
       updatedAt = updatedAt
     ),
@@ -130,6 +132,7 @@ object PersistentSerializationSpec {
       verifiedAttributes = vattrsV1,
       suspendedByConsumer = suspendedByConsumer,
       suspendedByProducer = suspendedByProducer,
+      suspendedByPlatform = suspendedByPlatform,
       createdAt = createdAtV1,
       updatedAt = updatedAtV1
     )

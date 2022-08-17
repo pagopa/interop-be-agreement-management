@@ -20,13 +20,30 @@ message AgreementV1 {
   required int64 createdAt = 10;
   optional int64 updatedAt = 11;
   optional bool suspendedByPlatform = 12;
+  repeated CertifiedAttributeV1 certifiedAttributes = 13;
+  repeated DeclaredAttributeV1 declaredAttributes = 14;
+
 }
 
 message VerifiedAttributeV1 {
-  required string id = 1;                 // registry identifier
-  optional bool verified = 2;             // state of verification
-  optional string verificationDate = 4;   // timestamp of verification, None if not verified
-  optional string validityTimespan = 5;   // seconds of verification validity, None by default
+  required string id = 1;
+  repeated DocumentV1 documents = 2;
+}
+
+message CertifiedAttributeV1 {
+  required string id = 1;
+}
+
+message DeclaredAttributeV1 {
+  required string id = 1;
+}
+
+message DocumentV1 {
+  required string id = 1;
+  required string name = 2;
+  required string contentType = 3;
+  required string path = 4;
+  required int64 createdAt = 5;
 }
 
 enum AgreementStateV1 {

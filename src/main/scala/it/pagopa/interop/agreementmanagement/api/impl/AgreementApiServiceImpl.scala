@@ -8,24 +8,27 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onComplete}
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.pattern.StatusReply
+import akka.util.Timeout
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.interop.agreementmanagement.model._
-import it.pagopa.interop.agreementmanagement.model.agreement.{PersistentAgreement, PersistentAgreementState}
-import it.pagopa.interop.agreementmanagement.model.persistence._
+import it.pagopa.interop.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementState,
+  PersistentVerifiedAttributeDocument
+}
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
+import it.pagopa.interop.agreementmanagement.model.persistence._
+import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.OperationForbidden
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 
 import scala.concurrent._
-import scala.util.{Failure, Success}
-import akka.util.Timeout
-import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, authorizeInterop, hasPermissions}
-import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.OperationForbidden
-
 import scala.concurrent.duration._
+import scala.util.{Failure, Success}
 
 final case class AgreementApiServiceImpl(
   system: ActorSystem[_],
@@ -279,59 +282,83 @@ final case class AgreementApiServiceImpl(
         ref
       )
 
-  /** Code: 200, Message: Returns the agreement with the updated attribute state., DataType: Agreement
-    * Code: 400, Message: Bad Request, DataType: Problem
-    * Code: 404, Message: Resource Not Found, DataType: Problem
-    */
-  override def updateAgreementVerifiedAttribute(agreementId: String, verifiedAttributeSeed: VerifiedAttributeSeed)(
+  override def addVerifiedAttributeDocument(agreementId: String, attributeId: String, documentSeed: DocumentSeed)(
     implicit
+    toEntityMarshallerAgreement: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = "Updating agreement"
+    val operationLabel: String = s"Adding document to verified attribute $attributeId of agreement $agreementId"
 
-    logger.info(s"$operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id}")
+    logger.info(operationLabel)
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    val result: Future[StatusReply[PersistentAgreement]] =
-      commander.ask(ref => UpdateVerifiedAttribute(agreementId, verifiedAttributeSeed, ref))
+    val result: Future[PersistentVerifiedAttributeDocument] =
+      commander.askWithStatus(ref =>
+        AddVerifiedAttributeDocument(
+          agreementId,
+          attributeId,
+          PersistentVerifiedAttributeDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
+          ref
+        )
+      )
 
     onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        updateAgreementVerifiedAttribute200(PersistentAgreement.toAPI(statusReply.getValue))
-      case Success(statusReply)                          =>
-        logger.error(
-          s"Error while $operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id}",
-          statusReply.getError
-        )
-        statusReply.getError match {
-          case ex: AgreementNotFound => updateAgreementVerifiedAttribute404(problemOf(StatusCodes.NotFound, ex))
-          case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId verified attribute ${verifiedAttributeSeed.id}", ex)
+      case Success(document)              =>
+        addVerifiedAttributeDocument200(PersistentVerifiedAttributeDocument.toAPI(document))
+      case Failure(ex: AgreementNotFound) =>
+        logger.error(s"Error while $operationLabel", ex)
+        addVerifiedAttributeDocument404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex)                    =>
+        logger.error(s"Error while $operationLabel", ex)
+        internalServerError(operationLabel, agreementId, ex.getMessage)
+    }
+  }
+
+  override def removeVerifiedAttributeDocument(agreementId: String, attributeId: String, documentId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE) {
+
+    val operationLabel: String = s"Removing document from verified attribute $attributeId of agreement $agreementId"
+
+    logger.info(operationLabel)
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+
+    val result: Future[Unit] =
+      commander.askWithStatus(ref => RemoveVerifiedAttributeDocument(agreementId, attributeId, documentId, ref))
+
+    onComplete(result) {
+      case Success(_)                     =>
+        removeVerifiedAttributeDocument204
+      case Failure(ex: AgreementNotFound) =>
+        logger.error(s"Error while $operationLabel", ex)
+        removeVerifiedAttributeDocument404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex)                    =>
+        logger.error(s"Error while $operationLabel", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
 
   // TODO introduce proper uuid handling (e.g.: Twitter snowflake)
-  override def upgradeAgreementById(agreementId: String, agreementSeed: AgreementSeed)(implicit
+  override def upgradeAgreementById(agreementId: String, seed: UpgradeAgreementSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = "Updating agreement"
+    val operationLabel: String = "Upgrading agreement"
 
-    logger.info(s"$operationLabel $agreementId, with data $agreementSeed")
+    logger.info(s"$operationLabel $agreementId, with data $seed")
 
     val result = for {
-      _ <- deactivateAgreementById(agreementId, StateChangeDetails(changedBy = None))
-      persistentAgreement = PersistentAgreement.fromAPIWithActiveState(agreementSeed, UUIDSupplier, dateTimeSupplier)
+      oldAgreement <- deactivateAgreementById(agreementId, StateChangeDetails(changedBy = None))
+      persistentAgreement = PersistentAgreement.upgrade(oldAgreement, seed)(UUIDSupplier, dateTimeSupplier)
       activeAgreement <- createAgreement(persistentAgreement)
     } yield activeAgreement
 
@@ -339,23 +366,26 @@ final case class AgreementApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess =>
         upgradeAgreementById200(PersistentAgreement.toAPI(statusReply.getValue))
       case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId, with data $agreementSeed", statusReply.getError)
+        logger.error(s"Error while $operationLabel $agreementId, with data $seed", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound           => upgradeAgreementById404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => upgradeAgreementById400(problemOf(StatusCodes.BadRequest, ex))
           case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId, with data $agreementSeed", ex)
+        logger.error(s"Error while $operationLabel $agreementId, with data $seed", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
 
-  private def deactivateAgreementById(agreementId: String, stateChangeDetails: StateChangeDetails) = {
+  private def deactivateAgreementById(
+    agreementId: String,
+    stateChangeDetails: StateChangeDetails
+  ): Future[PersistentAgreement] = {
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    commander.ask(ref => DeactivateAgreement(agreementId, stateChangeDetails, ref))
+    commander.askWithStatus(ref => DeactivateAgreement(agreementId, stateChangeDetails, ref))
   }
 
   private def internalServerError(operationLabel: String, resourceId: String, errorMessage: String): StandardRoute =

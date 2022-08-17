@@ -6,10 +6,15 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EffectBuilder, EventSourcedBehavior, RetentionCriteria}
-import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors.{AgreementConflict, AgreementNotFound}
+import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors.{
+  AgreementConflict,
+  AgreementNotFound,
+  AttributeNotFound
+}
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.{ChangedBy, StateChangeDetails}
+import it.pagopa.interop.commons.utils.errors.ComponentError
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 import java.time.temporal.ChronoUnit
@@ -34,24 +39,34 @@ object AgreementPersistentBehavior {
           .map(found => AgreementConflict(found.id.toString))
           .toLeft(newAgreement)
 
-        agreement
-          .fold(handleFailure[AgreementAdded](_)(replyTo), persistStateAndReply(_, AgreementAdded)(replyTo))
+        agreement.fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementAdded)(replyTo))
 
-      case UpdateVerifiedAttribute(agreementId, updateVerifiedAttribute, replyTo) =>
-        val attributeId = updateVerifiedAttribute.id.toString
+      case AddVerifiedAttributeDocument(agreementId, attributeId, document, replyTo) =>
+        val update: Either[ComponentError, PersistentVerifiedAttributeDocument] = for {
+          agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
+          _         <- agreement.verifiedAttributes
+            .find(_.id.toString == attributeId)
+            .toRight(AttributeNotFound(agreementId, attributeId))
+        } yield document
 
-        val agreementUpdated: Either[AgreementNotFound, PersistentAgreement] = for {
-          agreement <- state
-            .getAgreementContainingVerifiedAttribute(agreementId, attributeId)
-            .toRight(AgreementNotFound(agreementId))
-        } yield state.updateAgreementContent(
-          agreement,
-          PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)(updateVerifiedAttribute)
+        update.fold(
+          handleFailure(_)(replyTo),
+          persistStateAndReply(_, VerifiedAttributeDocumentAdded(agreementId, attributeId, _))(replyTo)
         )
 
-        agreementUpdated.fold(
-          handleFailure[VerifiedAttributeUpdated](_)(replyTo),
-          persistStateAndReply(_, VerifiedAttributeUpdated)(replyTo)
+      case RemoveVerifiedAttributeDocument(agreementId, attributeId, documentId, replyTo) =>
+        val update: Either[ComponentError, Unit] = for {
+          agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
+          _         <- agreement.verifiedAttributes
+            .find(_.id.toString == attributeId)
+            .toRight(AttributeNotFound(agreementId, attributeId))
+        } yield ()
+
+        update.fold(
+          handleFailure(_)(replyTo),
+          persistStateAndReply(_, (_: Unit) => VerifiedAttributeDocumentRemoved(agreementId, attributeId, documentId))(
+            replyTo
+          )
         )
 
       case GetAgreement(agreementId, replyTo) =>
@@ -73,21 +88,21 @@ object AgreementPersistentBehavior {
           getModifiedAgreement(state, agreementId, stateChangeDetails, Active, _.isActivable)(dateTimeSupplier)
 
         agreement
-          .fold(handleFailure[AgreementActivated](_)(replyTo), persistStateAndReply(_, AgreementActivated)(replyTo))
+          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementActivated)(replyTo))
 
       case SuspendAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] =
           getModifiedAgreement(state, agreementId, stateChangeDetails, Suspended, _.isSuspendable)(dateTimeSupplier)
 
         agreement
-          .fold(handleFailure[AgreementSuspended](_)(replyTo), persistStateAndReply(_, AgreementSuspended)(replyTo))
+          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementSuspended)(replyTo))
 
       case DeactivateAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] =
           getModifiedAgreement(state, agreementId, stateChangeDetails, Inactive, _.isDeactivable)(dateTimeSupplier)
 
         agreement
-          .fold(handleFailure[AgreementDeactivated](_)(replyTo), persistStateAndReply(_, AgreementDeactivated)(replyTo))
+          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementDeactivated)(replyTo))
 
       case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, agreementState, replyTo) =>
         val agreements: Seq[PersistentAgreement] = state.agreements
@@ -110,23 +125,26 @@ object AgreementPersistentBehavior {
     }
   }
 
-  def handleFailure[T](ex: Throwable)(replyTo: ActorRef[StatusReply[PersistentAgreement]]): EffectBuilder[T, State] = {
-    replyTo ! StatusReply.Error[PersistentAgreement](ex)
+  def handleFailure[T, V](ex: Throwable)(replyTo: ActorRef[StatusReply[V]]): EffectBuilder[T, State] = {
+    replyTo ! StatusReply.Error[V](ex)
     Effect.none[T, State]
   }
 
-  def persistStateAndReply[T](purpose: PersistentAgreement, eventBuilder: PersistentAgreement => T)(
-    replyTo: ActorRef[StatusReply[PersistentAgreement]]
+  def persistStateAndReply[T, V](value: V, eventBuilder: V => T)(
+    replyTo: ActorRef[StatusReply[V]]
   ): EffectBuilder[T, State] =
-    Effect.persist(eventBuilder(purpose)).thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
+    Effect.persist(eventBuilder(value)).thenRun((_: State) => replyTo ! StatusReply.Success(value))
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case AgreementAdded(agreement)           => state.add(agreement)
-      case AgreementActivated(agreement)       => state.updateAgreement(agreement)
-      case AgreementSuspended(agreement)       => state.updateAgreement(agreement)
-      case AgreementDeactivated(agreement)     => state.updateAgreement(agreement)
-      case VerifiedAttributeUpdated(agreement) => state.updateAgreement(agreement)
+      case AgreementAdded(agreement)                                              => state.add(agreement)
+      case AgreementActivated(agreement)                                          => state.updateAgreement(agreement)
+      case AgreementSuspended(agreement)                                          => state.updateAgreement(agreement)
+      case AgreementDeactivated(agreement)                                        => state.updateAgreement(agreement)
+      case VerifiedAttributeDocumentAdded(agreementId, attributeId, document)     =>
+        state.addAttributeDocument(agreementId, attributeId, document)
+      case VerifiedAttributeDocumentRemoved(agreementId, attributeId, documentId) =>
+        state.removeAttributeDocument(agreementId, attributeId, documentId)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-agreement-management-persistence")

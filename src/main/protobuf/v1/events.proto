@@ -27,3 +27,15 @@ message AgreementSuspendedV1 {
 message AgreementDeactivatedV1 {
   required AgreementV1 agreement = 1;
 }
+
+message VerifiedAttributeDocumentAddedV1 {
+  required string agreementId = 1;
+  required string attributeId = 2;
+  required DocumentV1 document = 3;
+}
+
+message VerifiedAttributeDocumentRemovedV1 {
+  required string agreementId = 1;
+  required string attributeId = 2;
+  required string documentId = 3;
+}

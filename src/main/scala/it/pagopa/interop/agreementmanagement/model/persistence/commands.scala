@@ -2,19 +2,18 @@ package it.pagopa.interop.agreementmanagement.model.persistence
 
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
-import it.pagopa.interop.agreementmanagement.model.agreement.{PersistentAgreement, PersistentAgreementState}
-import it.pagopa.interop.agreementmanagement.model.{StateChangeDetails, VerifiedAttributeSeed}
+import it.pagopa.interop.agreementmanagement.model.StateChangeDetails
+import it.pagopa.interop.agreementmanagement.model.agreement.{
+  PersistentAgreement,
+  PersistentAgreementState,
+  PersistentVerifiedAttributeDocument
+}
 
 sealed trait Command
 
 case object Idle                                                                                        extends Command
 final case class AddAgreement(agreement: PersistentAgreement, replyTo: ActorRef[StatusReply[PersistentAgreement]])
     extends Command
-final case class UpdateVerifiedAttribute(
-  agreementId: String,
-  verifiedAttribute: VerifiedAttributeSeed,
-  replyTo: ActorRef[StatusReply[PersistentAgreement]]
-) extends Command
 final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply[PersistentAgreement]]) extends Command
 final case class ActivateAgreement(
   agreementId: String,
@@ -42,4 +41,18 @@ final case class ListAgreements(
   descriptorId: Option[String],
   state: Option[PersistentAgreementState],
   replyTo: ActorRef[Seq[PersistentAgreement]]
+) extends Command
+
+final case class AddVerifiedAttributeDocument(
+  agreementId: String,
+  attributeId: String,
+  document: PersistentVerifiedAttributeDocument,
+  replyTo: ActorRef[StatusReply[PersistentVerifiedAttributeDocument]]
+) extends Command
+
+final case class RemoveVerifiedAttributeDocument(
+  agreementId: String,
+  attributeId: String,
+  documentId: String,
+  replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command

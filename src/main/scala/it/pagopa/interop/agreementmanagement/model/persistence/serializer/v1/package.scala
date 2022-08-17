@@ -8,12 +8,10 @@ import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.eve
   AgreementAddedV1,
   AgreementDeactivatedV1,
   AgreementSuspendedV1,
-  VerifiedAttributeUpdatedV1
+  VerifiedAttributeDocumentAddedV1,
+  VerifiedAttributeDocumentRemovedV1
 }
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.protobufUtils.{
-  toPersistentAgreement,
-  toProtobufAgreement
-}
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.protobufUtils._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.state.{AgreementsV1, StateV1}
 
 package object v1 {
@@ -25,39 +23,30 @@ package object v1 {
     state => {
       for {
         agreements <- state.agreements
-          .traverse[ThrowableOr, (String, PersistentAgreement)] { case entry =>
+          .traverse[ThrowableOr, (String, PersistentAgreement)](entry =>
             toPersistentAgreement(entry.value).map(agreement => (entry.key, agreement))
-          }
+          )
           .map(_.toMap)
       } yield State(agreements)
     }
 
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
-      for {
-        agreementsV1 <- state.agreements.toSeq.traverse[ThrowableOr, AgreementsV1] { case (key, agreement) =>
-          toProtobufAgreement(agreement).map(value => AgreementsV1(key, value))
-        }
-      } yield StateV1(agreementsV1)
+      val agreementsV1 = state.agreements.map { case (key, agreement) =>
+        AgreementsV1(key, toProtobufAgreement(agreement))
+      }.toSeq
+      Right(StateV1(agreementsV1))
     }
 
   implicit def agreementAddedV1PersistEventDeserializer: PersistEventDeserializer[AgreementAddedV1, AgreementAdded] =
     event => toPersistentAgreement(event.agreement).map(AgreementAdded)
 
   implicit def agreementAddedV1PersistEventSerializer: PersistEventSerializer[AgreementAdded, AgreementAddedV1] =
-    event => toProtobufAgreement(event.agreement).map(ag => AgreementAddedV1.of(ag))
-
-  implicit def verifiedAttributeUpdatedV1PersistEventDeserializer
-    : PersistEventDeserializer[VerifiedAttributeUpdatedV1, VerifiedAttributeUpdated] =
-    event => toPersistentAgreement(event.agreement).map(VerifiedAttributeUpdated)
-
-  implicit def verifiedAttributeUpdatedV1PersistEventSerializer
-    : PersistEventSerializer[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1] =
-    event => toProtobufAgreement(event.agreement).map(ag => VerifiedAttributeUpdatedV1.of(ag))
+    event => Right(AgreementAddedV1.of(toProtobufAgreement(event.agreement)))
 
   implicit def agreementActivatedV1PersistEventSerializer
     : PersistEventSerializer[AgreementActivated, AgreementActivatedV1] =
-    event => toProtobufAgreement(event.agreement).map(ag => AgreementActivatedV1.of(ag))
+    event => Right(AgreementActivatedV1.of(toProtobufAgreement(event.agreement)))
 
   implicit def agreementActivatedV1PersistEventDeserializer
     : PersistEventDeserializer[AgreementActivatedV1, AgreementActivated] =
@@ -65,7 +54,7 @@ package object v1 {
 
   implicit def agreementSuspendedV1PersistEventSerializer
     : PersistEventSerializer[AgreementSuspended, AgreementSuspendedV1] =
-    event => toProtobufAgreement(event.agreement).map(ag => AgreementSuspendedV1.of(ag))
+    event => Right(AgreementSuspendedV1.of(toProtobufAgreement(event.agreement)))
 
   implicit def agreementSuspendedV1PersistEventDeserializer
     : PersistEventDeserializer[AgreementSuspendedV1, AgreementSuspended] =
@@ -73,10 +62,30 @@ package object v1 {
 
   implicit def agreementDeactivatedV1PersistEventSerializer
     : PersistEventSerializer[AgreementDeactivated, AgreementDeactivatedV1] =
-    event => toProtobufAgreement(event.agreement).map(ag => AgreementDeactivatedV1.of(ag))
+    event => Right(AgreementDeactivatedV1.of(toProtobufAgreement(event.agreement)))
 
   implicit def agreementDeactivatedV1PersistEventDeserializer
     : PersistEventDeserializer[AgreementDeactivatedV1, AgreementDeactivated] =
     event => toPersistentAgreement(event.agreement).map(AgreementDeactivated)
+
+  implicit def verifiedAttributeDocumentAddedV1PersistEventSerializer
+    : PersistEventSerializer[VerifiedAttributeDocumentAdded, VerifiedAttributeDocumentAddedV1] =
+    event =>
+      Right(
+        VerifiedAttributeDocumentAddedV1.of(event.agreementId, event.attributeId, toProtobufDocument(event.document))
+      )
+
+  implicit def verifiedAttributeDocumentAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[VerifiedAttributeDocumentAddedV1, VerifiedAttributeDocumentAdded] =
+    event =>
+      toPersistentDocument(event.document).map(VerifiedAttributeDocumentAdded(event.agreementId, event.attributeId, _))
+
+  implicit def verifiedAttributeDocumentRemovedV1PersistEventSerializer
+    : PersistEventSerializer[VerifiedAttributeDocumentRemoved, VerifiedAttributeDocumentRemovedV1] =
+    event => Right(VerifiedAttributeDocumentRemovedV1.of(event.agreementId, event.attributeId, event.documentId))
+
+  implicit def verifiedAttributeDocumentRemovedV1PersistEventDeserializer
+    : PersistEventDeserializer[VerifiedAttributeDocumentRemovedV1, VerifiedAttributeDocumentRemoved] =
+    event => Right(VerifiedAttributeDocumentRemoved(event.agreementId, event.attributeId, event.documentId))
 
 }

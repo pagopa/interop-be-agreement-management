@@ -3,7 +3,6 @@ package it.pagopa.interop.agreementmanagement.model.agreement
 import java.time.OffsetDateTime
 import java.util.UUID
 
-object PersistentAgreement
 final case class PersistentAgreement(
   id: UUID,
   eserviceId: UUID,
@@ -12,6 +11,8 @@ final case class PersistentAgreement(
   consumerId: UUID,
   state: PersistentAgreementState,
   verifiedAttributes: Seq[PersistentVerifiedAttribute],
+  certifiedAttributes: Seq[PersistentCertifiedAttribute],
+  declaredAttributes: Seq[PersistentDeclaredAttribute],
   suspendedByConsumer: Option[Boolean],
   suspendedByProducer: Option[Boolean],
   suspendedByPlatform: Option[Boolean],

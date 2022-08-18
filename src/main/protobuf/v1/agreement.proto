@@ -27,7 +27,8 @@ message AgreementV1 {
 
 message VerifiedAttributeV1 {
   required string id = 1;
-  repeated VerifiedAttributeDocumentV1 documents = 2;
+  // Places 2-5 are reserved for backward compatibility
+  repeated VerifiedAttributeDocumentV1 documents = 6;
 }
 
 message CertifiedAttributeV1 {

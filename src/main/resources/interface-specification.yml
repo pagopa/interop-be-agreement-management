@@ -72,13 +72,13 @@ paths:
       parameters:
         - name: agreementId
           in: path
-          description: The identifier of the agreement to update
+          description: The identifier of the agreement to upgrade
           required: true
           schema:
             type: string
             format: uuid
       requestBody:
-        description: The updated agreement data
+        description: The upgraded agreement data
         content:
           application/json:
             schema:
@@ -86,7 +86,7 @@ paths:
         required: true
       responses:
         '200':
-          description: Agreement updated.
+          description: Agreement upgraded.
           content:
             application/json:
               schema:
@@ -181,7 +181,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/agreements/{agreementId}/attribute/{attributeId}/documents':
+  '/agreements/{agreementId}/attributes/{attributeId}/documents':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
@@ -206,7 +206,7 @@ paths:
       operationId: addVerifiedAttributeDocument
       responses:
         '200':
-          description: Returns the agreement with the updated state.
+          description: Returns the document.
           content:
             application/json:
               schema:
@@ -229,9 +229,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentSeed'
-        description: the updated attribute
+        description: the document seed
         required: true
-  '/agreements/{agreementId}/attribute/{attributeId}/documents/{documentId}':
+  '/agreements/{agreementId}/attributes/{attributeId}/documents/{documentId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
@@ -262,7 +262,7 @@ paths:
       operationId: removeVerifiedAttributeDocument
       responses:
         '204':
-          description: Returns the agreement with the updated state.
+          description: Document removed
         '400':
           description: Bad Request
           content:

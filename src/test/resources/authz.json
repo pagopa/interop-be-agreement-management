@@ -26,7 +26,12 @@
       "verb": "GET"
     },
     {
-      "route": "updateAgreementVerifiedAttribute",
+      "route": "addVerifiedAttributeDocument",
+      "roles": ["admin"],
+      "verb": "POST"
+    },
+    {
+      "route": "removeVerifiedAttributeDocument",
       "roles": ["admin"],
       "verb": "POST"
     },

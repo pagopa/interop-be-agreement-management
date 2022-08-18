@@ -8,7 +8,6 @@ final case class State(agreements: Map[String, PersistentAgreement]) extends Per
   def updateAgreement(agreement: PersistentAgreement): State =
     copy(agreements = agreements + (agreement.id.toString -> agreement))
 
-  // TODO Test me
   def addAttributeDocument(
     agreementId: String,
     attributeId: String,
@@ -26,7 +25,6 @@ final case class State(agreements: Map[String, PersistentAgreement]) extends Per
     updatedAgreement.fold(this)(agreement => copy(agreements = agreements + (agreementId -> agreement)))
   }
 
-  // TODO Test me
   def removeAttributeDocument(agreementId: String, attributeId: String, documentId: String): State = {
     val updatedAgreement = for {
       agreement <- agreements.get(agreementId)

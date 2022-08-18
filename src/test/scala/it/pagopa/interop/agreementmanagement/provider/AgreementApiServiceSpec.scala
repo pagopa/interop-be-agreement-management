@@ -607,7 +607,6 @@ class AgreementApiServiceSpec
       certifiedAttributes = Seq.empty,
       declaredAttributes = Seq.empty
     )
-//    (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
     val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
 
     val response: Future[Agreement] = createAgreement(agreementSeed, agreementId)
@@ -622,7 +621,6 @@ class AgreementApiServiceSpec
 
     // and its upgrade
     val updateAgreementId = UUID.randomUUID()
-//    (() => mockUUIDSupplier.get).expects().returning(updateAgreementId).once()
     val _                 = upgradeAgreement(agreementId.toString, updateAgreementId, upgradeAgreementSeed).futureValue
 
     // when we retrieve the original agreement. it should have its state changed to "inactive"

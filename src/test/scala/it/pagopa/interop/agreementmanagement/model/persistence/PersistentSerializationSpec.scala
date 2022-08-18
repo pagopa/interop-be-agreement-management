@@ -31,10 +31,10 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
   serdeCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
   deserCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
-//  serdeCheck[VerifiedAttributeDocumentAdded, VerifiedAttributeDocumentAddedV1](verifiedAttributeDocumentAddedGen)
-//  deserCheck[VerifiedAttributeDocumentAdded, VerifiedAttributeDocumentAddedV1](verifiedAttributeDocumentAddedGen)
-//  serdeCheck[VerifiedAttributeDocumentRemoved, VerifiedAttributeDocumentRemovedV1](verifiedAttributeDocumentRemovedGen)
-//  deserCheck[VerifiedAttributeDocumentRemoved, VerifiedAttributeDocumentRemovedV1](verifiedAttributeDocumentRemovedGen)
+  serdeCheck[VerifiedAttributeDocumentAdded, VerifiedAttributeDocumentAddedV1](verifiedAttributeDocumentAddedGen)
+  deserCheck[VerifiedAttributeDocumentAdded, VerifiedAttributeDocumentAddedV1](verifiedAttributeDocumentAddedGen)
+  serdeCheck[VerifiedAttributeDocumentRemoved, VerifiedAttributeDocumentRemovedV1](verifiedAttributeDocumentRemovedGen)
+  deserCheck[VerifiedAttributeDocumentRemoved, VerifiedAttributeDocumentRemovedV1](verifiedAttributeDocumentRemovedGen)
 
   // TODO move me in commons
   def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit

@@ -27,7 +27,7 @@ message AgreementV1 {
 
 message VerifiedAttributeV1 {
   required string id = 1;
-  repeated DocumentV1 documents = 2;
+  repeated VerifiedAttributeDocumentV1 documents = 2;
 }
 
 message CertifiedAttributeV1 {
@@ -38,7 +38,7 @@ message DeclaredAttributeV1 {
   required string id = 1;
 }
 
-message DocumentV1 {
+message VerifiedAttributeDocumentV1 {
   required string id = 1;
   required string name = 2;
   required string contentType = 3;

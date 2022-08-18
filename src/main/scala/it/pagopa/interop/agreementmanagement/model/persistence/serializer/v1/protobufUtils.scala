@@ -42,7 +42,9 @@ object protobufUtils {
     agreement.toEither
   }
 
-  def toPersistentDocument(documentV1: DocumentV1): Either[Throwable, PersistentVerifiedAttributeDocument] = {
+  def toPersistentDocument(
+    documentV1: VerifiedAttributeDocumentV1
+  ): Either[Throwable, PersistentVerifiedAttributeDocument] = {
     val document = for {
       id        <- documentV1.id.toUUID
       createdAt <- documentV1.createdAt.toOffsetDateTime
@@ -74,8 +76,8 @@ object protobufUtils {
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
     )
 
-  def toProtobufDocument(persistentDocument: PersistentVerifiedAttributeDocument): DocumentV1 =
-    DocumentV1(
+  def toProtobufDocument(persistentDocument: PersistentVerifiedAttributeDocument): VerifiedAttributeDocumentV1 =
+    VerifiedAttributeDocumentV1(
       id = persistentDocument.id.toString,
       name = persistentDocument.name,
       contentType = persistentDocument.contentType,

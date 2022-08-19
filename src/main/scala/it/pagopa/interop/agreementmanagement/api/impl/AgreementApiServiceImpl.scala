@@ -347,7 +347,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerDocument: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) { // TODO Other roles needed?
+  ): Route = authorize(ADMIN_ROLE) {
 
     val operationLabel: String = s"Retrieving consumer document $documentId from agreement $agreementId"
 
@@ -360,12 +360,15 @@ final case class AgreementApiServiceImpl(
       commander.askWithStatus(ref => GetAgreementConsumerDocument(agreementId, documentId, ref))
 
     onComplete(result) {
-      case Success(document)              =>
+      case Success(document)                      =>
         getAgreementConsumerDocument200(PersistentAgreementDocument.toAPI(document))
-      case Failure(ex: AgreementNotFound) =>
+      case Failure(ex: AgreementNotFound)         =>
         logger.error(s"Error while $operationLabel", ex)
         getAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
-      case Failure(ex)                    =>
+      case Failure(ex: AgreementDocumentNotFound) =>
+        logger.error(s"Error while $operationLabel", ex)
+        getAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex)                            =>
         logger.error(s"Error while $operationLabel", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }

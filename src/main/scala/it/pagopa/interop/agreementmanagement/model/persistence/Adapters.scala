@@ -46,6 +46,7 @@ object Adapters {
       suspendedByConsumer = None,
       suspendedByProducer = None,
       suspendedByPlatform = None,
+      consumerDocuments = Nil,
       createdAt = dateTimeSupplier.get,
       updatedAt = None
     )
@@ -67,6 +68,7 @@ object Adapters {
         suspendedByConsumer = None,
         suspendedByProducer = None,
         suspendedByPlatform = None,
+        consumerDocuments = oldAgreement.consumerDocuments,
         createdAt = dateTimeSupplier.get,
         updatedAt = None
       )
@@ -84,6 +86,7 @@ object Adapters {
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
       suspendedByPlatform = persistentAgreement.suspendedByPlatform,
+      consumerDocuments = persistentAgreement.consumerDocuments.map(PersistentAgreementDocument.toAPI),
       createdAt = persistentAgreement.createdAt,
       updatedAt = persistentAgreement.updatedAt
     )
@@ -111,12 +114,9 @@ object Adapters {
       extends AnyVal {
     // Note: It's possible to set documents = Nil because this function is only used when creating a new attribute
     def fromAPI(attribute: AttributeSeed): PersistentVerifiedAttribute            =
-      PersistentVerifiedAttribute(id = attribute.id, documents = Nil)
+      PersistentVerifiedAttribute(id = attribute.id)
     def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute =
-      VerifiedAttribute(
-        id = persistedAttribute.id,
-        documents = persistedAttribute.documents.map(PersistentVerifiedAttributeDocument.toAPI)
-      )
+      VerifiedAttribute(id = persistedAttribute.id)
   }
 
   implicit class PersistentCertifiedAttributeObjectWrapper(private val p: PersistentCertifiedAttribute.type)
@@ -134,20 +134,19 @@ object Adapters {
       DeclaredAttribute(id = persistedAttribute.id)
   }
 
-  implicit class PersistentVerifiedAttributeDocumentObjectWrapper(
-    private val p: PersistentVerifiedAttributeDocument.type
-  ) extends AnyVal {
+  implicit class PersistentAgreementDocumentObjectWrapper(private val p: PersistentAgreementDocument.type)
+      extends AnyVal {
     def fromAPI(
       seed: DocumentSeed
-    )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentVerifiedAttributeDocument =
-      PersistentVerifiedAttributeDocument(
+    )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreementDocument =
+      PersistentAgreementDocument(
         id = uuidSupplier.get,
         name = seed.name,
         contentType = seed.contentType,
         path = seed.path,
         createdAt = dateTimeSupplier.get
       )
-    def toAPI(document: PersistentVerifiedAttributeDocument): Document =
+    def toAPI(document: PersistentAgreementDocument): Document =
       Document(
         id = document.id,
         name = document.name,

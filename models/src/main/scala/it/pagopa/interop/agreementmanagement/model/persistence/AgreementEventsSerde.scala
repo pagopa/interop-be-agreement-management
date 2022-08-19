@@ -8,8 +8,8 @@ import spray.json._
 object AgreementEventsSerde {
 
   val agreementToJson: PartialFunction[ProjectableEvent, JsValue] = {
-    case x: VerifiedAttributeDocumentAdded   => x.toJson
-    case x: VerifiedAttributeDocumentRemoved => x.toJson
+    case x: AgreementConsumerDocumentAdded   => x.toJson
+    case x: AgreementConsumerDocumentRemoved => x.toJson
     case x: AgreementAdded                   => x.toJson
     case x: AgreementActivated               => x.toJson
     case x: AgreementSuspended               => x.toJson
@@ -17,8 +17,8 @@ object AgreementEventsSerde {
   }
 
   val jsonToAgreement: PartialFunction[String, JsValue => ProjectableEvent] = {
-    case `verifiedAttributeDocumentAdded`   => _.convertTo[VerifiedAttributeDocumentAdded]
-    case `verifiedAttributeDocumentRemoved` => _.convertTo[VerifiedAttributeDocumentRemoved]
+    case `agreementConsumerDocumentAdded`   => _.convertTo[AgreementConsumerDocumentAdded]
+    case `agreementConsumerDocumentRemoved` => _.convertTo[AgreementConsumerDocumentRemoved]
     case `agreementAdded`                   => _.convertTo[AgreementAdded]
     case `agreementActivated`               => _.convertTo[AgreementActivated]
     case `agreementSuspended`               => _.convertTo[AgreementSuspended]
@@ -26,16 +26,16 @@ object AgreementEventsSerde {
   }
 
   def getKind(e: Event): String = e match {
-    case _: VerifiedAttributeDocumentAdded   => verifiedAttributeDocumentAdded
-    case _: VerifiedAttributeDocumentRemoved => verifiedAttributeDocumentRemoved
+    case _: AgreementConsumerDocumentAdded   => agreementConsumerDocumentAdded
+    case _: AgreementConsumerDocumentRemoved => agreementConsumerDocumentRemoved
     case _: AgreementAdded                   => agreementAdded
     case _: AgreementActivated               => agreementActivated
     case _: AgreementSuspended               => agreementSuspended
     case _: AgreementDeactivated             => agreementDeactivated
   }
 
-  private val verifiedAttributeDocumentAdded: String   = "verified_attribute_document_added"
-  private val verifiedAttributeDocumentRemoved: String = "verified_attribute_document_removed"
+  private val agreementConsumerDocumentAdded: String   = "agreement_consumer_document_added"
+  private val agreementConsumerDocumentRemoved: String = "agreement_consumer_document_removed"
   private val agreementAdded: String                   = "agreement_added"
   private val agreementActivated: String               = "agreement_activated"
   private val agreementSuspended: String               = "agreement_suspended"
@@ -59,17 +59,17 @@ object AgreementEventsSerde {
       }
     }
 
-  private implicit val pvadFormat: RootJsonFormat[PersistentVerifiedAttributeDocument] =
-    jsonFormat5(PersistentVerifiedAttributeDocument)
-  private implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat2(PersistentVerifiedAttribute)
+  private implicit val pvadFormat: RootJsonFormat[PersistentAgreementDocument] =
+    jsonFormat5(PersistentAgreementDocument)
+  private implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat1(PersistentVerifiedAttribute)
   private implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] =
     jsonFormat1(PersistentCertifiedAttribute)
   private implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute] = jsonFormat1(PersistentDeclaredAttribute)
-  private implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat14(PersistentAgreement)
-  private implicit val vadaFormat: RootJsonFormat[VerifiedAttributeDocumentAdded]   =
-    jsonFormat3(VerifiedAttributeDocumentAdded)
-  private implicit val vadrFormat: RootJsonFormat[VerifiedAttributeDocumentRemoved] =
-    jsonFormat3(VerifiedAttributeDocumentRemoved)
+  private implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat15(PersistentAgreement)
+  private implicit val acdaFormat: RootJsonFormat[AgreementConsumerDocumentAdded]   =
+    jsonFormat2(AgreementConsumerDocumentAdded)
+  private implicit val acdrFormat: RootJsonFormat[AgreementConsumerDocumentRemoved] =
+    jsonFormat2(AgreementConsumerDocumentRemoved)
   private implicit val aadFormat: RootJsonFormat[AgreementAdded]                    = jsonFormat1(AgreementAdded)
   private implicit val aacFormat: RootJsonFormat[AgreementActivated]                = jsonFormat1(AgreementActivated)
   private implicit val asFormat: RootJsonFormat[AgreementSuspended]                 = jsonFormat1(AgreementSuspended)

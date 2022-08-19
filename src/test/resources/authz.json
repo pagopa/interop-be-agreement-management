@@ -26,12 +26,17 @@
       "verb": "GET"
     },
     {
-      "route": "addVerifiedAttributeDocument",
+      "route": "getAgreementConsumerDocument",
+      "roles": ["admin"],
+      "verb": "GET"
+    },
+    {
+      "route": "addAgreementConsumerDocument",
       "roles": ["admin"],
       "verb": "POST"
     },
     {
-      "route": "removeVerifiedAttributeDocument",
+      "route": "removeAgreementConsumerDocument",
       "roles": ["admin"],
       "verb": "POST"
     },

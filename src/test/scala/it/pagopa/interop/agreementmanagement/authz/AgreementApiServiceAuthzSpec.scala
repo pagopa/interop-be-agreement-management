@@ -87,26 +87,34 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
       )
     }
 
-    "accept authorized roles for addVerifiedAttributeDocument" in {
-      val endpoint = AuthorizedRoutes.endpoints("addVerifiedAttributeDocument")
+    "accept authorized roles for getAgreementConsumerDocument" in {
+      val endpoint = AuthorizedRoutes.endpoints("getAgreementConsumerDocument")
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.getAgreementConsumerDocument("agreementId", "documentId") }
+      )
+    }
+
+    "accept authorized roles for addAgreementConsumerDocument" in {
+      val endpoint = AuthorizedRoutes.endpoints("addAgreementConsumerDocument")
 
       val fakeSeed = DocumentSeed(name = "doc1", contentType = "pdf", path = "somewhere")
 
       validateAuthorization(
         endpoint,
         { implicit c: Seq[(String, String)] =>
-          service.addVerifiedAttributeDocument("agreementId", "attributeId", fakeSeed)
+          service.addAgreementConsumerDocument("agreementId", fakeSeed)
         }
       )
     }
 
-    "accept authorized roles for removeVerifiedAttributeDocument" in {
-      val endpoint = AuthorizedRoutes.endpoints("removeVerifiedAttributeDocument")
+    "accept authorized roles for removeAgreementConsumerDocument" in {
+      val endpoint = AuthorizedRoutes.endpoints("removeAgreementConsumerDocument")
 
       validateAuthorization(
         endpoint,
         { implicit c: Seq[(String, String)] =>
-          service.removeVerifiedAttributeDocument("agreementId", "attributeId", "documentId")
+          service.removeAgreementConsumerDocument("agreementId", "documentId")
         }
       )
     }

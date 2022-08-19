@@ -24,14 +24,12 @@ message AgreementDeactivatedV1 {
   required AgreementV1 agreement = 1;
 }
 
-message VerifiedAttributeDocumentAddedV1 {
+message AgreementConsumerDocumentAddedV1 {
   required string agreementId = 1;
-  required string attributeId = 2;
-  required VerifiedAttributeDocumentV1 document = 3;
+  required AgreementDocumentV1 document = 2;
 }
 
-message VerifiedAttributeDocumentRemovedV1 {
+message AgreementConsumerDocumentRemovedV1 {
   required string agreementId = 1;
-  required string attributeId = 2;
-  required string documentId = 3;
+  required string documentId = 2;
 }

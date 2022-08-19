@@ -18,23 +18,19 @@ class StateSpec extends FunSuite {
     val newDocumentId       = UUID.randomUUID()
     val newDocument         = persistentDocument(newDocumentId)
 
-    val state               = State(agreements =
+    val state        = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(agreementId1, Seq(existingDocumentId1, existingDocumentId2)),
         agreementId2.toString -> persistentAgreement(agreementId2, Seq(existingDocumentId3))
       )
     )
-    val attributeIdToUpdate = state.agreements(agreementId1.toString).verifiedAttributes.head.id.toString
+    val updatedState = state.addAgreementConsumerDocument(agreementId1.toString, newDocument)
 
-    val updatedState = state.addAttributeDocument(agreementId1.toString, attributeIdToUpdate, newDocument)
+    val oldAgreementConsumerDocs     = state.agreements(agreementId1.toString).consumerDocuments
+    val updatedAgreementConsumerDocs = updatedState.agreements(agreementId1.toString).consumerDocuments
 
-    val oldAttribute     =
-      state.agreements(agreementId1.toString).verifiedAttributes.find(_.id.toString == attributeIdToUpdate).get
-    val updatedAttribute =
-      updatedState.agreements(agreementId1.toString).verifiedAttributes.find(_.id.toString == attributeIdToUpdate).get
-
-    assertEquals(updatedAttribute.documents.find(_.id == newDocumentId), Some(newDocument))
-    assertEquals(updatedAttribute.documents.filter(_.id != newDocumentId), oldAttribute.documents)
+    assertEquals(updatedAgreementConsumerDocs.find(_.id == newDocumentId), Some(newDocument))
+    assertEquals(updatedAgreementConsumerDocs.filter(_.id != newDocumentId), oldAgreementConsumerDocs)
     assertEquals(state.agreements(agreementId2.toString), updatedState.agreements(agreementId2.toString))
   }
 
@@ -54,29 +50,7 @@ class StateSpec extends FunSuite {
       )
     )
 
-    val attributeIdToUpdate = state.agreements(agreementId1.toString).verifiedAttributes.head.id.toString
-    val updatedState        = state.addAttributeDocument("non-existing", attributeIdToUpdate, newDocument)
-
-    assertEquals(state, updatedState)
-  }
-
-  test("State should not be changed if adding document on non-existing attribute") {
-    val agreementId1        = UUID.randomUUID()
-    val agreementId2        = UUID.randomUUID()
-    val existingDocumentId1 = UUID.randomUUID()
-    val existingDocumentId2 = UUID.randomUUID()
-    val existingDocumentId3 = UUID.randomUUID()
-    val newDocumentId       = UUID.randomUUID()
-    val newDocument         = persistentDocument(newDocumentId)
-
-    val state = State(agreements =
-      Map(
-        agreementId1.toString -> persistentAgreement(agreementId1, Seq(existingDocumentId1, existingDocumentId2)),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(existingDocumentId3))
-      )
-    )
-
-    val updatedState = state.addAttributeDocument(agreementId1.toString, "non-existing", newDocument)
+    val updatedState = state.addAgreementConsumerDocument("non-existing", newDocument)
 
     assertEquals(state, updatedState)
   }
@@ -88,23 +62,20 @@ class StateSpec extends FunSuite {
     val documentId2  = UUID.randomUUID()
     val documentId3  = UUID.randomUUID()
 
-    val state               = State(agreements =
+    val state = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(agreementId1, Seq(documentId1, documentId2)),
         agreementId2.toString -> persistentAgreement(agreementId2, Seq(documentId3))
       )
     )
-    val attributeIdToUpdate = state.agreements(agreementId1.toString).verifiedAttributes.head.id.toString
 
-    val updatedState = state.removeAttributeDocument(agreementId1.toString, attributeIdToUpdate, documentId1.toString)
+    val updatedState = state.removeAgreementConsumerDocument(agreementId1.toString, documentId1.toString)
 
-    val oldAttribute     =
-      state.agreements(agreementId1.toString).verifiedAttributes.find(_.id.toString == attributeIdToUpdate).get
-    val updatedAttribute =
-      updatedState.agreements(agreementId1.toString).verifiedAttributes.find(_.id.toString == attributeIdToUpdate).get
+    val oldAgreementConsumerDocs     = state.agreements(agreementId1.toString).consumerDocuments
+    val updatedAgreementConsumerDocs = updatedState.agreements(agreementId1.toString).consumerDocuments
 
-    assertEquals(updatedAttribute.documents.find(_.id == documentId1), None)
-    assertEquals(oldAttribute.documents.filter(_.id != documentId1), updatedAttribute.documents)
+    assertEquals(updatedAgreementConsumerDocs.find(_.id == documentId1), None)
+    assertEquals(oldAgreementConsumerDocs.filter(_.id != documentId1), updatedAgreementConsumerDocs)
     assertEquals(state.agreements(agreementId2.toString), updatedState.agreements(agreementId2.toString))
   }
 
@@ -122,27 +93,7 @@ class StateSpec extends FunSuite {
       )
     )
 
-    val attributeIdToUpdate = state.agreements(agreementId1.toString).verifiedAttributes.head.id.toString
-    val updatedState        = state.removeAttributeDocument("non-existing", attributeIdToUpdate, documentId1.toString)
-
-    assertEquals(state, updatedState)
-  }
-
-  test("State should not be changed if removing document on non-existing attribute") {
-    val agreementId1 = UUID.randomUUID()
-    val agreementId2 = UUID.randomUUID()
-    val documentId1  = UUID.randomUUID()
-    val documentId2  = UUID.randomUUID()
-    val documentId3  = UUID.randomUUID()
-
-    val state = State(agreements =
-      Map(
-        agreementId1.toString -> persistentAgreement(agreementId1, Seq(documentId1, documentId2)),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(documentId3))
-      )
-    )
-
-    val updatedState = state.removeAttributeDocument(agreementId1.toString, "non-existing", documentId1.toString)
+    val updatedState = state.removeAgreementConsumerDocument("non-existing", documentId1.toString)
 
     assertEquals(state, updatedState)
   }
@@ -161,13 +112,12 @@ class StateSpec extends FunSuite {
       )
     )
 
-    val attributeIdToUpdate = state.agreements(agreementId1.toString).verifiedAttributes.head.id.toString
-    val updatedState        = state.removeAttributeDocument(agreementId1.toString, attributeIdToUpdate, "non-existing")
+    val updatedState = state.removeAgreementConsumerDocument(agreementId1.toString, "non-existing")
 
     assertEquals(state, updatedState)
   }
 
-  def persistentDocument(documentId: UUID): PersistentVerifiedAttributeDocument = PersistentVerifiedAttributeDocument(
+  def persistentDocument(documentId: UUID): PersistentAgreementDocument                   = PersistentAgreementDocument(
     id = documentId,
     name = "doc",
     contentType = "pdf",
@@ -181,13 +131,13 @@ class StateSpec extends FunSuite {
     producerId = UUID.randomUUID(),
     consumerId = UUID.randomUUID(),
     state = Active,
-    verifiedAttributes =
-      Seq(PersistentVerifiedAttribute(id = UUID.randomUUID(), documents = documentIds.map(persistentDocument))),
+    verifiedAttributes = Nil,
     certifiedAttributes = Nil,
     declaredAttributes = Nil,
     suspendedByConsumer = None,
     suspendedByProducer = None,
     suspendedByPlatform = None,
+    consumerDocuments = documentIds.map(persistentDocument),
     createdAt = OffsetDateTime.now(),
     updatedAt = None
   )

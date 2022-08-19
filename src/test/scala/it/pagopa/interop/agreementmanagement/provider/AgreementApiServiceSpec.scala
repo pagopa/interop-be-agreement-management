@@ -519,7 +519,7 @@ class AgreementApiServiceSpec
       bodyResponse.suspendedByPlatform shouldBe Some(false)
     }
 
-    "add a document to a verified attribute" in {
+    "add a consumer document to an agreement" in {
       val agreementId  = UUID.randomUUID()
       val eserviceId   = UUID.randomUUID()
       val descriptorId = UUID.randomUUID()
@@ -527,25 +527,21 @@ class AgreementApiServiceSpec
       val consumerId   = UUID.randomUUID()
       val documentId   = UUID.randomUUID()
 
-      val attributeId1 = UUID.randomUUID()
-      val attributeId2 = UUID.randomUUID()
-      val attributeId3 = UUID.randomUUID()
-
       val agreementSeed = AgreementSeed(
         eserviceId = eserviceId,
         descriptorId = descriptorId,
         producerId = producerId,
         consumerId = consumerId,
-        verifiedAttributes = Seq(AttributeSeed(id = attributeId1)),
-        certifiedAttributes = Seq(AttributeSeed(id = attributeId2)),
-        declaredAttributes = Seq(AttributeSeed(id = attributeId3))
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
       )
 
       val documentSeed = DocumentSeed(name = "doc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[Document] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        document <- addDocument(agreementId, attributeId1, documentId, documentSeed)
+        document <- addConsumerDocument(agreementId, documentId, documentSeed)
       } yield document
 
       val bodyResponse: Document = response.futureValue
@@ -557,7 +553,7 @@ class AgreementApiServiceSpec
       bodyResponse.createdAt shouldBe timestamp
     }
 
-    "remove a document from a verified attribute" in {
+    "remove a consumer document from an agreement" in {
       val agreementId  = UUID.randomUUID()
       val eserviceId   = UUID.randomUUID()
       val descriptorId = UUID.randomUUID()
@@ -565,26 +561,22 @@ class AgreementApiServiceSpec
       val consumerId   = UUID.randomUUID()
       val documentId   = UUID.randomUUID()
 
-      val attributeId1 = UUID.randomUUID()
-      val attributeId2 = UUID.randomUUID()
-      val attributeId3 = UUID.randomUUID()
-
       val agreementSeed = AgreementSeed(
         eserviceId = eserviceId,
         descriptorId = descriptorId,
         producerId = producerId,
         consumerId = consumerId,
-        verifiedAttributes = Seq(AttributeSeed(id = attributeId1)),
-        certifiedAttributes = Seq(AttributeSeed(id = attributeId2)),
-        declaredAttributes = Seq(AttributeSeed(id = attributeId3))
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
       )
 
       val documentSeed = DocumentSeed(name = "doc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[String] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        _        <- addDocument(agreementId, attributeId1, documentId, documentSeed)
-        response <- removeDocument(agreementId, attributeId1, documentId)
+        _        <- addConsumerDocument(agreementId, documentId, documentSeed)
+        response <- removeConsumerDocument(agreementId, documentId)
       } yield response
 
       val bodyResponse: String = response.futureValue

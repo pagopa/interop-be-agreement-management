@@ -181,17 +181,11 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/agreements/{agreementId}/attributes/{attributeId}/documents':
+  '/agreements/{agreementId}/consumer-documents':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
       - name: agreementId
-        in: path
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - name: attributeId
         in: path
         schema:
           type: string
@@ -202,8 +196,9 @@ paths:
         - bearerAuth: []
       tags:
         - agreement
-      summary: Add a Document for a Verified Attribute
-      operationId: addVerifiedAttributeDocument
+      summary: Add a consumer Document to an Agreement
+      description: Add a consumer Document to an Agreement
+      operationId: addAgreementConsumerDocument
       responses:
         '200':
           description: Returns the document.
@@ -223,7 +218,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      description: Add a Document for a Verified Attribute
       requestBody:
         content:
           application/json:
@@ -231,17 +225,11 @@ paths:
               $ref: '#/components/schemas/DocumentSeed'
         description: the document seed
         required: true
-  '/agreements/{agreementId}/attributes/{attributeId}/documents/{documentId}':
+  '/agreements/{agreementId}/consumer-documents/{documentId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
       - name: agreementId
-        in: path
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - name: attributeId
         in: path
         schema:
           type: string
@@ -253,13 +241,41 @@ paths:
           type: string
           format: uuid
         required: true
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - agreement
+      summary: Retrieve a consumer Document of an Agreement
+      description: Retrieve a consumer Document of an Agreement
+      operationId: getAgreementConsumerDocument
+      responses:
+        '200':
+          description: Document retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
     delete:
       security:
         - bearerAuth: []
       tags:
         - agreement
-      summary: Remove a Document from a Verified Attribute
-      operationId: removeVerifiedAttributeDocument
+      summary: Remove a consumer Document from an Agreement
+      description: Remove a consumer Document from an Agreement
+      operationId: removeAgreementConsumerDocument
       responses:
         '204':
           description: Document removed
@@ -275,7 +291,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      description: Remove a Document for a Verified Attribute
   '/agreements/{agreement_id}/activate':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -487,6 +502,10 @@ components:
           type: boolean
         suspendedByPlatform:
           type: boolean
+        consumerDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
         createdAt:
           type: string
           format: date-time
@@ -503,6 +522,7 @@ components:
         - verifiedAttributes
         - certifiedAttributes
         - declaredAttributes
+        - consumerDocuments
         - createdAt
       description: business representation of an agreement
     Agreements:
@@ -572,13 +592,8 @@ components:
           type: string
           description: identifier of the attribute as defined on the attribute registry
           format: uuid
-        documents:
-          type: array
-          items:
-            $ref: '#/components/schemas/Document'
       required:
         - id
-        - documents
     CertifiedAttribute:
       title: CertifiedAttribute
       type: object

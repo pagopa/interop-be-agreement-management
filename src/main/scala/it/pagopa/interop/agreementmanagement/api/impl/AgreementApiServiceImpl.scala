@@ -17,7 +17,7 @@ import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementState,
-  PersistentVerifiedAttributeDocument
+  PersistentAgreementDocument
 }
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.persistence._
@@ -282,48 +282,46 @@ final case class AgreementApiServiceImpl(
         ref
       )
 
-  override def addVerifiedAttributeDocument(agreementId: String, attributeId: String, documentSeed: DocumentSeed)(
-    implicit
+  override def addAgreementConsumerDocument(agreementId: String, documentSeed: DocumentSeed)(implicit
     toEntityMarshallerAgreement: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = s"Adding document to verified attribute $attributeId of agreement $agreementId"
+    val operationLabel: String = s"Adding consumer document to agreement $agreementId"
 
     logger.info(operationLabel)
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
-    val result: Future[PersistentVerifiedAttributeDocument] =
+    val result: Future[PersistentAgreementDocument] =
       commander.askWithStatus(ref =>
-        AddVerifiedAttributeDocument(
+        AddAgreementConsumerDocument(
           agreementId,
-          attributeId,
-          PersistentVerifiedAttributeDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
+          PersistentAgreementDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
           ref
         )
       )
 
     onComplete(result) {
       case Success(document)              =>
-        addVerifiedAttributeDocument200(PersistentVerifiedAttributeDocument.toAPI(document))
+        addAgreementConsumerDocument200(PersistentAgreementDocument.toAPI(document))
       case Failure(ex: AgreementNotFound) =>
         logger.error(s"Error while $operationLabel", ex)
-        addVerifiedAttributeDocument404(problemOf(StatusCodes.NotFound, ex))
+        addAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
       case Failure(ex)                    =>
         logger.error(s"Error while $operationLabel", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
 
-  override def removeVerifiedAttributeDocument(agreementId: String, attributeId: String, documentId: String)(implicit
+  override def removeAgreementConsumerDocument(agreementId: String, documentId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = s"Removing document from verified attribute $attributeId of agreement $agreementId"
+    val operationLabel: String = s"Removing consumer document $documentId from agreement $agreementId"
 
     logger.info(operationLabel)
 
@@ -331,14 +329,42 @@ final case class AgreementApiServiceImpl(
       sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
 
     val result: Future[Unit] =
-      commander.askWithStatus(ref => RemoveVerifiedAttributeDocument(agreementId, attributeId, documentId, ref))
+      commander.askWithStatus(ref => RemoveAgreementConsumerDocument(agreementId, documentId, ref))
 
     onComplete(result) {
       case Success(_)                     =>
-        removeVerifiedAttributeDocument204
+        removeAgreementConsumerDocument204
       case Failure(ex: AgreementNotFound) =>
         logger.error(s"Error while $operationLabel", ex)
-        removeVerifiedAttributeDocument404(problemOf(StatusCodes.NotFound, ex))
+        removeAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex)                    =>
+        logger.error(s"Error while $operationLabel", ex)
+        internalServerError(operationLabel, agreementId, ex.getMessage)
+    }
+  }
+
+  override def getAgreementConsumerDocument(agreementId: String, documentId: String)(implicit
+    toEntityMarshallerDocument: ToEntityMarshaller[Document],
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE) { // TODO Other roles needed?
+
+    val operationLabel: String = s"Retrieving consumer document $documentId from agreement $agreementId"
+
+    logger.info(operationLabel)
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+
+    val result: Future[PersistentAgreementDocument] =
+      commander.askWithStatus(ref => GetAgreementConsumerDocument(agreementId, documentId, ref))
+
+    onComplete(result) {
+      case Success(document)              =>
+        getAgreementConsumerDocument200(PersistentAgreementDocument.toAPI(document))
+      case Failure(ex: AgreementNotFound) =>
+        logger.error(s"Error while $operationLabel", ex)
+        getAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
       case Failure(ex)                    =>
         logger.error(s"Error while $operationLabel", ex)
         internalServerError(operationLabel, agreementId, ex.getMessage)

@@ -3,14 +3,7 @@ package it.pagopa.interop.agreementmanagement.model.persistence.serializer
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.interop.agreementmanagement.model.persistence._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events.{
-  AgreementActivatedV1,
-  AgreementAddedV1,
-  AgreementDeactivatedV1,
-  AgreementSuspendedV1,
-  VerifiedAttributeDocumentAddedV1,
-  VerifiedAttributeDocumentRemovedV1
-}
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.protobufUtils._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.state.{AgreementsV1, StateV1}
 
@@ -68,24 +61,20 @@ package object v1 {
     : PersistEventDeserializer[AgreementDeactivatedV1, AgreementDeactivated] =
     event => toPersistentAgreement(event.agreement).map(AgreementDeactivated)
 
-  implicit def verifiedAttributeDocumentAddedV1PersistEventSerializer
-    : PersistEventSerializer[VerifiedAttributeDocumentAdded, VerifiedAttributeDocumentAddedV1] =
-    event =>
-      Right(
-        VerifiedAttributeDocumentAddedV1.of(event.agreementId, event.attributeId, toProtobufDocument(event.document))
-      )
+  implicit def agreementConsumerDocumentAddedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1] =
+    event => Right(AgreementConsumerDocumentAddedV1.of(event.agreementId, toProtobufDocument(event.document)))
 
-  implicit def verifiedAttributeDocumentAddedV1PersistEventDeserializer
-    : PersistEventDeserializer[VerifiedAttributeDocumentAddedV1, VerifiedAttributeDocumentAdded] =
-    event =>
-      toPersistentDocument(event.document).map(VerifiedAttributeDocumentAdded(event.agreementId, event.attributeId, _))
+  implicit def agreementConsumerDocumentAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementConsumerDocumentAddedV1, AgreementConsumerDocumentAdded] =
+    event => toPersistentDocument(event.document).map(AgreementConsumerDocumentAdded(event.agreementId, _))
 
-  implicit def verifiedAttributeDocumentRemovedV1PersistEventSerializer
-    : PersistEventSerializer[VerifiedAttributeDocumentRemoved, VerifiedAttributeDocumentRemovedV1] =
-    event => Right(VerifiedAttributeDocumentRemovedV1.of(event.agreementId, event.attributeId, event.documentId))
+  implicit def agreementConsumerDocumentRemovedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementConsumerDocumentRemoved, AgreementConsumerDocumentRemovedV1] =
+    event => Right(AgreementConsumerDocumentRemovedV1.of(event.agreementId, event.documentId))
 
-  implicit def verifiedAttributeDocumentRemovedV1PersistEventDeserializer
-    : PersistEventDeserializer[VerifiedAttributeDocumentRemovedV1, VerifiedAttributeDocumentRemoved] =
-    event => Right(VerifiedAttributeDocumentRemoved(event.agreementId, event.attributeId, event.documentId))
+  implicit def agreementConsumerDocumentRemovedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementConsumerDocumentRemovedV1, AgreementConsumerDocumentRemoved] =
+    event => Right(AgreementConsumerDocumentRemoved(event.agreementId, event.documentId))
 
 }

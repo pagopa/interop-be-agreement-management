@@ -16,6 +16,7 @@ final case class PersistentAgreement(
   suspendedByConsumer: Option[Boolean],
   suspendedByProducer: Option[Boolean],
   suspendedByPlatform: Option[Boolean],
+  consumerDocuments: Seq[PersistentAgreementDocument],
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime]
 )

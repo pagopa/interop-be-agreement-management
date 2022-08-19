@@ -23,6 +23,7 @@ object protobufUtils {
       verifiedAttributes  <- protobufAgreement.verifiedAttributes.traverse(deserializeVerifiedAttribute)
       certifiedAttributes <- protobufAgreement.certifiedAttributes.traverse(deserializeCertifiedAttribute)
       declaredAttributes  <- protobufAgreement.declaredAttributes.traverse(deserializeDeclaredAttribute)
+      consumerDocuments   <- protobufAgreement.consumerDocuments.traverse(toPersistentDocument).toTry
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
@@ -36,19 +37,18 @@ object protobufUtils {
       suspendedByConsumer = protobufAgreement.suspendedByConsumer,
       suspendedByProducer = protobufAgreement.suspendedByProducer,
       suspendedByPlatform = protobufAgreement.suspendedByPlatform,
+      consumerDocuments = consumerDocuments,
       createdAt = createdAt,
       updatedAt = updatedAt
     )
     agreement.toEither
   }
 
-  def toPersistentDocument(
-    documentV1: VerifiedAttributeDocumentV1
-  ): Either[Throwable, PersistentVerifiedAttributeDocument] = {
+  def toPersistentDocument(documentV1: AgreementDocumentV1): Either[Throwable, PersistentAgreementDocument] = {
     val document = for {
       id        <- documentV1.id.toUUID
       createdAt <- documentV1.createdAt.toOffsetDateTime
-    } yield PersistentVerifiedAttributeDocument(
+    } yield PersistentAgreementDocument(
       id = id,
       name = documentV1.name,
       contentType = documentV1.contentType,
@@ -72,12 +72,13 @@ object protobufUtils {
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
       suspendedByPlatform = persistentAgreement.suspendedByPlatform,
+      consumerDocuments = persistentAgreement.consumerDocuments.map(toProtobufDocument),
       createdAt = persistentAgreement.createdAt.toMillis,
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
     )
 
-  def toProtobufDocument(persistentDocument: PersistentVerifiedAttributeDocument): VerifiedAttributeDocumentV1 =
-    VerifiedAttributeDocumentV1(
+  def toProtobufDocument(persistentDocument: PersistentAgreementDocument): AgreementDocumentV1 =
+    AgreementDocumentV1(
       id = persistentDocument.id.toString,
       name = persistentDocument.name,
       contentType = persistentDocument.contentType,
@@ -86,7 +87,7 @@ object protobufUtils {
     )
 
   def serializeVerifiedAttribute(attribute: PersistentVerifiedAttribute): VerifiedAttributeV1 =
-    VerifiedAttributeV1.of(id = attribute.id.toString, attribute.documents.map(toProtobufDocument))
+    VerifiedAttributeV1.of(id = attribute.id.toString)
 
   def serializeCertifiedAttribute(attribute: PersistentCertifiedAttribute): CertifiedAttributeV1 =
     CertifiedAttributeV1.of(id = attribute.id.toString)
@@ -94,10 +95,8 @@ object protobufUtils {
   def serializeDeclaredAttribute(attribute: PersistentDeclaredAttribute): DeclaredAttributeV1 =
     DeclaredAttributeV1.of(id = attribute.id.toString)
 
-  def deserializeVerifiedAttribute(serialized: VerifiedAttributeV1): Try[PersistentVerifiedAttribute] = for {
-    id        <- Try(UUID.fromString(serialized.id))
-    documents <- serialized.documents.traverse(toPersistentDocument).toTry
-  } yield PersistentVerifiedAttribute(id, documents)
+  def deserializeVerifiedAttribute(serialized: VerifiedAttributeV1): Try[PersistentVerifiedAttribute] =
+    Try(UUID.fromString(serialized.id)).map(PersistentVerifiedAttribute)
 
   def deserializeCertifiedAttribute(serialized: CertifiedAttributeV1): Try[PersistentCertifiedAttribute] =
     Try(UUID.fromString(serialized.id)).map(PersistentCertifiedAttribute)

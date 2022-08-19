@@ -94,28 +94,23 @@ trait SpecHelper {
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
-  def addDocument(agreementId: UUID, attributeId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
+  def addConsumerDocument(agreementId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[Document] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     _ = (() => mockUUIDSupplier.get).expects().returning(documentId).once()
-    document <- Unmarshal(
-      makeRequest(data, s"agreements/$agreementId/attributes/$attributeId/documents", HttpMethods.POST)
-    ).to[Document]
+    document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/consumer-documents", HttpMethods.POST))
+      .to[Document]
   } yield document
 
-  def removeDocument(agreementId: UUID, attributeId: UUID, documentId: UUID)(implicit
+  def removeConsumerDocument(agreementId: UUID, documentId: UUID)(implicit
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[String] = for {
     response <- Unmarshal(
-      makeRequest(
-        emptyData,
-        s"agreements/$agreementId/attributes/$attributeId/documents/$documentId",
-        HttpMethods.DELETE
-      )
+      makeRequest(emptyData, s"agreements/$agreementId/consumer-documents/$documentId", HttpMethods.DELETE)
     ).to[String]
   } yield response
 

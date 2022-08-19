@@ -22,13 +22,12 @@ message AgreementV1 {
   optional bool suspendedByPlatform = 12;
   repeated CertifiedAttributeV1 certifiedAttributes = 13;
   repeated DeclaredAttributeV1 declaredAttributes = 14;
-
+  repeated AgreementDocumentV1 consumerDocuments = 15;
 }
 
 message VerifiedAttributeV1 {
   required string id = 1;
   // Places 2-5 are reserved for backward compatibility
-  repeated VerifiedAttributeDocumentV1 documents = 6;
 }
 
 message CertifiedAttributeV1 {
@@ -39,7 +38,7 @@ message DeclaredAttributeV1 {
   required string id = 1;
 }
 
-message VerifiedAttributeDocumentV1 {
+message AgreementDocumentV1 {
   required string id = 1;
   required string name = 2;
   required string contentType = 3;

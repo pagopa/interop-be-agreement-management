@@ -5,8 +5,8 @@ import akka.pattern.StatusReply
 import it.pagopa.interop.agreementmanagement.model.StateChangeDetails
 import it.pagopa.interop.agreementmanagement.model.agreement.{
   PersistentAgreement,
-  PersistentAgreementState,
-  PersistentVerifiedAttributeDocument
+  PersistentAgreementDocument,
+  PersistentAgreementState
 }
 
 sealed trait Command
@@ -43,16 +43,20 @@ final case class ListAgreements(
   replyTo: ActorRef[Seq[PersistentAgreement]]
 ) extends Command
 
-final case class AddVerifiedAttributeDocument(
+final case class AddAgreementConsumerDocument(
   agreementId: String,
-  attributeId: String,
-  document: PersistentVerifiedAttributeDocument,
-  replyTo: ActorRef[StatusReply[PersistentVerifiedAttributeDocument]]
+  document: PersistentAgreementDocument,
+  replyTo: ActorRef[StatusReply[PersistentAgreementDocument]]
 ) extends Command
 
-final case class RemoveVerifiedAttributeDocument(
+final case class RemoveAgreementConsumerDocument(
   agreementId: String,
-  attributeId: String,
   documentId: String,
   replyTo: ActorRef[StatusReply[Unit]]
+) extends Command
+
+final case class GetAgreementConsumerDocument(
+  agreementId: String,
+  documentId: String,
+  replyTo: ActorRef[StatusReply[PersistentAgreementDocument]]
 ) extends Command

@@ -88,12 +88,13 @@ object PersistentSerializationSpec {
   val persistentDocumentGen: Gen[(PersistentAgreementDocument, AgreementDocumentV1)] = for {
     id              <- Gen.uuid
     name            <- stringGen
+    prettyName      <- stringGen
     contentType     <- stringGen
     path            <- stringGen
     (vDate, vDateL) <- offsetDatetimeLongGen
   } yield (
-    PersistentAgreementDocument(id, name, contentType, path, vDate),
-    AgreementDocumentV1(id.toString, name, contentType, path, vDateL)
+    PersistentAgreementDocument(id, name, prettyName, contentType, path, vDate),
+    AgreementDocumentV1(id.toString, name, prettyName, contentType, path, vDateL)
   )
 
   val persistentVerifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] =

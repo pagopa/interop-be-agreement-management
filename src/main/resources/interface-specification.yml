@@ -621,6 +621,7 @@ components:
       required:
         - id
         - name
+        - prettyName
         - contentType
         - path
         - createdAt
@@ -629,6 +630,8 @@ components:
           type: string
           format: uuid
         name:
+          type: string
+        prettyName:
           type: string
         contentType:
           type: string
@@ -641,10 +644,13 @@ components:
       type: object
       required:
         - name
+        - prettyName
         - contentType
         - path
       properties:
         name:
+          type: string
+        prettyName:
           type: string
         contentType:
           type: string

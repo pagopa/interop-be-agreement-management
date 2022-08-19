@@ -537,7 +537,7 @@ class AgreementApiServiceSpec
         declaredAttributes = Nil
       )
 
-      val documentSeed = DocumentSeed(name = "doc1", contentType = "pdf", path = "somewhere")
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[Document] = for {
         _        <- createAgreement(agreementSeed, agreementId)
@@ -571,7 +571,7 @@ class AgreementApiServiceSpec
         declaredAttributes = Nil
       )
 
-      val documentSeed = DocumentSeed(name = "doc1", contentType = "pdf", path = "somewhere")
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[String] = for {
         _        <- createAgreement(agreementSeed, agreementId)

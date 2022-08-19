@@ -60,7 +60,7 @@ object AgreementEventsSerde {
     }
 
   private implicit val pvadFormat: RootJsonFormat[PersistentAgreementDocument] =
-    jsonFormat5(PersistentAgreementDocument)
+    jsonFormat6(PersistentAgreementDocument)
   private implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat1(PersistentVerifiedAttribute)
   private implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] =
     jsonFormat1(PersistentCertifiedAttribute)

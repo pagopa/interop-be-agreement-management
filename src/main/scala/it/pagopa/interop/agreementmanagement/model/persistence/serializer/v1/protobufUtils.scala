@@ -51,6 +51,7 @@ object protobufUtils {
     } yield PersistentAgreementDocument(
       id = id,
       name = documentV1.name,
+      prettyName = documentV1.prettyName,
       contentType = documentV1.contentType,
       path = documentV1.path,
       createdAt = createdAt
@@ -81,6 +82,7 @@ object protobufUtils {
     AgreementDocumentV1(
       id = persistentDocument.id.toString,
       name = persistentDocument.name,
+      prettyName = persistentDocument.prettyName,
       contentType = persistentDocument.contentType,
       path = persistentDocument.path,
       createdAt = persistentDocument.createdAt.toMillis

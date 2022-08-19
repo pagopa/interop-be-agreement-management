@@ -98,7 +98,7 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
     "accept authorized roles for addAgreementConsumerDocument" in {
       val endpoint = AuthorizedRoutes.endpoints("addAgreementConsumerDocument")
 
-      val fakeSeed = DocumentSeed(name = "doc1", contentType = "pdf", path = "somewhere")
+      val fakeSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       validateAuthorization(
         endpoint,

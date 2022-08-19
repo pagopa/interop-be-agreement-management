@@ -120,6 +120,7 @@ class StateSpec extends FunSuite {
   def persistentDocument(documentId: UUID): PersistentAgreementDocument                   = PersistentAgreementDocument(
     id = documentId,
     name = "doc",
+    prettyName = "prettyDoc",
     contentType = "pdf",
     path = "somewhere",
     createdAt = OffsetDateTime.now()

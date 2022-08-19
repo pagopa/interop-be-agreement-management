@@ -41,9 +41,10 @@ message DeclaredAttributeV1 {
 message AgreementDocumentV1 {
   required string id = 1;
   required string name = 2;
-  required string contentType = 3;
-  required string path = 4;
-  required int64 createdAt = 5;
+  required string prettyName = 3;
+  required string contentType = 4;
+  required string path = 5;
+  required int64 createdAt = 6;
 }
 
 enum AgreementStateV1 {

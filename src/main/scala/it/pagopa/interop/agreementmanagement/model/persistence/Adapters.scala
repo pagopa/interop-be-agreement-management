@@ -142,6 +142,7 @@ object Adapters {
       PersistentAgreementDocument(
         id = uuidSupplier.get,
         name = seed.name,
+        prettyName = seed.prettyName,
         contentType = seed.contentType,
         path = seed.path,
         createdAt = dateTimeSupplier.get
@@ -150,6 +151,7 @@ object Adapters {
       Document(
         id = document.id,
         name = document.name,
+        prettyName = document.prettyName,
         contentType = document.contentType,
         path = document.path,
         createdAt = document.createdAt

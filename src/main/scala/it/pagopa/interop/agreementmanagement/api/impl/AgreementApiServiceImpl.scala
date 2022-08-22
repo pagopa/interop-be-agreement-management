@@ -95,11 +95,8 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  private def createAgreement(agreement: PersistentAgreement) = {
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreement.id.toString))
-    commander.ask(ref => AddAgreement(agreement, ref))
-  }
+  private def createAgreement(agreement: PersistentAgreement): Future[StatusReply[PersistentAgreement]] =
+    commander(agreement.id.toString).ask(ref => AddAgreement(agreement, ref))
 
   /** Code: 200, Message: EService retrieved, DataType: Agreement
     * Code: 404, Message: Agreement not found, DataType: Problem
@@ -115,10 +112,8 @@ final case class AgreementApiServiceImpl(
 
     logger.info(s"$operationLabel $agreementId")
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-
-    val result: Future[StatusReply[PersistentAgreement]] = commander.ask(ref => GetAgreement(agreementId, ref))
+    val result: Future[StatusReply[PersistentAgreement]] =
+      commander(agreementId).ask(ref => GetAgreement(agreementId, ref))
 
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess =>
@@ -161,12 +156,11 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  private def activateAgreementById(agreementId: String, stateChangeDetails: StateChangeDetails) = {
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-
-    commander.ask(ref => ActivateAgreement(agreementId, stateChangeDetails, ref))
-  }
+  private def activateAgreementById(
+    agreementId: String,
+    stateChangeDetails: StateChangeDetails
+  ): Future[StatusReply[PersistentAgreement]] =
+    commander(agreementId).ask(ref => ActivateAgreement(agreementId, stateChangeDetails, ref))
 
   override def suspendAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
@@ -196,12 +190,11 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  private def suspendAgreementById(agreementId: String, stateChangeDetails: StateChangeDetails) = {
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-
-    commander.ask(ref => SuspendAgreement(agreementId, stateChangeDetails, ref))
-  }
+  private def suspendAgreementById(
+    agreementId: String,
+    stateChangeDetails: StateChangeDetails
+  ): Future[StatusReply[PersistentAgreement]] =
+    commander(agreementId).ask(ref => SuspendAgreement(agreementId, stateChangeDetails, ref))
 
   /** Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
     */
@@ -226,9 +219,7 @@ final case class AgreementApiServiceImpl(
 
     val sliceSize = 100
 
-    val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, shard.toString)
-    )
+    val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard => commander(shard.toString))
 
     val result: Either[Throwable, Seq[PersistentAgreement]] = for {
       stateEnum <- state.traverse(AgreementState.fromValue)
@@ -292,11 +283,8 @@ final case class AgreementApiServiceImpl(
 
     logger.info(operationLabel)
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-
     val result: Future[PersistentAgreementDocument] =
-      commander.askWithStatus(ref =>
+      commander(agreementId).askWithStatus(ref =>
         AddAgreementConsumerDocument(
           agreementId,
           PersistentAgreementDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
@@ -325,11 +313,8 @@ final case class AgreementApiServiceImpl(
 
     logger.info(operationLabel)
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-
     val result: Future[Unit] =
-      commander.askWithStatus(ref => RemoveAgreementConsumerDocument(agreementId, documentId, ref))
+      commander(agreementId).askWithStatus(ref => RemoveAgreementConsumerDocument(agreementId, documentId, ref))
 
     onComplete(result) {
       case Success(_)                     =>
@@ -353,11 +338,8 @@ final case class AgreementApiServiceImpl(
 
     logger.info(operationLabel)
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
-
     val result: Future[PersistentAgreementDocument] =
-      commander.askWithStatus(ref => GetAgreementConsumerDocument(agreementId, documentId, ref))
+      commander(agreementId).askWithStatus(ref => GetAgreementConsumerDocument(agreementId, documentId, ref))
 
     onComplete(result) {
       case Success(document)                      =>
@@ -410,12 +392,11 @@ final case class AgreementApiServiceImpl(
   private def deactivateAgreementById(
     agreementId: String,
     stateChangeDetails: StateChangeDetails
-  ): Future[PersistentAgreement] = {
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(agreementId))
+  ): Future[PersistentAgreement] =
+    commander(agreementId).askWithStatus(ref => DeactivateAgreement(agreementId, stateChangeDetails, ref))
 
-    commander.askWithStatus(ref => DeactivateAgreement(agreementId, stateChangeDetails, ref))
-  }
+  private def commander(id: String): EntityRef[Command] =
+    sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id))
 
   private def internalServerError(operationLabel: String, resourceId: String, errorMessage: String): StandardRoute =
     complete(StatusCodes.InternalServerError, GenericError(operationLabel, resourceId, errorMessage))

@@ -15,11 +15,19 @@ case object Idle                                                                
 final case class AddAgreement(agreement: PersistentAgreement, replyTo: ActorRef[StatusReply[PersistentAgreement]])
     extends Command
 final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply[PersistentAgreement]]) extends Command
+final case class DeleteAgreement(agreementId: String, replyTo: ActorRef[StatusReply[Unit]])             extends Command
 final case class ActivateAgreement(
   agreementId: String,
   stateChangeDetails: StateChangeDetails,
   replyTo: ActorRef[StatusReply[PersistentAgreement]]
 ) extends Command
+
+final case class SubscribeAgreement(
+  agreementId: String,
+  stateChangeDetails: StateChangeDetails,
+  replyTo: ActorRef[StatusReply[PersistentAgreement]]
+) extends Command
+
 final case class SuspendAgreement(
   agreementId: String,
   stateChangeDetails: StateChangeDetails,

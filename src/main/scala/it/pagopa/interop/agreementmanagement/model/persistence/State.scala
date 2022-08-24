@@ -5,6 +5,8 @@ import it.pagopa.interop.agreementmanagement.model.agreement.{PersistentAgreemen
 final case class State(agreements: Map[String, PersistentAgreement]) extends Persistable {
   def add(agreement: PersistentAgreement): State = copy(agreements = agreements + (agreement.id.toString -> agreement))
 
+  def delete(agreementId: String): State = copy(agreements = agreements - agreementId)
+
   def updateAgreement(agreement: PersistentAgreement): State =
     copy(agreements = agreements + (agreement.id.toString -> agreement))
 

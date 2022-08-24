@@ -98,6 +98,36 @@ final case class AgreementApiServiceImpl(
   private def createAgreement(agreement: PersistentAgreement): Future[StatusReply[PersistentAgreement]] =
     commander(agreement.id.toString).ask(ref => AddAgreement(agreement, ref))
 
+  /**
+   * Code: 204, Message: Agreement deleted
+   * Code: 400, Message: Invalid input, DataType: Problem
+   * Code: 404, Message: Agreement not found, DataType: Problem
+   */
+  override def deleteAgreement(
+    agreementId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
+    authorize(ADMIN_ROLE) {
+      val operationLabel: String = "Deleting agreement"
+
+      logger.info(s"$operationLabel $agreementId")
+
+      val result: Future[StatusReply[Unit]] =
+        commander(agreementId).ask(ref => DeleteAgreement(agreementId, ref))
+
+      onComplete(result) {
+        case Success(statusReply) if statusReply.isSuccess => deleteAgreement204
+        case Success(statusReply)                          =>
+          logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
+          statusReply.getError match {
+            case ex: AgreementNotFound => deleteAgreement404(problemOf(StatusCodes.NotFound, ex))
+            case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
+          }
+        case Failure(ex)                                   =>
+          logger.error(s"Error while $operationLabel $agreementId", ex)
+          internalServerError(operationLabel, agreementId, ex.getMessage)
+      }
+    }
+
   /** Code: 200, Message: EService retrieved, DataType: Agreement
     * Code: 404, Message: Agreement not found, DataType: Problem
     * Code: 400, Message: Bad request, DataType: Problem
@@ -130,6 +160,36 @@ final case class AgreementApiServiceImpl(
     }
   }
 
+  /**
+   * Code: 200, Message: Agreement subscribed, DataType: Agreement
+   * Code: 400, Message: Bad Request, DataType: Problem
+   * Code: 404, Message: Agreement not found, DataType: Problem
+   */
+  override def subscribeAgreement(agreementId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE) {
+    val operationLabel: String = "Subscribing agreement"
+
+    logger.info(s"$operationLabel $agreementId")
+
+    val result: Future[PersistentAgreement] =
+      subscribeAgreementById(agreementId, StateChangeDetails(changedBy = None))
+
+    onComplete(result) {
+      case Success(agreement) =>
+        subscribeAgreement200(PersistentAgreement.toAPI(agreement))
+      case Failure(ex)        =>
+        logger.error(s"Error while $operationLabel $agreementId", ex)
+        ex match {
+          case ex: AgreementNotFound           => activateAgreement404(problemOf(StatusCodes.NotFound, ex))
+          case ex: AgreementNotInExpectedState => activateAgreement400(problemOf(StatusCodes.BadRequest, ex))
+          case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
+        }
+    }
+  }
+
   override def activateAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
@@ -155,6 +215,12 @@ final case class AgreementApiServiceImpl(
         internalServerError(operationLabel, agreementId, ex.getMessage)
     }
   }
+
+  private def subscribeAgreementById(
+    agreementId: String,
+    stateChangeDetails: StateChangeDetails
+  ): Future[PersistentAgreement] =
+    commander(agreementId).askWithStatus(ref => SubscribeAgreement(agreementId, stateChangeDetails, ref))
 
   private def activateAgreementById(
     agreementId: String,

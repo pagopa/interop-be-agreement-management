@@ -24,6 +24,12 @@ paths:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
+      - name: agreement_id
+        in: path
+        description: the agreement id
+        required: true
+        schema:
+          type: string
     get:
       tags:
         - agreement
@@ -31,13 +37,6 @@ paths:
       operationId: getAgreement
       security:
         - bearerAuth: []
-      parameters:
-        - name: agreement_id
-          in: path
-          description: the agreement id
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Agreement retrieved
@@ -45,8 +44,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Agreement'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - agreement
+      summary: Delete an agreement. This operation is valid only for agreements in draft
+      operationId: deleteAgreement
+      responses:
+        '204':
+          description: Agreement deleted
         '400':
-          description: Bad request
+          description: Invalid input
           content:
             application/problem+json:
               schema:
@@ -334,6 +349,43 @@ paths:
       description: 'activates the agreement, if any.'
       tags:
         - agreement
+  '/agreements/{agreement_id}/subscribe':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      security:
+        - bearerAuth: []
+      summary: Subscribe Agreement
+      operationId: subscribeAgreement
+      parameters:
+        - schema:
+            type: string
+          name: agreement_id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Agreement subscribed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      description: 'activates the agreement, if any.'
+      tags:
+        - agreement
   '/agreements/{agreement_id}/suspend':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -409,8 +461,9 @@ components:
       type: string
       description: Agreement State
       enum:
-        - ACTIVE
+        - DRAFT
         - PENDING
+        - ACTIVE
         - SUSPENDED
         - INACTIVE
     AgreementSeed:

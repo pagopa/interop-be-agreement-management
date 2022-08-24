@@ -37,6 +37,21 @@ package object v1 {
   implicit def agreementAddedV1PersistEventSerializer: PersistEventSerializer[AgreementAdded, AgreementAddedV1] =
     event => Right(AgreementAddedV1.of(toProtobufAgreement(event.agreement)))
 
+  implicit def agreementDeletedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementDeletedV1, AgreementDeleted] =
+    event => Right(AgreementDeleted(event.agreementId))
+
+  implicit def agreementDeletedV1PersistEventSerializer: PersistEventSerializer[AgreementDeleted, AgreementDeletedV1] =
+    event => Right(AgreementDeletedV1.of(event.agreementId))
+
+  implicit def agreementSubscribedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementSubscribed, AgreementSubscribedV1] =
+    event => Right(AgreementSubscribedV1.of(toProtobufAgreement(event.agreement)))
+
+  implicit def agreementSubscribedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementSubscribedV1, AgreementSubscribed] =
+    event => toPersistentAgreement(event.agreement).map(AgreementSubscribed)
+
   implicit def agreementActivatedV1PersistEventSerializer
     : PersistEventSerializer[AgreementActivated, AgreementActivatedV1] =
     event => Right(AgreementActivatedV1.of(toProtobufAgreement(event.agreement)))

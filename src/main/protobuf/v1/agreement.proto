@@ -52,4 +52,5 @@ enum AgreementStateV1 {
   ACTIVE = 2;
   SUSPENDED = 3;
   INACTIVE = 4;
+  DRAFT = 5;
 }

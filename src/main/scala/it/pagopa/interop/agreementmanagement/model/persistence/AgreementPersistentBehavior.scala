@@ -41,6 +41,17 @@ object AgreementPersistentBehavior {
 
         agreement.fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementAdded)(replyTo))
 
+      case DeleteAgreement(agreementId, replyTo) =>
+        val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
+
+        agreement
+          .map(_ =>
+            Effect
+              .persist(AgreementDeleted(agreementId))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+          )
+          .getOrElse(handleFailure(AgreementNotFound(agreementId))(replyTo))
+
       case AddAgreementConsumerDocument(agreementId, document, replyTo) =>
         state.agreements
           .get(agreementId)
@@ -85,6 +96,13 @@ object AgreementPersistentBehavior {
           } yield document
 
         document.fold(handleFailure(_)(replyTo), doc => Effect.reply(replyTo)(StatusReply.Success(doc)))
+
+      case SubscribeAgreement(agreementId, stateChangeDetails, replyTo) =>
+        val agreement: Either[Throwable, PersistentAgreement] =
+          getModifiedAgreement(state, agreementId, stateChangeDetails, Pending, _.isSubscribable)(dateTimeSupplier)
+
+        agreement
+          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementActivated)(replyTo))
 
       case ActivateAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] =
@@ -141,6 +159,8 @@ object AgreementPersistentBehavior {
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case AgreementAdded(agreement)                                 => state.add(agreement)
+      case AgreementDeleted(agreementId)                             => state.delete(agreementId)
+      case AgreementSubscribed(agreement)                            => state.updateAgreement(agreement)
       case AgreementActivated(agreement)                             => state.updateAgreement(agreement)
       case AgreementSuspended(agreement)                             => state.updateAgreement(agreement)
       case AgreementDeactivated(agreement)                           => state.updateAgreement(agreement)

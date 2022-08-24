@@ -108,6 +108,7 @@ object protobufUtils {
 
   def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1 =
     status match {
+      case Draft     => AgreementStateV1.DRAFT
       case Pending   => AgreementStateV1.PENDING
       case Active    => AgreementStateV1.ACTIVE
       case Suspended => AgreementStateV1.SUSPENDED
@@ -116,6 +117,7 @@ object protobufUtils {
 
   def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
     status match {
+      case AgreementStateV1.DRAFT               => Success(Draft)
       case AgreementStateV1.PENDING             => Success(Pending)
       case AgreementStateV1.ACTIVE              => Success(Active)
       case AgreementStateV1.SUSPENDED           => Success(Suspended)

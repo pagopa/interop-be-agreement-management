@@ -10,9 +10,14 @@ object Adapters {
 
   implicit class PersistentAgreementWrapper(private val p: PersistentAgreement) {
 
-    val ACTIVABLE_STATES: Set[PersistentAgreementState]   = Set(Pending, Suspended)
-    val SUSPENDABLE_STATES: Set[PersistentAgreementState] = Set(Active, Suspended)
-    val DEACTIVABLE_STATES: Set[PersistentAgreementState] = Set(Active, Suspended)
+    val SUBSCRIBABLE_STATES: Set[PersistentAgreementState] = Set(Draft)
+    val ACTIVABLE_STATES: Set[PersistentAgreementState]    = Set(Pending, Suspended)
+    val SUSPENDABLE_STATES: Set[PersistentAgreementState]  = Set(Active, Suspended)
+    val DEACTIVABLE_STATES: Set[PersistentAgreementState]  = Set(Active, Suspended)
+
+    def isSubscribable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
+      .withRight[Unit]
+      .unlessA(SUBSCRIBABLE_STATES.contains(p.state))
 
     def isActivable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
       .withRight[Unit]
@@ -39,7 +44,7 @@ object Adapters {
       descriptorId = agreement.descriptorId,
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
-      state = Pending,
+      state = Draft,
       verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
       certifiedAttributes = agreement.certifiedAttributes.distinctBy(_.id).map(PersistentCertifiedAttribute.fromAPI),
       declaredAttributes = agreement.declaredAttributes.distinctBy(_.id).map(PersistentDeclaredAttribute.fromAPI),
@@ -94,6 +99,7 @@ object Adapters {
 
   implicit class PersistentAgreementStateWrapper(private val p: PersistentAgreementState) extends AnyVal {
     def toApi: AgreementState = p match {
+      case Draft     => AgreementState.DRAFT
       case Pending   => AgreementState.PENDING
       case Active    => AgreementState.ACTIVE
       case Suspended => AgreementState.SUSPENDED
@@ -103,6 +109,7 @@ object Adapters {
 
   implicit class PersistentAgreementStateObjectWrapper(private val p: PersistentAgreementState.type) extends AnyVal {
     def fromApi(status: AgreementState): PersistentAgreementState = status match {
+      case AgreementState.DRAFT     => Draft
       case AgreementState.PENDING   => Pending
       case AgreementState.ACTIVE    => Active
       case AgreementState.SUSPENDED => Suspended

@@ -79,15 +79,15 @@ class AgreementApiServiceSpec
   "Processing a request payload" must {
 
     "create a new agreement" in {
-      val agreementId  = UUID.fromString("4330c05c-e892-4fed-a664-c40f27b50e63")
-      val eserviceId   = UUID.fromString("8c4da4ab-8dee-4af1-be5e-c93addb48d6d")
-      val descriptorId = UUID.fromString("ac51f56f-9944-4f96-a8f1-93cd0c256ac7")
-      val producerId   = UUID.fromString("5cc978b5-87f9-4685-8be1-a11e6e795964")
-      val consumerId   = UUID.fromString("cbc42433-2165-40a5-a60d-bb33471e8a91")
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
 
-      val attributeId1 = UUID.fromString("9888fb13-870b-45c6-9cd8-b74457bb797a")
-      val attributeId2 = UUID.fromString("8141a60d-5fd8-45bb-b229-ad661a6793ba")
-      val attributeId3 = UUID.fromString("f59b912c-6a5e-451c-8041-71b1c2087250")
+      val attributeId1 = UUID.randomUUID()
+      val attributeId2 = UUID.randomUUID()
+      val attributeId3 = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
         eserviceId = eserviceId,
@@ -104,27 +104,59 @@ class AgreementApiServiceSpec
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
 
       bodyResponse.id shouldBe agreementId
-      bodyResponse.state shouldBe AgreementState.PENDING
+      bodyResponse.state shouldBe AgreementState.DRAFT
       bodyResponse.verifiedAttributes.find(p => p.id == attributeId1) shouldBe a[Some[_]]
       bodyResponse.certifiedAttributes.find(p => p.id == attributeId2) shouldBe a[Some[_]]
       bodyResponse.declaredAttributes.find(p => p.id == attributeId3) shouldBe a[Some[_]]
     }
 
-    "activate an agreement properly" in {
+    "subscribed an agreement properly" in {
       // given a pending agreement
-      val agreementId = UUID.fromString("d1040ff3-7fbc-4b29-9081-b1b53f72d386")
+      val agreementId = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
-        eserviceId = UUID.fromString("94c06558-c0f9-42e0-a11e-c5f82e4b8a9b"),
-        descriptorId = UUID.fromString("77262ddf-7743-4f26-85fd-ec53febbfe56"),
-        producerId = UUID.fromString("f318fcc9-5421-4081-8e13-ba508152af9e"),
-        consumerId = UUID.fromString("1f538520-95b6-4d3f-accf-90c7b183df9f"),
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
         verifiedAttributes = Seq.empty,
         certifiedAttributes = Seq.empty,
         declaredAttributes = Seq.empty
       )
 
       val response: Future[Agreement] = createAgreement(agreementSeed, agreementId)
+
+      val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+      bodyResponse.verifiedAttributes shouldBe empty
+      bodyResponse.state shouldBe AgreementState.DRAFT
+
+      // when the activation occurs
+      val subscribeAgreementResponse = subscribeAgreement(bodyResponse)
+
+      // the agreement should change its status to "active"
+      val subscribedAgreement = Await.result(subscribeAgreementResponse, Duration.Inf)
+
+      subscribedAgreement.state shouldBe AgreementState.PENDING
+    }
+
+    "activate an agreement properly" in {
+      // given a pending agreement
+      val agreementId = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        producerId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
+      )
+
+      val response: Future[Agreement] = for {
+        draft   <- createAgreement(agreementSeed, agreementId)
+        pending <- subscribeAgreement(draft)
+      } yield pending
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
       bodyResponse.verifiedAttributes shouldBe empty
@@ -154,9 +186,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed, agreementId)
-        activateAgreementResponse <- activateAgreement(bodyResponse)
-        suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
+        draft             <- createAgreement(agreementSeed, agreementId)
+        pending           <- subscribeAgreement(draft)
+        active            <- activateAgreement(pending)
+        suspendByConsumer <- suspendAgreement(active, Some(ChangedBy.CONSUMER))
       } yield suspendByConsumer
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -182,9 +215,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed, agreementId)
-        activateAgreementResponse <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
-        suspendByProducer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.PRODUCER))
+        draft             <- createAgreement(agreementSeed, agreementId)
+        pending           <- subscribeAgreement(draft)
+        active            <- activateAgreement(pending, Some(ChangedBy.PRODUCER))
+        suspendByProducer <- suspendAgreement(active, Some(ChangedBy.PRODUCER))
       } yield suspendByProducer
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -210,9 +244,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed, agreementId)
-        activateAgreementResponse <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
-        suspendByPlatform         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.PLATFORM))
+        draft             <- createAgreement(agreementSeed, agreementId)
+        pending           <- subscribeAgreement(draft)
+        activate          <- activateAgreement(pending, Some(ChangedBy.PRODUCER))
+        suspendByPlatform <- suspendAgreement(activate, Some(ChangedBy.PLATFORM))
       } yield suspendByPlatform
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -239,10 +274,11 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed, agreementId)
-        activateAgreementResponse <- activateAgreement(bodyResponse)
-        suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
-        suspendByProducer         <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PRODUCER))
+        draft             <- createAgreement(agreementSeed, agreementId)
+        pending           <- subscribeAgreement(draft)
+        activate          <- activateAgreement(pending)
+        suspendByConsumer <- suspendAgreement(activate, Some(ChangedBy.CONSUMER))
+        suspendByProducer <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PRODUCER))
       } yield suspendByProducer
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -268,10 +304,11 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed, agreementId)
-        activateAgreementResponse <- activateAgreement(bodyResponse)
-        suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
-        suspendByPlatform         <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PLATFORM))
+        draft             <- createAgreement(agreementSeed, agreementId)
+        pending           <- subscribeAgreement(draft)
+        active            <- activateAgreement(pending)
+        suspendByConsumer <- suspendAgreement(active, Some(ChangedBy.CONSUMER))
+        suspendByPlatform <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PLATFORM))
       } yield suspendByPlatform
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -297,10 +334,11 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse <- createAgreement(agreementSeed, agreementId)
-        activated    <- activateAgreement(bodyResponse, Some(ChangedBy.CONSUMER))
-        suspended    <- suspendAgreement(activated, Some(ChangedBy.CONSUMER))
-        reActivated  <- activateAgreement(suspended, Some(ChangedBy.CONSUMER))
+        draft       <- createAgreement(agreementSeed, agreementId)
+        pending     <- subscribeAgreement(draft)
+        active      <- activateAgreement(pending, Some(ChangedBy.CONSUMER))
+        suspended   <- suspendAgreement(active, Some(ChangedBy.CONSUMER))
+        reActivated <- activateAgreement(suspended, Some(ChangedBy.CONSUMER))
       } yield reActivated
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -326,10 +364,11 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse <- createAgreement(agreementSeed, agreementId)
-        activated    <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
-        suspended    <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
-        reActivated  <- activateAgreement(suspended, Some(ChangedBy.PRODUCER))
+        draft       <- createAgreement(agreementSeed, agreementId)
+        pending     <- subscribeAgreement(draft)
+        active      <- activateAgreement(pending, Some(ChangedBy.PRODUCER))
+        suspended   <- suspendAgreement(active, Some(ChangedBy.PRODUCER))
+        reActivated <- activateAgreement(suspended, Some(ChangedBy.PRODUCER))
       } yield reActivated
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -353,10 +392,11 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse <- createAgreement(agreementSeed, agreementId)
-        activated    <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
-        suspended    <- suspendAgreement(activated, Some(ChangedBy.PLATFORM))
-        reActivated  <- activateAgreement(suspended, Some(ChangedBy.PLATFORM))
+        draft       <- createAgreement(agreementSeed, agreementId)
+        pending     <- subscribeAgreement(draft)
+        active      <- activateAgreement(pending, Some(ChangedBy.PRODUCER))
+        suspended   <- suspendAgreement(active, Some(ChangedBy.PLATFORM))
+        reActivated <- activateAgreement(suspended, Some(ChangedBy.PLATFORM))
       } yield reActivated
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -380,9 +420,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed, agreementId)
-        activated             <- activateAgreement(bodyResponse, Some(ChangedBy.CONSUMER))
-        suspendedByConsumer   <- suspendAgreement(activated, Some(ChangedBy.CONSUMER))
+        draft                 <- createAgreement(agreementSeed, agreementId)
+        pending               <- subscribeAgreement(draft)
+        active                <- activateAgreement(pending, Some(ChangedBy.CONSUMER))
+        suspendedByConsumer   <- suspendAgreement(active, Some(ChangedBy.CONSUMER))
         suspendedByProducer   <- suspendAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
         reActivatedByConsumer <- activateAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
       } yield reActivatedByConsumer
@@ -410,9 +451,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed, agreementId)
-        activated             <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
-        suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
+        draft                 <- createAgreement(agreementSeed, agreementId)
+        pending               <- subscribeAgreement(draft)
+        active                <- activateAgreement(pending, Some(ChangedBy.PRODUCER))
+        suspendedByProducer   <- suspendAgreement(active, Some(ChangedBy.PRODUCER))
         suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
         reActivatedByProducer <- activateAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
       } yield reActivatedByProducer
@@ -440,9 +482,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed, agreementId)
-        activated             <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
-        suspendedByPlatform   <- suspendAgreement(activated, Some(ChangedBy.PLATFORM))
+        draft                 <- createAgreement(agreementSeed, agreementId)
+        pending               <- subscribeAgreement(draft)
+        active                <- activateAgreement(pending, Some(ChangedBy.PRODUCER))
+        suspendedByPlatform   <- suspendAgreement(active, Some(ChangedBy.PLATFORM))
         suspendedByConsumer   <- suspendAgreement(suspendedByPlatform, Some(ChangedBy.CONSUMER))
         reActivatedByPlatform <- activateAgreement(suspendedByConsumer, Some(ChangedBy.PLATFORM))
       } yield reActivatedByPlatform
@@ -470,9 +513,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed, agreementId)
-        activated             <- activateAgreement(bodyResponse)
-        suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
+        draft                 <- createAgreement(agreementSeed, agreementId)
+        pending               <- subscribeAgreement(draft)
+        active                <- activateAgreement(pending)
+        suspendedByProducer   <- suspendAgreement(active, Some(ChangedBy.PRODUCER))
         suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
         reActivatedByProducer <- activateAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
         reActivatedByConsumer <- activateAgreement(reActivatedByProducer, Some(ChangedBy.CONSUMER))
@@ -501,9 +545,10 @@ class AgreementApiServiceSpec
       )
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed, agreementId)
-        activated             <- activateAgreement(bodyResponse)
-        suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
+        draft                 <- createAgreement(agreementSeed, agreementId)
+        pending               <- subscribeAgreement(draft)
+        active                <- activateAgreement(pending)
+        suspendedByProducer   <- suspendAgreement(active, Some(ChangedBy.PRODUCER))
         suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
         suspendedByPlatform   <- suspendAgreement(suspendedByConsumer, Some(ChangedBy.PLATFORM))
         reActivatedByProducer <- activateAgreement(suspendedByPlatform, Some(ChangedBy.PRODUCER))
@@ -591,18 +636,22 @@ class AgreementApiServiceSpec
     val agreementId = UUID.randomUUID()
 
     val agreementSeed        = AgreementSeed(
-      eserviceId = UUID.fromString("94c06558-c0f9-42e0-a11e-c5f82e4b8a9b"),
-      descriptorId = UUID.fromString("77262ddf-7743-4f26-85fd-ec53febbfe56"),
-      producerId = UUID.fromString("f318fcc9-5421-4081-8e13-ba508152af9e"),
-      consumerId = UUID.fromString("1f538520-95b6-4d3f-accf-90c7b183df9f"),
+      eserviceId = UUID.randomUUID(),
+      descriptorId = UUID.randomUUID(),
+      producerId = UUID.randomUUID(),
+      consumerId = UUID.randomUUID(),
       verifiedAttributes = Seq.empty,
       certifiedAttributes = Seq.empty,
       declaredAttributes = Seq.empty
     )
     val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
 
-    val response: Future[Agreement] = createAgreement(agreementSeed, agreementId)
-    val bodyResponse: Agreement     = Await.result(response, Duration.Inf)
+    val response: Future[Agreement] = for {
+      draft   <- createAgreement(agreementSeed, agreementId)
+      pending <- subscribeAgreement(draft)
+    } yield pending
+
+    val bodyResponse: Agreement = Await.result(response, Duration.Inf)
     bodyResponse.verifiedAttributes shouldBe empty
     bodyResponse.certifiedAttributes shouldBe empty
     bodyResponse.declaredAttributes shouldBe empty

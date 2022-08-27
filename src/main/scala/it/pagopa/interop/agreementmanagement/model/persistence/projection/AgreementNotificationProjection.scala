@@ -1,4 +1,4 @@
-package it.pagopa.interop.agreementmanagement.model.persistence
+package it.pagopa.interop.agreementmanagement.model.persistence.projection
 
 import akka.Done
 import akka.actor.typed.ActorSystem
@@ -9,21 +9,24 @@ import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
 import akka.projection.slick.{SlickHandler, SlickProjection}
+import cats.syntax.all._
+import com.typesafe.scalalogging.Logger
+import it.pagopa.interop.agreementmanagement.model.persistence.{AgreementEventsSerde, Event}
+import it.pagopa.interop.commons.queue.QueueWriter
+import it.pagopa.interop.commons.queue.message.{Message, ProjectableEvent}
 import slick.basic.DatabaseConfig
 import slick.dbio._
 import slick.jdbc.JdbcProfile
-import cats.syntax.all._
-import it.pagopa.interop.commons.queue.QueueWriter
-import scala.concurrent.ExecutionContext
-import it.pagopa.interop.commons.queue.message.Message
+
 import java.util.UUID
-import it.pagopa.interop.commons.queue.message.ProjectableEvent
-import com.typesafe.scalalogging.Logger
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-class AgreementPersistentProjection(dbConfig: DatabaseConfig[JdbcProfile], queueWriter: QueueWriter)(implicit
-  system: ActorSystem[_]
-) {
+final case class AgreementNotificationProjection(
+  dbConfig: DatabaseConfig[JdbcProfile],
+  queueWriter: QueueWriter,
+  projectionId: String
+)(implicit system: ActorSystem[_]) {
 
   implicit val ec: ExecutionContext = system.executionContext
 
@@ -32,15 +35,15 @@ class AgreementPersistentProjection(dbConfig: DatabaseConfig[JdbcProfile], queue
       .eventsByTag[Event](system, readJournalPluginId = JdbcReadJournal.Identifier, tag = tag)
 
   def projection(tag: String): ExactlyOnceProjection[Offset, EventEnvelope[Event]] = SlickProjection.exactlyOnce(
-    projectionId = ProjectionId("agreement-projections", tag),
+    projectionId = ProjectionId(projectionId, tag),
     sourceProvider = sourceProvider(tag),
-    handler = () => new ProjectionHandler(queueWriter),
+    handler = () => NotificationProjectionHandler(queueWriter),
     databaseConfig = dbConfig
   )
 
 }
 
-class ProjectionHandler(queueWriter: QueueWriter)(implicit ec: ExecutionContext)
+final case class NotificationProjectionHandler(queueWriter: QueueWriter)(implicit ec: ExecutionContext)
     extends SlickHandler[EventEnvelope[Event]] {
 
   private val logger: Logger = Logger(this.getClass)

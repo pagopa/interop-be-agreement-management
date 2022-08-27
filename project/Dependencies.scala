@@ -103,7 +103,7 @@ object Dependencies {
 
     lazy val `server`: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"          % "javax.annotation-api" % "1.3.2"  % "compile",
+      "javax.annotation"          % "javax.annotation-api"           % "1.3.2"                    % "compile",
       //
       akka.actorTyped             % Compile,
       akka.clusterBootstrap       % Compile,
@@ -140,8 +140,8 @@ object Dependencies {
       scalamock.core              % "test,it",
       akka.testkit                % "test,it",
       akka.httpTestkit            % "test,it",
-      "org.scalameta"            %% "munit-scalacheck"     % "0.7.29" % Test,
-      "com.softwaremill.diffx"   %% "diffx-munit"          % "0.7.0"  % Test,
+      "org.scalameta"            %% "munit-scalacheck"               % "0.7.29"                   % Test,
+      "com.softwaremill.diffx"   %% "diffx-munit"                    % "0.7.1"                    % Test,
       "com.dimafeng"             %% "testcontainers-scala-scalatest" % testcontainersScalaVersion % IntegrationTest
     )
 

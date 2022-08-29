@@ -67,10 +67,10 @@ trait SpecHelper {
   def getAgreement(id: String)(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
     Unmarshal(makeRequest(emptyData, s"agreement/$id", HttpMethods.GET)).to[Agreement]
 
-  def subscribeAgreement(
+  def submitAgreement(
     agreement: Agreement
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = Unmarshal(
-    makeRequest(emptyData, s"agreements/${agreement.id.toString}/subscribe", HttpMethods.POST)
+    makeRequest(emptyData, s"agreements/${agreement.id.toString}/submit", HttpMethods.POST)
   )
     .to[Agreement]
 
@@ -173,14 +173,14 @@ trait SpecHelper {
     val complete = for {
       _         <- createAgreement(agreementSeed1, AgreementOne.agreementId)
       draft1    <- createAgreement(agreementSeed2, AgreementTwo.agreementId)
-      pending1  <- subscribeAgreement(draft1)
+      pending1  <- submitAgreement(draft1)
       _         <- activateAgreement(pending1)
       draft2    <- createAgreement(agreementSeed3, AgreementThree.agreementId)
-      pending2  <- subscribeAgreement(draft2)
+      pending2  <- submitAgreement(draft2)
       activated <- activateAgreement(pending2)
       _         <- suspendAgreement(activated)
       draft4    <- createAgreement(agreementSeed4, AgreementFour.agreementId)
-      _         <- subscribeAgreement(draft4)
+      _         <- submitAgreement(draft4)
     } yield ()
 
     Await.result(complete, Duration.Inf)

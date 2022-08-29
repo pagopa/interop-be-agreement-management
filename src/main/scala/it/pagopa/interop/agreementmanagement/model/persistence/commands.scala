@@ -22,7 +22,7 @@ final case class ActivateAgreement(
   replyTo: ActorRef[StatusReply[PersistentAgreement]]
 ) extends Command
 
-final case class SubscribeAgreement(
+final case class SubmitAgreement(
   agreementId: String,
   stateChangeDetails: StateChangeDetails,
   replyTo: ActorRef[StatusReply[PersistentAgreement]]

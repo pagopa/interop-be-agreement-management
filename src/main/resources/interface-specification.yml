@@ -349,15 +349,15 @@ paths:
       description: 'activates the agreement, if any.'
       tags:
         - agreement
-  '/agreements/{agreement_id}/subscribe':
+  '/agreements/{agreement_id}/submit':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: []
-      summary: Subscribe Agreement
-      operationId: subscribeAgreement
+      summary: Submit Agreement
+      operationId: submitAgreement
       parameters:
         - schema:
             type: string
@@ -366,7 +366,7 @@ paths:
           required: true
       responses:
         '200':
-          description: Agreement subscribed
+          description: Agreement submitted
           content:
             application/json:
               schema:
@@ -383,7 +383,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      description: 'activates the agreement, if any.'
+      description: 'submitted the agreement, if any.'
       tags:
         - agreement
   '/agreements/{agreement_id}/suspend':

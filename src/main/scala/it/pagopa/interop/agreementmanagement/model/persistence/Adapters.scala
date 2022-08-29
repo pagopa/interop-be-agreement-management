@@ -10,14 +10,14 @@ object Adapters {
 
   implicit class PersistentAgreementWrapper(private val p: PersistentAgreement) {
 
-    val SUBSCRIBABLE_STATES: Set[PersistentAgreementState] = Set(Draft)
-    val ACTIVABLE_STATES: Set[PersistentAgreementState]    = Set(Pending, Suspended)
-    val SUSPENDABLE_STATES: Set[PersistentAgreementState]  = Set(Active, Suspended)
-    val DEACTIVABLE_STATES: Set[PersistentAgreementState]  = Set(Active, Suspended)
+    val SUBMITTABLE_STATES: Set[PersistentAgreementState] = Set(Draft)
+    val ACTIVABLE_STATES: Set[PersistentAgreementState]   = Set(Pending, Suspended)
+    val SUSPENDABLE_STATES: Set[PersistentAgreementState] = Set(Active, Suspended)
+    val DEACTIVABLE_STATES: Set[PersistentAgreementState] = Set(Active, Suspended)
 
-    def isSubscribable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
+    def isSubmittable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
       .withRight[Unit]
-      .unlessA(SUBSCRIBABLE_STATES.contains(p.state))
+      .unlessA(SUBMITTABLE_STATES.contains(p.state))
 
     def isActivable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
       .withRight[Unit]

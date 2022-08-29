@@ -97,12 +97,12 @@ object AgreementPersistentBehavior {
 
         document.fold(handleFailure(_)(replyTo), doc => Effect.reply(replyTo)(StatusReply.Success(doc)))
 
-      case SubscribeAgreement(agreementId, stateChangeDetails, replyTo) =>
+      case SubmitAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] =
-          getModifiedAgreement(state, agreementId, stateChangeDetails, Pending, _.isSubscribable)(dateTimeSupplier)
+          getModifiedAgreement(state, agreementId, stateChangeDetails, Pending, _.isSubmittable)(dateTimeSupplier)
 
         agreement
-          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementActivated)(replyTo))
+          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementSubmitted)(replyTo))
 
       case ActivateAgreement(agreementId, stateChangeDetails, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] =
@@ -160,7 +160,7 @@ object AgreementPersistentBehavior {
     event match {
       case AgreementAdded(agreement)                                 => state.add(agreement)
       case AgreementDeleted(agreementId)                             => state.delete(agreementId)
-      case AgreementSubscribed(agreement)                            => state.updateAgreement(agreement)
+      case AgreementSubmitted(agreement)                             => state.updateAgreement(agreement)
       case AgreementActivated(agreement)                             => state.updateAgreement(agreement)
       case AgreementSuspended(agreement)                             => state.updateAgreement(agreement)
       case AgreementDeactivated(agreement)                           => state.updateAgreement(agreement)

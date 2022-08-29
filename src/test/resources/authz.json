@@ -25,7 +25,7 @@
       "verb": "GET"
     },
     {
-      "route": "subscribeAgreement",
+      "route": "submitAgreement",
       "roles": [
         "admin"
       ],

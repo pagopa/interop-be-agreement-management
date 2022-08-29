@@ -16,7 +16,7 @@ message AgreementDeletedV1 {
   required string agreementId = 1;
 }
 
-message AgreementSubscribedV1 {
+message AgreementSubmittedV1 {
   required AgreementV1 agreement = 1;
 }
 

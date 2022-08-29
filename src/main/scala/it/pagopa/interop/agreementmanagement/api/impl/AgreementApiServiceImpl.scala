@@ -63,7 +63,7 @@ final case class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = "Adding an agreement"
+    val operationLabel: String = s"Adding an agreement with date $agreementSeed"
 
     logger.info(
       s"$operationLabel for consumer ${agreementSeed.consumerId} to descriptor ${agreementSeed.descriptorId} " +
@@ -83,7 +83,7 @@ final case class AgreementApiServiceImpl(
         )
         statusReply.getError match {
           case ex: AgreementConflict => addAgreement409(problemOf(StatusCodes.Conflict, ex))
-          case ex                    => internalServerError(operationLabel, agreement.id.toString, ex.getMessage)
+          case ex                    => internalServerError(operationLabel, ex.getMessage)
         }
       case Failure(ex)                                   =>
         logger.error(
@@ -91,7 +91,7 @@ final case class AgreementApiServiceImpl(
             s"of e-service ${agreementSeed.eserviceId} from the producer ${agreementSeed.producerId} ",
           ex
         )
-        internalServerError(operationLabel, agreement.id.toString, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
@@ -109,7 +109,7 @@ final case class AgreementApiServiceImpl(
     authorize(ADMIN_ROLE) {
       val operationLabel: String = s"Deleting agreement $agreementId"
 
-      logger.info(s"$operationLabel $agreementId")
+      logger.info(operationLabel)
 
       val result: Future[StatusReply[Unit]] =
         commander(agreementId).ask(ref => DeleteAgreement(agreementId, ref))
@@ -120,11 +120,11 @@ final case class AgreementApiServiceImpl(
           logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
           statusReply.getError match {
             case ex: AgreementNotFound => deleteAgreement404(problemOf(StatusCodes.NotFound, ex))
-            case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
+            case ex                    => internalServerError(operationLabel, ex.getMessage)
           }
         case Failure(ex)                                   =>
           logger.error(s"Error while $operationLabel $agreementId", ex)
-          internalServerError(operationLabel, agreementId, ex.getMessage)
+          internalServerError(operationLabel, ex.getMessage)
       }
     }
 
@@ -138,9 +138,9 @@ final case class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
 
-    val operationLabel: String = "Getting agreement"
+    val operationLabel: String = s"Getting agreement $agreementId"
 
-    logger.info(s"$operationLabel $agreementId")
+    logger.info(operationLabel)
 
     val result: Future[StatusReply[PersistentAgreement]] =
       commander(agreementId).ask(ref => GetAgreement(agreementId, ref))
@@ -152,40 +152,40 @@ final case class AgreementApiServiceImpl(
         logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
         statusReply.getError match {
           case ex: AgreementNotFound => getAgreement404(problemOf(StatusCodes.NotFound, ex))
-          case ex                    => internalServerError(operationLabel, agreementId, ex.getMessage)
+          case ex                    => internalServerError(operationLabel, ex.getMessage)
         }
       case Failure(ex)                                   =>
         logger.error(s"Error while $operationLabel $agreementId", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
   /**
-   * Code: 200, Message: Agreement subscribed, DataType: Agreement
+   * Code: 200, Message: Agreement submitted, DataType: Agreement
    * Code: 400, Message: Bad Request, DataType: Problem
    * Code: 404, Message: Agreement not found, DataType: Problem
    */
-  override def subscribeAgreement(agreementId: String)(implicit
+  override def submitAgreement(agreementId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    val operationLabel: String = "Subscribing agreement"
+    val operationLabel: String = s"Submitting agreement $agreementId"
 
-    logger.info(s"$operationLabel $agreementId")
+    logger.info(s"$operationLabel")
 
     val result: Future[PersistentAgreement] =
-      subscribeAgreementById(agreementId, StateChangeDetails(changedBy = None))
+      submitAgreementById(agreementId, StateChangeDetails(changedBy = None))
 
     onComplete(result) {
       case Success(agreement) =>
-        subscribeAgreement200(PersistentAgreement.toAPI(agreement))
+        submitAgreement200(PersistentAgreement.toAPI(agreement))
       case Failure(ex)        =>
-        logger.error(s"Error while $operationLabel $agreementId", ex)
+        logger.error(s"Error while $operationLabel", ex)
         ex match {
-          case ex: AgreementNotFound           => activateAgreement404(problemOf(StatusCodes.NotFound, ex))
-          case ex: AgreementNotInExpectedState => activateAgreement400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
+          case ex: AgreementNotFound           => submitAgreement404(problemOf(StatusCodes.NotFound, ex))
+          case ex: AgreementNotInExpectedState => submitAgreement400(problemOf(StatusCodes.BadRequest, ex))
+          case ex                              => internalServerError(operationLabel, ex.getMessage)
         }
     }
   }
@@ -195,9 +195,9 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    val operationLabel: String = "Activating agreement"
+    val operationLabel: String = s"Activating agreement $agreementId"
 
-    logger.info(s"$operationLabel $agreementId")
+    logger.info(operationLabel)
 
     val result: Future[StatusReply[PersistentAgreement]] = activateAgreementById(agreementId, stateChangeDetails)
     onComplete(result) {
@@ -208,19 +208,19 @@ final case class AgreementApiServiceImpl(
         statusReply.getError match {
           case ex: AgreementNotFound           => activateAgreement404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => activateAgreement400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
+          case ex                              => internalServerError(operationLabel, ex.getMessage)
         }
       case Failure(ex)                                   =>
         logger.error(s"Error while $operationLabel $agreementId", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
-  private def subscribeAgreementById(
+  private def submitAgreementById(
     agreementId: String,
     stateChangeDetails: StateChangeDetails
   ): Future[PersistentAgreement] =
-    commander(agreementId).askWithStatus(ref => SubscribeAgreement(agreementId, stateChangeDetails, ref))
+    commander(agreementId).askWithStatus(ref => SubmitAgreement(agreementId, stateChangeDetails, ref))
 
   private def activateAgreementById(
     agreementId: String,
@@ -234,9 +234,9 @@ final case class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = "Suspending agreement"
+    val operationLabel: String = s"Suspending agreement $agreementId"
 
-    logger.info(s"$operationLabel $agreementId")
+    logger.info(operationLabel)
 
     val result: Future[StatusReply[PersistentAgreement]] = suspendAgreementById(agreementId, stateChangeDetails)
 
@@ -248,11 +248,11 @@ final case class AgreementApiServiceImpl(
         statusReply.getError match {
           case ex: AgreementNotFound           => suspendAgreement404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => suspendAgreement400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
+          case ex                              => internalServerError(operationLabel, ex.getMessage)
         }
       case Failure(ex)                                   =>
         logger.error(s"Error while $operationLabel $agreementId", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
@@ -276,12 +276,18 @@ final case class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
 
-    val operationLabel: String = "Getting agreements for"
+    val resourceId: String =
+      s"""
+         |producer=${producerId.getOrElse("")}/
+         |consumer=${consumerId.getOrElse("")}/
+         |eservice=${eserviceId.getOrElse("")}/
+         |descriptor=${descriptorId.getOrElse("")}/
+         |state=${state.getOrElse("")}
+         |""".stripMargin.replaceAll("\n", "")
 
-    logger.info(
-      s"$operationLabel consumer $consumerId to e-service $eserviceId of the producer $producerId " +
-        s"with the descriptor $descriptorId and state $state"
-    )
+    val operationLabel: String = s"Getting agreements with $resourceId"
+
+    logger.info(operationLabel)
 
     val sliceSize = 100
 
@@ -302,20 +308,8 @@ final case class AgreementApiServiceImpl(
     result match {
       case Right(agreements) => getAgreements200(agreements.map(PersistentAgreement.toAPI))
       case Left(error)       =>
-        logger.error(
-          s"Error while $operationLabel consumer $consumerId to e-service $eserviceId of the producer $producerId " +
-            s"with the descriptor $descriptorId and state $state",
-          error
-        )
-        val resourceId: String =
-          s"""
-             |producer=${producerId.getOrElse("")}/
-             |consumer=${consumerId.getOrElse("")}/
-             |eservice=${eserviceId.getOrElse("")}/
-             |descriptor=${descriptorId.getOrElse("")}/
-             |state=${state.getOrElse("")}
-             |""".stripMargin.replaceAll("\n", "")
-        getAgreements400(problemOf(StatusCodes.BadRequest, GenericError(operationLabel, resourceId, error.getMessage)))
+        logger.error(s"Error while $operationLabel", error)
+        getAgreements400(problemOf(StatusCodes.BadRequest, GenericError(operationLabel, error.getMessage)))
     }
 
   }
@@ -366,7 +360,7 @@ final case class AgreementApiServiceImpl(
         addAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
       case Failure(ex)                    =>
         logger.error(s"Error while $operationLabel", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
@@ -390,7 +384,7 @@ final case class AgreementApiServiceImpl(
         removeAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
       case Failure(ex)                    =>
         logger.error(s"Error while $operationLabel", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
@@ -418,7 +412,7 @@ final case class AgreementApiServiceImpl(
         getAgreementConsumerDocument404(problemOf(StatusCodes.NotFound, ex))
       case Failure(ex)                            =>
         logger.error(s"Error while $operationLabel", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
@@ -447,11 +441,11 @@ final case class AgreementApiServiceImpl(
         statusReply.getError match {
           case ex: AgreementNotFound           => upgradeAgreementById404(problemOf(StatusCodes.NotFound, ex))
           case ex: AgreementNotInExpectedState => upgradeAgreementById400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, agreementId, ex.getMessage)
+          case ex                              => internalServerError(operationLabel, ex.getMessage)
         }
       case Failure(ex)                                   =>
         logger.error(s"Error while $operationLabel $agreementId, with data $seed", ex)
-        internalServerError(operationLabel, agreementId, ex.getMessage)
+        internalServerError(operationLabel, ex.getMessage)
     }
   }
 
@@ -464,6 +458,6 @@ final case class AgreementApiServiceImpl(
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id))
 
-  private def internalServerError(operationLabel: String, resourceId: String, errorMessage: String): StandardRoute =
-    complete(StatusCodes.InternalServerError, GenericError(operationLabel, resourceId, errorMessage))
+  private def internalServerError(operationLabel: String, errorMessage: String): StandardRoute =
+    complete(StatusCodes.InternalServerError, GenericError(operationLabel, errorMessage))
 }

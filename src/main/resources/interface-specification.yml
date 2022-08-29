@@ -118,6 +118,46 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/agreements/{agreementId}/update':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - agreement
+      summary: updates an agreement.
+      description: updates an agreement
+      operationId: updateAgreementById
+      parameters:
+        - name: agreementId
+          in: path
+          description: The identifier of the agreement to update
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: The updated agreement data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgreementSeed'
+        required: true
+      responses:
+        '200':
+          description: Agreement updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /agreements:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -306,130 +346,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/agreements/{agreement_id}/activate':
-    parameters:
-      - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
-    post:
-      security:
-        - bearerAuth: []
-      summary: Activate Agreement
-      operationId: activateAgreement
-      parameters:
-        - schema:
-            type: string
-          name: agreement_id
-          in: path
-          required: true
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StateChangeDetails'
-        required: true
-      responses:
-        '200':
-          description: Agreement activated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agreement'
-        '400':
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Agreement not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      description: 'activates the agreement, if any.'
-      tags:
-        - agreement
-  '/agreements/{agreement_id}/submit':
-    parameters:
-      - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
-    post:
-      security:
-        - bearerAuth: []
-      summary: Submit Agreement
-      operationId: submitAgreement
-      parameters:
-        - schema:
-            type: string
-          name: agreement_id
-          in: path
-          required: true
-      responses:
-        '200':
-          description: Agreement submitted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agreement'
-        '400':
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Agreement not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      description: 'submitted the agreement, if any.'
-      tags:
-        - agreement
-  '/agreements/{agreement_id}/suspend':
-    parameters:
-      - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
-    post:
-      security:
-        - bearerAuth: []
-      summary: Suspend Agreement
-      operationId: suspendAgreement
-      parameters:
-        - schema:
-            type: string
-          name: agreement_id
-          in: path
-          required: true
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StateChangeDetails'
-        description: the updated attribute
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agreement'
-        '400':
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Agreement Not Found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      tags:
-        - agreement
-      description: suspends the agreement by id
 components:
   parameters:
     CorrelationIdHeader:
@@ -444,19 +360,6 @@ components:
       schema:
         type: string
   schemas:
-    StateChangeDetails:
-      type: object
-      description: tracks the owner of the change.
-      properties:
-        changedBy:
-          $ref: '#/components/schemas/ChangedBy'
-    ChangedBy:
-      type: string
-      description: Role who made the change
-      enum:
-        - PRODUCER
-        - CONSUMER
-        - PLATFORM
     AgreementState:
       type: string
       description: Agreement State
@@ -466,6 +369,7 @@ components:
         - ACTIVE
         - SUSPENDED
         - INACTIVE
+        - MISSING_CERTIFIED_ATTRIBUTES
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -502,6 +406,38 @@ components:
         - descriptorId
         - producerId
         - consumerId
+        - verifiedAttributes
+        - certifiedAttributes
+        - declaredAttributes
+    UpdateAgreementSeed:
+      type: object
+      description: contains the admitted payload for agreement update.
+      properties:
+        state:
+          $ref: '#/components/schemas/AgreementState'
+        certifiedAttributes:
+          type: array
+          description: 'set of the certified attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/CertifiedAttribute'
+        declaredAttributes:
+          type: array
+          description: 'set of the declared attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/DeclaredAttribute'
+        verifiedAttributes:
+          type: array
+          description: 'set of the verified attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/VerifiedAttribute'
+        suspendedByConsumer:
+          type: boolean
+        suspendedByProducer:
+          type: boolean
+        suspendedByPlatform:
+          type: boolean
+      required:
+        - state
         - verifiedAttributes
         - certifiedAttributes
         - declaredAttributes

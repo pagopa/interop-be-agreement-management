@@ -25,10 +25,8 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[State, StateV1](stateGen)
   serdeCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
   deserCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
-  serdeCheck[AgreementActivated, AgreementActivatedV1](agreementActivatedGen)
-  deserCheck[AgreementActivated, AgreementActivatedV1](agreementActivatedGen)
-  serdeCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
-  deserCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
+  serdeCheck[AgreementUpdated, AgreementUpdatedV1](agreementUpdatedGen)
+  deserCheck[AgreementUpdated, AgreementUpdatedV1](agreementUpdatedGen)
   serdeCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
   deserCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
   serdeCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
@@ -170,12 +168,8 @@ object PersistentSerializationSpec {
     (AgreementAdded(a), AgreementAddedV1(b))
   }
 
-  val agreementActivatedGen: Gen[(AgreementActivated, AgreementActivatedV1)] = persistentAgreementGen.map {
-    case (a, b) => (AgreementActivated(a), AgreementActivatedV1(b))
-  }
-
-  val agreementSuspendedGen: Gen[(AgreementSuspended, AgreementSuspendedV1)] = persistentAgreementGen.map {
-    case (a, b) => (AgreementSuspended(a), AgreementSuspendedV1(b))
+  val agreementUpdatedGen: Gen[(AgreementUpdated, AgreementUpdatedV1)] = persistentAgreementGen.map { case (a, b) =>
+    (AgreementUpdated(a), AgreementUpdatedV1(b))
   }
 
   val agreementDeactivatedGen: Gen[(AgreementDeactivated, AgreementDeactivatedV1)] = persistentAgreementGen.map {

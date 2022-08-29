@@ -56,6 +56,22 @@ object Adapters {
       updatedAt = None
     )
 
+    def update(
+      agreement: PersistentAgreement,
+      updateAgreementSeed: UpdateAgreementSeed,
+      dateTimeSupplier: OffsetDateTimeSupplier
+    ): PersistentAgreement =
+      agreement.copy(
+        state = PersistentAgreementState.fromApi(updateAgreementSeed.state),
+        certifiedAttributes = updateAgreementSeed.certifiedAttributes.map(PersistentCertifiedAttribute.fromAPI),
+        declaredAttributes = updateAgreementSeed.declaredAttributes.map(PersistentDeclaredAttribute.fromAPI),
+        verifiedAttributes = updateAgreementSeed.verifiedAttributes.map(PersistentVerifiedAttribute.fromAPI),
+        suspendedByConsumer = updateAgreementSeed.suspendedByConsumer,
+        suspendedByProducer = updateAgreementSeed.suspendedByProducer,
+        suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
+        updatedAt = Some(dateTimeSupplier.get)
+      )
+
     def upgrade(
       oldAgreement: PersistentAgreement,
       seed: UpgradeAgreementSeed
@@ -99,21 +115,23 @@ object Adapters {
 
   implicit class PersistentAgreementStateWrapper(private val p: PersistentAgreementState) extends AnyVal {
     def toApi: AgreementState = p match {
-      case Draft     => AgreementState.DRAFT
-      case Pending   => AgreementState.PENDING
-      case Active    => AgreementState.ACTIVE
-      case Suspended => AgreementState.SUSPENDED
-      case Inactive  => AgreementState.INACTIVE
+      case Draft                      => AgreementState.DRAFT
+      case Pending                    => AgreementState.PENDING
+      case Active                     => AgreementState.ACTIVE
+      case Suspended                  => AgreementState.SUSPENDED
+      case Inactive                   => AgreementState.INACTIVE
+      case MissingCertifiedAttributes => AgreementState.MISSING_CERTIFIED_ATTRIBUTES
     }
   }
 
   implicit class PersistentAgreementStateObjectWrapper(private val p: PersistentAgreementState.type) extends AnyVal {
     def fromApi(status: AgreementState): PersistentAgreementState = status match {
-      case AgreementState.DRAFT     => Draft
-      case AgreementState.PENDING   => Pending
-      case AgreementState.ACTIVE    => Active
-      case AgreementState.SUSPENDED => Suspended
-      case AgreementState.INACTIVE  => Inactive
+      case AgreementState.DRAFT                        => Draft
+      case AgreementState.PENDING                      => Pending
+      case AgreementState.ACTIVE                       => Active
+      case AgreementState.SUSPENDED                    => Suspended
+      case AgreementState.INACTIVE                     => Inactive
+      case AgreementState.MISSING_CERTIFIED_ATTRIBUTES => MissingCertifiedAttributes
     }
   }
 
@@ -121,6 +139,8 @@ object Adapters {
       extends AnyVal {
     // Note: It's possible to set documents = Nil because this function is only used when creating a new attribute
     def fromAPI(attribute: AttributeSeed): PersistentVerifiedAttribute            =
+      PersistentVerifiedAttribute(id = attribute.id)
+    def fromAPI(attribute: VerifiedAttribute): PersistentVerifiedAttribute        =
       PersistentVerifiedAttribute(id = attribute.id)
     def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute =
       VerifiedAttribute(id = persistedAttribute.id)
@@ -130,6 +150,8 @@ object Adapters {
       extends AnyVal {
     def fromAPI(attribute: AttributeSeed): PersistentCertifiedAttribute             =
       PersistentCertifiedAttribute(id = attribute.id)
+    def fromAPI(attribute: CertifiedAttribute): PersistentCertifiedAttribute        =
+      PersistentCertifiedAttribute(id = attribute.id)
     def toAPI(persistedAttribute: PersistentCertifiedAttribute): CertifiedAttribute =
       CertifiedAttribute(id = persistedAttribute.id)
   }
@@ -137,6 +159,8 @@ object Adapters {
   implicit class PersistentDeclaredAttributeObjectWrapper(private val p: PersistentDeclaredAttribute.type)
       extends AnyVal {
     def fromAPI(attribute: AttributeSeed): PersistentDeclaredAttribute = PersistentDeclaredAttribute(id = attribute.id)
+    def fromAPI(attribute: DeclaredAttribute): PersistentDeclaredAttribute        =
+      PersistentDeclaredAttribute(id = attribute.id)
     def toAPI(persistedAttribute: PersistentDeclaredAttribute): DeclaredAttribute =
       DeclaredAttribute(id = persistedAttribute.id)
   }

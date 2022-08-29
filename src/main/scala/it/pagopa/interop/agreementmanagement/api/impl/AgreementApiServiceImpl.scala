@@ -16,8 +16,8 @@ import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement.{
   PersistentAgreement,
-  PersistentAgreementState,
-  PersistentAgreementDocument
+  PersistentAgreementDocument,
+  PersistentAgreementState
 }
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.persistence._
@@ -54,9 +54,11 @@ final case class AgreementApiServiceImpl(
       route
     }
 
-  /** Code: 200, Message: Agreement created, DataType: Agreement
-    * Code: 405, Message: Invalid input, DataType: Problem
-    */
+  /**
+   * Code: 200, Message: Agreement created, DataType: Agreement
+   * Code: 400, Message: Invalid input, DataType: Problem
+   * Code: 409, Message: Agreement already exists, DataType: Problem
+   */
   override def addAgreement(agreementSeed: AgreementSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
@@ -97,6 +99,44 @@ final case class AgreementApiServiceImpl(
 
   private def createAgreement(agreement: PersistentAgreement): Future[StatusReply[PersistentAgreement]] =
     commander(agreement.id.toString).ask(ref => AddAgreement(agreement, ref))
+
+  /**
+   * Code: 200, Message: Agreement updated., DataType: Agreement
+   * Code: 404, Message: Agreement not found, DataType: Problem
+   * Code: 400, Message: Invalid ID supplied, DataType: Problem
+   */
+  override def updateAgreementById(agreementId: String, updateAgreementSeed: UpdateAgreementSeed)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE) {
+
+    val operationLabel: String = s"Updating agreement $agreementId"
+
+    logger.info(operationLabel)
+
+    val result: Future[PersistentAgreement] = updateAgreement(agreementId, updateAgreementSeed)
+
+    onComplete(result) {
+      case Success(agreement)             => updateAgreementById200(PersistentAgreement.toAPI(agreement))
+      case Failure(ex: AgreementNotFound) =>
+        logger.error(s"Error while $operationLabel", ex)
+        updateAgreementById404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex)                    =>
+        logger.error(s"Error while $operationLabel", ex)
+        internalServerError(operationLabel, ex.getMessage)
+    }
+  }
+
+  private def updateAgreement(
+    agreementId: String,
+    updateAgreementSeed: UpdateAgreementSeed
+  ): Future[PersistentAgreement] = for {
+    agreement <- commander(agreementId).askWithStatus(ref => GetAgreement(agreementId, ref))
+    updated = PersistentAgreement.update(agreement, updateAgreementSeed, dateTimeSupplier)
+    _       = println(updated)
+    result <- commander(agreementId).askWithStatus(ref => UpdateAgreement(updated, ref))
+  } yield result
 
   /**
    * Code: 204, Message: Agreement deleted
@@ -159,108 +199,6 @@ final case class AgreementApiServiceImpl(
         internalServerError(operationLabel, ex.getMessage)
     }
   }
-
-  /**
-   * Code: 200, Message: Agreement submitted, DataType: Agreement
-   * Code: 400, Message: Bad Request, DataType: Problem
-   * Code: 404, Message: Agreement not found, DataType: Problem
-   */
-  override def submitAgreement(agreementId: String)(implicit
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
-    contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
-    val operationLabel: String = s"Submitting agreement $agreementId"
-
-    logger.info(s"$operationLabel")
-
-    val result: Future[PersistentAgreement] =
-      submitAgreementById(agreementId, StateChangeDetails(changedBy = None))
-
-    onComplete(result) {
-      case Success(agreement) =>
-        submitAgreement200(PersistentAgreement.toAPI(agreement))
-      case Failure(ex)        =>
-        logger.error(s"Error while $operationLabel", ex)
-        ex match {
-          case ex: AgreementNotFound           => submitAgreement404(problemOf(StatusCodes.NotFound, ex))
-          case ex: AgreementNotInExpectedState => submitAgreement400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, ex.getMessage)
-        }
-    }
-  }
-
-  override def activateAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)(implicit
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
-    contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
-    val operationLabel: String = s"Activating agreement $agreementId"
-
-    logger.info(operationLabel)
-
-    val result: Future[StatusReply[PersistentAgreement]] = activateAgreementById(agreementId, stateChangeDetails)
-    onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        activateAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
-      case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
-        statusReply.getError match {
-          case ex: AgreementNotFound           => activateAgreement404(problemOf(StatusCodes.NotFound, ex))
-          case ex: AgreementNotInExpectedState => activateAgreement400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, ex.getMessage)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId", ex)
-        internalServerError(operationLabel, ex.getMessage)
-    }
-  }
-
-  private def submitAgreementById(
-    agreementId: String,
-    stateChangeDetails: StateChangeDetails
-  ): Future[PersistentAgreement] =
-    commander(agreementId).askWithStatus(ref => SubmitAgreement(agreementId, stateChangeDetails, ref))
-
-  private def activateAgreementById(
-    agreementId: String,
-    stateChangeDetails: StateChangeDetails
-  ): Future[StatusReply[PersistentAgreement]] =
-    commander(agreementId).ask(ref => ActivateAgreement(agreementId, stateChangeDetails, ref))
-
-  override def suspendAgreement(agreementId: String, stateChangeDetails: StateChangeDetails)(implicit
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
-    contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
-
-    val operationLabel: String = s"Suspending agreement $agreementId"
-
-    logger.info(operationLabel)
-
-    val result: Future[StatusReply[PersistentAgreement]] = suspendAgreementById(agreementId, stateChangeDetails)
-
-    onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        suspendAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
-      case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
-        statusReply.getError match {
-          case ex: AgreementNotFound           => suspendAgreement404(problemOf(StatusCodes.NotFound, ex))
-          case ex: AgreementNotInExpectedState => suspendAgreement400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, ex.getMessage)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId", ex)
-        internalServerError(operationLabel, ex.getMessage)
-    }
-  }
-
-  private def suspendAgreementById(
-    agreementId: String,
-    stateChangeDetails: StateChangeDetails
-  ): Future[StatusReply[PersistentAgreement]] =
-    commander(agreementId).ask(ref => SuspendAgreement(agreementId, stateChangeDetails, ref))
 
   /** Code: 200, Message: A list of Agreement, DataType: Seq[Agreement]
     */
@@ -428,7 +366,7 @@ final case class AgreementApiServiceImpl(
     logger.info(s"$operationLabel $agreementId, with data $seed")
 
     val result = for {
-      oldAgreement <- deactivateAgreementById(agreementId, StateChangeDetails(changedBy = None))
+      oldAgreement <- deactivateAgreementById(agreementId)
       persistentAgreement = PersistentAgreement.upgrade(oldAgreement, seed)(UUIDSupplier, dateTimeSupplier)
       activeAgreement <- createAgreement(persistentAgreement)
     } yield activeAgreement
@@ -449,11 +387,8 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  private def deactivateAgreementById(
-    agreementId: String,
-    stateChangeDetails: StateChangeDetails
-  ): Future[PersistentAgreement] =
-    commander(agreementId).askWithStatus(ref => DeactivateAgreement(agreementId, stateChangeDetails, ref))
+  private def deactivateAgreementById(agreementId: String): Future[PersistentAgreement] =
+    commander(agreementId).askWithStatus(ref => DeactivateAgreement(agreementId, ref))
 
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id))

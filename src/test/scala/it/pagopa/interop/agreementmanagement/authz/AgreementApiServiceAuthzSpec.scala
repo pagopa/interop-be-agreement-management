@@ -5,12 +5,7 @@ import akka.cluster.sharding.typed.scaladsl.Entity
 import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiMarshallerImpl._
 import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiServiceImpl
 import it.pagopa.interop.agreementmanagement.model.persistence.Command
-import it.pagopa.interop.agreementmanagement.model.{
-  AgreementSeed,
-  DocumentSeed,
-  StateChangeDetails,
-  UpgradeAgreementSeed
-}
+import it.pagopa.interop.agreementmanagement.model.{AgreementSeed, DocumentSeed, UpgradeAgreementSeed}
 import it.pagopa.interop.agreementmanagement.server.impl.Main.agreementPersistenceEntity
 import it.pagopa.interop.agreementmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
@@ -58,25 +53,6 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
     "accept authorized roles for getAgreement" in {
       val endpoint = AuthorizedRoutes.endpoints("getAgreement")
       validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.getAgreement("fake") })
-    }
-
-    "accept authorized roles for activateAgreement" in {
-      val endpoint = AuthorizedRoutes.endpoints("activateAgreement")
-
-      validateAuthorization(
-        endpoint,
-        { implicit c: Seq[(String, String)] => service.activateAgreement("fake", StateChangeDetails()) }
-      )
-
-    }
-
-    "accept authorized roles for suspendAgreement" in {
-      val endpoint = AuthorizedRoutes.endpoints("suspendAgreement")
-
-      validateAuthorization(
-        endpoint,
-        { implicit c: Seq[(String, String)] => service.suspendAgreement("fake", StateChangeDetails()) }
-      )
     }
 
     "accept authorized roles for getAgreements" in {

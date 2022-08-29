@@ -53,4 +53,5 @@ enum AgreementStateV1 {
   SUSPENDED = 3;
   INACTIVE = 4;
   DRAFT = 5;
+  MISSING_CERTIFIED_ATTRIBUTES = 6;
 }

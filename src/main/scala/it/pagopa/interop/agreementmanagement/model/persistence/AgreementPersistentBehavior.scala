@@ -12,10 +12,7 @@ import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors.{
   AgreementNotFound
 }
 import it.pagopa.interop.agreementmanagement.model.agreement._
-import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
-import it.pagopa.interop.agreementmanagement.model.{ChangedBy, StateChangeDetails}
 import it.pagopa.interop.commons.utils.errors.ComponentError
-import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -26,8 +23,7 @@ object AgreementPersistentBehavior {
 
   def commandHandler(
     shard: ActorRef[ClusterSharding.ShardCommand],
-    context: ActorContext[Command],
-    dateTimeSupplier: OffsetDateTimeSupplier
+    context: ActorContext[Command]
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
     val idleTimeout: Duration = context.system.settings.config.getDuration("agreement-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
@@ -40,6 +36,13 @@ object AgreementPersistentBehavior {
           .toLeft(newAgreement)
 
         agreement.fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementAdded)(replyTo))
+
+      case UpdateAgreement(updated, replyTo) =>
+        val agreement: Either[Throwable, PersistentAgreement] = state.agreements
+          .get(updated.id.toString)
+          .toRight(AgreementNotFound(updated.id.toString))
+
+        agreement.fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementUpdated)(replyTo))
 
       case DeleteAgreement(agreementId, replyTo) =>
         val agreement: Option[PersistentAgreement] = state.agreements.get(agreementId)
@@ -97,30 +100,9 @@ object AgreementPersistentBehavior {
 
         document.fold(handleFailure(_)(replyTo), doc => Effect.reply(replyTo)(StatusReply.Success(doc)))
 
-      case SubmitAgreement(agreementId, stateChangeDetails, replyTo) =>
+      case DeactivateAgreement(agreementId, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] =
-          getModifiedAgreement(state, agreementId, stateChangeDetails, Pending, _.isSubmittable)(dateTimeSupplier)
-
-        agreement
-          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementSubmitted)(replyTo))
-
-      case ActivateAgreement(agreementId, stateChangeDetails, replyTo) =>
-        val agreement: Either[Throwable, PersistentAgreement] =
-          getModifiedAgreement(state, agreementId, stateChangeDetails, Active, _.isActivable)(dateTimeSupplier)
-
-        agreement
-          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementActivated)(replyTo))
-
-      case SuspendAgreement(agreementId, stateChangeDetails, replyTo) =>
-        val agreement: Either[Throwable, PersistentAgreement] =
-          getModifiedAgreement(state, agreementId, stateChangeDetails, Suspended, _.isSuspendable)(dateTimeSupplier)
-
-        agreement
-          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementSuspended)(replyTo))
-
-      case DeactivateAgreement(agreementId, stateChangeDetails, replyTo) =>
-        val agreement: Either[Throwable, PersistentAgreement] =
-          getModifiedAgreement(state, agreementId, stateChangeDetails, Inactive, _.isDeactivable)(dateTimeSupplier)
+          state.agreements.get(agreementId).map(_.copy(state = Inactive)).toRight(AgreementNotFound(agreementId))
 
         agreement
           .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementDeactivated)(replyTo))
@@ -160,9 +142,7 @@ object AgreementPersistentBehavior {
     event match {
       case AgreementAdded(agreement)                                 => state.add(agreement)
       case AgreementDeleted(agreementId)                             => state.delete(agreementId)
-      case AgreementSubmitted(agreement)                             => state.updateAgreement(agreement)
-      case AgreementActivated(agreement)                             => state.updateAgreement(agreement)
-      case AgreementSuspended(agreement)                             => state.updateAgreement(agreement)
+      case AgreementUpdated(agreement)                               => state.updateAgreement(agreement)
       case AgreementDeactivated(agreement)                           => state.updateAgreement(agreement)
       case AgreementConsumerDocumentAdded(agreementId, document)     =>
         state.addAgreementConsumerDocument(agreementId, document)
@@ -175,7 +155,6 @@ object AgreementPersistentBehavior {
   def apply(
     shard: ActorRef[ClusterSharding.ShardCommand],
     persistenceId: PersistenceId,
-    dateTimeSupplier: OffsetDateTimeSupplier,
     projectionTag: String
   ): Behavior[Command] = Behaviors.setup { context =>
     context.log.debug(s"Starting Agreement Shard ${persistenceId.id}")
@@ -185,73 +164,11 @@ object AgreementPersistentBehavior {
     EventSourcedBehavior[Command, Event, State](
       persistenceId = persistenceId,
       emptyState = State.empty,
-      commandHandler = commandHandler(shard, context, dateTimeSupplier),
+      commandHandler = commandHandler(shard, context),
       eventHandler = eventHandler
     ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
       .withTagger(_ => Set(projectionTag))
       .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
   }
-
-  private def updateAgreementState(
-    persistentAgreement: PersistentAgreement,
-    state: PersistentAgreementState,
-    stateChangeDetails: StateChangeDetails
-  )(dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreement = {
-
-    val timestamp   = Some(dateTimeSupplier.get)
-    def isSuspended = state == Suspended
-
-    stateChangeDetails.changedBy match {
-      case Some(changedBy) =>
-        changedBy match {
-          case ChangedBy.CONSUMER =>
-            val newState = calcNewAgreementState(
-              suspendedByProducer = persistentAgreement.suspendedByProducer,
-              suspendedByConsumer = Some(isSuspended),
-              suspendedByPlatform = persistentAgreement.suspendedByPlatform,
-              newState = state
-            )
-            persistentAgreement.copy(state = newState, suspendedByConsumer = Some(isSuspended), updatedAt = timestamp)
-          case ChangedBy.PRODUCER =>
-            val newState = calcNewAgreementState(
-              suspendedByProducer = Some(isSuspended),
-              suspendedByConsumer = persistentAgreement.suspendedByConsumer,
-              suspendedByPlatform = persistentAgreement.suspendedByPlatform,
-              newState = state
-            )
-            persistentAgreement.copy(state = newState, suspendedByProducer = Some(isSuspended), updatedAt = timestamp)
-          case ChangedBy.PLATFORM =>
-            val newState = calcNewAgreementState(
-              suspendedByProducer = persistentAgreement.suspendedByProducer,
-              suspendedByConsumer = persistentAgreement.suspendedByConsumer,
-              suspendedByPlatform = Some(isSuspended),
-              newState = state
-            )
-            persistentAgreement.copy(state = newState, suspendedByPlatform = Some(isSuspended), updatedAt = timestamp)
-        }
-      case None            => persistentAgreement.copy(state = state, updatedAt = timestamp)
-    }
-
-  }
-  def calcNewAgreementState(
-    suspendedByProducer: Option[Boolean],
-    suspendedByConsumer: Option[Boolean],
-    suspendedByPlatform: Option[Boolean],
-    newState: PersistentAgreementState
-  ): PersistentAgreementState =
-    (suspendedByProducer ++ suspendedByConsumer ++ suspendedByPlatform)
-      .collectFirst { case true if newState == Active => Suspended }
-      .getOrElse(newState)
-
-  def getModifiedAgreement(
-    state: State,
-    agreementId: String,
-    stateChangeDetails: StateChangeDetails,
-    newState: PersistentAgreementState,
-    agreementValidation: PersistentAgreement => Either[Throwable, Unit]
-  )(dateTimeSupplier: OffsetDateTimeSupplier): Either[Throwable, PersistentAgreement] = for {
-    agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
-    _         <- agreementValidation(agreement)
-  } yield updateAgreementState(agreement, newState, stateChangeDetails)(dateTimeSupplier)
 
 }

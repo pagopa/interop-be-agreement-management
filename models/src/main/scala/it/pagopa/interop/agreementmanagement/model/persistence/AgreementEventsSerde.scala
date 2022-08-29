@@ -11,10 +11,8 @@ object AgreementEventsSerde {
     case x: AgreementConsumerDocumentAdded   => x.toJson
     case x: AgreementConsumerDocumentRemoved => x.toJson
     case x: AgreementAdded                   => x.toJson
+    case x: AgreementUpdated                 => x.toJson
     case x: AgreementDeleted                 => x.toJson
-    case x: AgreementSubmitted               => x.toJson
-    case x: AgreementActivated               => x.toJson
-    case x: AgreementSuspended               => x.toJson
     case x: AgreementDeactivated             => x.toJson
   }
 
@@ -22,10 +20,8 @@ object AgreementEventsSerde {
     case `agreementConsumerDocumentAdded`   => _.convertTo[AgreementConsumerDocumentAdded]
     case `agreementConsumerDocumentRemoved` => _.convertTo[AgreementConsumerDocumentRemoved]
     case `agreementAdded`                   => _.convertTo[AgreementAdded]
+    case `agreementUpdated`                 => _.convertTo[AgreementUpdated]
     case `agreementDeleted`                 => _.convertTo[AgreementDeleted]
-    case `agreementSubmitted`               => _.convertTo[AgreementSubmitted]
-    case `agreementActivated`               => _.convertTo[AgreementActivated]
-    case `agreementSuspended`               => _.convertTo[AgreementSuspended]
     case `agreementDeactivated`             => _.convertTo[AgreementDeactivated]
   }
 
@@ -33,10 +29,8 @@ object AgreementEventsSerde {
     case _: AgreementConsumerDocumentAdded   => agreementConsumerDocumentAdded
     case _: AgreementConsumerDocumentRemoved => agreementConsumerDocumentRemoved
     case _: AgreementAdded                   => agreementAdded
+    case _: AgreementUpdated                 => agreementUpdated
     case _: AgreementDeleted                 => agreementDeleted
-    case _: AgreementSubmitted               => agreementSubmitted
-    case _: AgreementActivated               => agreementActivated
-    case _: AgreementSuspended               => agreementSuspended
     case _: AgreementDeactivated             => agreementDeactivated
   }
 
@@ -44,28 +38,28 @@ object AgreementEventsSerde {
   private val agreementConsumerDocumentRemoved: String = "agreement_consumer_document_removed"
   private val agreementAdded: String                   = "agreement_added"
   private val agreementDeleted: String                 = "agreement_deleted"
-  private val agreementSubmitted: String               = "agreement_submitted"
-  private val agreementActivated: String               = "agreement_activated"
-  private val agreementSuspended: String               = "agreement_suspended"
+  private val agreementUpdated: String                 = "agreement_updated"
   private val agreementDeactivated: String             = "agreement_deactivated"
 
   private implicit val pasFormat: RootJsonFormat[PersistentAgreementState] =
     new RootJsonFormat[PersistentAgreementState] {
       override def read(json: JsValue): PersistentAgreementState = json match {
-        case JsString("Draft")     => Draft
-        case JsString("Pending")   => Pending
-        case JsString("Active")    => Active
-        case JsString("Suspended") => Suspended
-        case JsString("Inactive ") => Inactive
+        case JsString("Draft")                       => Draft
+        case JsString("Pending")                     => Pending
+        case JsString("Active")                      => Active
+        case JsString("Suspended")                   => Suspended
+        case JsString("Inactive ")                   => Inactive
+        case JsString("MissingCertifiedAttributes ") => MissingCertifiedAttributes
         case _ => deserializationError("Unable to deserialize json as a PersistentPurposeVersionState")
       }
 
       override def write(obj: PersistentAgreementState): JsValue = obj match {
-        case Draft     => JsString("Draft")
-        case Pending   => JsString("Pending")
-        case Active    => JsString("Active")
-        case Suspended => JsString("Suspended")
-        case Inactive  => JsString("Inactive")
+        case Draft                      => JsString("Draft")
+        case Pending                    => JsString("Pending")
+        case Active                     => JsString("Active")
+        case Suspended                  => JsString("Suspended")
+        case Inactive                   => JsString("Inactive")
+        case MissingCertifiedAttributes => JsString("MissingCertifiedAttributes")
       }
     }
 
@@ -81,10 +75,8 @@ object AgreementEventsSerde {
   private implicit val acdrFormat: RootJsonFormat[AgreementConsumerDocumentRemoved] =
     jsonFormat2(AgreementConsumerDocumentRemoved)
   private implicit val aadFormat: RootJsonFormat[AgreementAdded]                    = jsonFormat1(AgreementAdded)
+  private implicit val aUpFormat: RootJsonFormat[AgreementUpdated]                  = jsonFormat1(AgreementUpdated)
   private implicit val adelFormat: RootJsonFormat[AgreementDeleted]                 = jsonFormat1(AgreementDeleted)
-  private implicit val asubFormat: RootJsonFormat[AgreementSubmitted]               = jsonFormat1(AgreementSubmitted)
-  private implicit val aacFormat: RootJsonFormat[AgreementActivated]                = jsonFormat1(AgreementActivated)
-  private implicit val asFormat: RootJsonFormat[AgreementSuspended]                 = jsonFormat1(AgreementSuspended)
   private implicit val adeaFormat: RootJsonFormat[AgreementDeactivated]             = jsonFormat1(AgreementDeactivated)
 
 }

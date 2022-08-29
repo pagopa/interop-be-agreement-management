@@ -23,10 +23,10 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val certifiedAttributeFormat: RootJsonFormat[CertifiedAttribute]     = jsonFormat1(CertifiedAttribute)
   implicit val declaredAttributeFormat: RootJsonFormat[DeclaredAttribute]       = jsonFormat1(DeclaredAttribute)
   implicit val attributeSeedFormat: RootJsonFormat[AttributeSeed]               = jsonFormat1(AttributeSeed)
+  implicit val updateAgreementSeedFormat: RootJsonFormat[UpdateAgreementSeed]   = jsonFormat7(UpdateAgreementSeed)
   implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]               = jsonFormat7(AgreementSeed)
   implicit val upgradeAgreementSeedFormat: RootJsonFormat[UpgradeAgreementSeed] = jsonFormat1(UpgradeAgreementSeed)
   implicit val agreementFormat: RootJsonFormat[Agreement]                       = jsonFormat15(Agreement)
-  implicit val stateChangeDetailsFormat: RootJsonFormat[StateChangeDetails]     = jsonFormat1(StateChangeDetails)
   implicit val problemErrorFormat: RootJsonFormat[ProblemError]                 = jsonFormat2(ProblemError)
   implicit val problemFormat: RootJsonFormat[Problem]                           = jsonFormat5(Problem)
 

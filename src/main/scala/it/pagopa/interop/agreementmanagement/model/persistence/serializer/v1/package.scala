@@ -37,36 +37,19 @@ package object v1 {
   implicit def agreementAddedV1PersistEventSerializer: PersistEventSerializer[AgreementAdded, AgreementAddedV1] =
     event => Right(AgreementAddedV1.of(toProtobufAgreement(event.agreement)))
 
+  implicit def agreementUpdatedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementUpdatedV1, AgreementUpdated] =
+    event => toPersistentAgreement(event.agreement).map(AgreementUpdated)
+
+  implicit def agreementUpdatedV1PersistEventSerializer: PersistEventSerializer[AgreementUpdated, AgreementUpdatedV1] =
+    event => Right(AgreementUpdatedV1.of(toProtobufAgreement(event.agreement)))
+
   implicit def agreementDeletedV1PersistEventDeserializer
     : PersistEventDeserializer[AgreementDeletedV1, AgreementDeleted] =
     event => Right(AgreementDeleted(event.agreementId))
 
   implicit def agreementDeletedV1PersistEventSerializer: PersistEventSerializer[AgreementDeleted, AgreementDeletedV1] =
     event => Right(AgreementDeletedV1.of(event.agreementId))
-
-  implicit def agreementSubmittedV1PersistEventSerializer
-    : PersistEventSerializer[AgreementSubmitted, AgreementSubmittedV1] =
-    event => Right(AgreementSubmittedV1.of(toProtobufAgreement(event.agreement)))
-
-  implicit def agreementSubmittedV1PersistEventDeserializer
-    : PersistEventDeserializer[AgreementSubmittedV1, AgreementSubmitted] =
-    event => toPersistentAgreement(event.agreement).map(AgreementSubmitted)
-
-  implicit def agreementActivatedV1PersistEventSerializer
-    : PersistEventSerializer[AgreementActivated, AgreementActivatedV1] =
-    event => Right(AgreementActivatedV1.of(toProtobufAgreement(event.agreement)))
-
-  implicit def agreementActivatedV1PersistEventDeserializer
-    : PersistEventDeserializer[AgreementActivatedV1, AgreementActivated] =
-    event => toPersistentAgreement(event.agreement).map(AgreementActivated)
-
-  implicit def agreementSuspendedV1PersistEventSerializer
-    : PersistEventSerializer[AgreementSuspended, AgreementSuspendedV1] =
-    event => Right(AgreementSuspendedV1.of(toProtobufAgreement(event.agreement)))
-
-  implicit def agreementSuspendedV1PersistEventDeserializer
-    : PersistEventDeserializer[AgreementSuspendedV1, AgreementSuspended] =
-    event => toPersistentAgreement(event.agreement).map(AgreementSuspended)
 
   implicit def agreementDeactivatedV1PersistEventSerializer
     : PersistEventSerializer[AgreementDeactivated, AgreementDeactivatedV1] =

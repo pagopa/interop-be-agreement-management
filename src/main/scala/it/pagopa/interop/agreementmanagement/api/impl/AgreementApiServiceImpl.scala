@@ -107,7 +107,7 @@ final case class AgreementApiServiceImpl(
     agreementId: String
   )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
     authorize(ADMIN_ROLE) {
-      val operationLabel: String = "Deleting agreement"
+      val operationLabel: String = s"Deleting agreement $agreementId"
 
       logger.info(s"$operationLabel $agreementId")
 

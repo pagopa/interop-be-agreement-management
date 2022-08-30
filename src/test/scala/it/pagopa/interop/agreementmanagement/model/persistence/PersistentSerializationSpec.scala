@@ -27,8 +27,6 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
   serdeCheck[AgreementUpdated, AgreementUpdatedV1](agreementUpdatedGen)
   deserCheck[AgreementUpdated, AgreementUpdatedV1](agreementUpdatedGen)
-  serdeCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
-  deserCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
   serdeCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
   deserCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
   serdeCheck[AgreementConsumerDocumentRemoved, AgreementConsumerDocumentRemovedV1](agreementConsumerDocumentRemovedGen)
@@ -170,10 +168,6 @@ object PersistentSerializationSpec {
 
   val agreementUpdatedGen: Gen[(AgreementUpdated, AgreementUpdatedV1)] = persistentAgreementGen.map { case (a, b) =>
     (AgreementUpdated(a), AgreementUpdatedV1(b))
-  }
-
-  val agreementDeactivatedGen: Gen[(AgreementDeactivated, AgreementDeactivatedV1)] = persistentAgreementGen.map {
-    case (a, b) => (AgreementDeactivated(a), AgreementDeactivatedV1(b))
   }
 
   val agreementConsumerDocumentAddedGen: Gen[(AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1)] =

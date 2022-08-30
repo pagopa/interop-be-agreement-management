@@ -25,21 +25,7 @@
       "verb": "GET"
     },
     {
-      "route": "submitAgreement",
-      "roles": [
-        "admin"
-      ],
-      "verb": "POST"
-    },
-    {
-      "route": "activateAgreement",
-      "roles": [
-        "admin"
-      ],
-      "verb": "POST"
-    },
-    {
-      "route": "suspendAgreement",
+      "route": "updateAgreement",
       "roles": [
         "admin"
       ],

@@ -20,10 +20,6 @@ message AgreementDeletedV1 {
   required string agreementId = 1;
 }
 
-message AgreementDeactivatedV1 {
-  required AgreementV1 agreement = 1;
-}
-
 message AgreementConsumerDocumentAddedV1 {
   required string agreementId = 1;
   required AgreementDocumentV1 document = 2;

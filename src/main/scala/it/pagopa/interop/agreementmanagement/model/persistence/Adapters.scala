@@ -82,7 +82,7 @@ object Adapters {
         descriptorId = seed.descriptorId,
         producerId = oldAgreement.producerId,
         consumerId = oldAgreement.consumerId,
-        state = Active,
+        state = oldAgreement.state,
         verifiedAttributes = oldAgreement.verifiedAttributes,
         certifiedAttributes = oldAgreement.certifiedAttributes,
         declaredAttributes = oldAgreement.declaredAttributes,

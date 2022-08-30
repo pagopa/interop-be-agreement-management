@@ -101,13 +101,6 @@ object AgreementPersistentBehavior {
 
         document.fold(handleFailure(_)(replyTo), doc => Effect.reply(replyTo)(StatusReply.Success(doc)))
 
-      case DeactivateAgreement(agreementId, replyTo) =>
-        val agreement: Either[Throwable, PersistentAgreement] =
-          state.agreements.get(agreementId).map(_.copy(state = Inactive)).toRight(AgreementNotFound(agreementId))
-
-        agreement
-          .fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementDeactivated)(replyTo))
-
       case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, agreementState, replyTo) =>
         val agreements: Seq[PersistentAgreement] = state.agreements
           .slice(from, to)
@@ -144,7 +137,6 @@ object AgreementPersistentBehavior {
       case AgreementAdded(agreement)                                 => state.add(agreement)
       case AgreementDeleted(agreementId)                             => state.delete(agreementId)
       case AgreementUpdated(agreement)                               => state.updateAgreement(agreement)
-      case AgreementDeactivated(agreement)                           => state.updateAgreement(agreement)
       case AgreementConsumerDocumentAdded(agreementId, document)     =>
         state.addAgreementConsumerDocument(agreementId, document)
       case AgreementConsumerDocumentRemoved(agreementId, documentId) =>

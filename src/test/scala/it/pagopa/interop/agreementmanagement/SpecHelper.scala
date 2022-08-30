@@ -66,7 +66,7 @@ trait SpecHelper {
   } yield agreement
 
   def getAgreement(id: String)(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
-    Unmarshal(makeRequest(emptyData, s"agreement/$id", HttpMethods.GET)).to[Agreement]
+    Unmarshal(makeRequest(emptyData, s"agreements/$id", HttpMethods.GET)).to[Agreement]
 
   def updateAgreement(agreementId: UUID, updateAgreementSeed: UpdateAgreementSeed)(implicit
     ec: ExecutionContext,

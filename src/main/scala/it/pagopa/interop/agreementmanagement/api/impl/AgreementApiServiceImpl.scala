@@ -13,11 +13,15 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
+import it.pagopa.interop.agreementmanagement.model.AgreementState.INACTIVE
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement.{
   PersistentAgreement,
   PersistentAgreementDocument,
-  PersistentAgreementState
+  PersistentAgreementState,
+  PersistentCertifiedAttribute,
+  PersistentDeclaredAttribute,
+  PersistentVerifiedAttribute
 }
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.persistence._
@@ -115,7 +119,12 @@ final case class AgreementApiServiceImpl(
 
     logger.info(operationLabel)
 
-    val result: Future[PersistentAgreement] = updateAgreement(agreementId, updateAgreementSeed)
+    val result: Future[PersistentAgreement] =
+      for {
+        agreement <- commander(agreementId).askWithStatus(ref => GetAgreement(agreementId, ref))
+        updated = PersistentAgreement.update(agreement, updateAgreementSeed, dateTimeSupplier)
+        result <- commander(agreementId).askWithStatus(ref => UpdateAgreement(updated, ref))
+      } yield result
 
     onComplete(result) {
       case Success(agreement)             => updateAgreementById200(PersistentAgreement.toAPI(agreement))
@@ -127,15 +136,6 @@ final case class AgreementApiServiceImpl(
         internalServerError(operationLabel, ex.getMessage)
     }
   }
-
-  private def updateAgreement(
-    agreementId: String,
-    updateAgreementSeed: UpdateAgreementSeed
-  ): Future[PersistentAgreement] = for {
-    agreement <- commander(agreementId).askWithStatus(ref => GetAgreement(agreementId, ref))
-    updated = PersistentAgreement.update(agreement, updateAgreementSeed, dateTimeSupplier)
-    result <- commander(agreementId).askWithStatus(ref => UpdateAgreement(updated, ref))
-  } yield result
 
   /**
    * Code: 204, Message: Agreement deleted
@@ -181,20 +181,17 @@ final case class AgreementApiServiceImpl(
 
     logger.info(operationLabel)
 
-    val result: Future[StatusReply[PersistentAgreement]] =
-      commander(agreementId).ask(ref => GetAgreement(agreementId, ref))
+    val result: Future[PersistentAgreement] =
+      commander(agreementId).askWithStatus(ref => GetAgreement(agreementId, ref))
 
     onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        getAgreement200(PersistentAgreement.toAPI(statusReply.getValue))
-      case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId", statusReply.getError)
-        statusReply.getError match {
-          case ex: AgreementNotFound => getAgreement404(problemOf(StatusCodes.NotFound, ex))
-          case ex                    => internalServerError(operationLabel, ex.getMessage)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId", ex)
+      case Success(agreement)             =>
+        getAgreement200(PersistentAgreement.toAPI(agreement))
+      case Failure(ex: AgreementNotFound) =>
+        logger.error(s"Error while $operationLabel", ex)
+        getAgreement404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex)                    =>
+        logger.error(s"Error while $operationLabel", ex)
         internalServerError(operationLabel, ex.getMessage)
     }
   }
@@ -228,7 +225,8 @@ final case class AgreementApiServiceImpl(
 
     val sliceSize = 100
 
-    val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard => commander(shard.toString))
+    val commanders: Seq[EntityRef[Command]] =
+      (0 until settings.numberOfShards).map(shard => commander(shard.toString))
 
     val result: Either[Throwable, Seq[PersistentAgreement]] = for {
       stateEnum <- state.traverse(AgreementState.fromValue)
@@ -360,34 +358,46 @@ final case class AgreementApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = "Upgrading agreement"
+    val operationLabel: String = s"Upgrading agreement $agreementId"
 
-    logger.info(s"$operationLabel $agreementId, with data $seed")
+    logger.info(s"$operationLabel, with data $seed")
 
-    val result = for {
-      oldAgreement <- deactivateAgreementById(agreementId)
+    val result: Future[PersistentAgreement] = for {
+      oldAgreement <- commander(agreementId).askWithStatus(ref => GetAgreement(agreementId, ref))
+      deactivated = PersistentAgreement.update(
+        oldAgreement,
+        UpdateAgreementSeed(
+          state = INACTIVE,
+          certifiedAttributes = oldAgreement.certifiedAttributes.map(PersistentCertifiedAttribute.toAPI),
+          declaredAttributes = oldAgreement.declaredAttributes.map(PersistentDeclaredAttribute.toAPI),
+          verifiedAttributes = oldAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
+          suspendedByConsumer = oldAgreement.suspendedByConsumer,
+          suspendedByProducer = oldAgreement.suspendedByProducer,
+          suspendedByPlatform = oldAgreement.suspendedByPlatform
+        ),
+        dateTimeSupplier
+      )
+      _ <- commander(agreementId).askWithStatus(ref => UpdateAgreement(deactivated, ref))
       persistentAgreement = PersistentAgreement.upgrade(oldAgreement, seed)(UUIDSupplier, dateTimeSupplier)
-      activeAgreement <- createAgreement(persistentAgreement)
+      activeAgreement <- commander(persistentAgreement.id.toString).askWithStatus(ref =>
+        AddAgreement(persistentAgreement, ref)
+      )
     } yield activeAgreement
 
     onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        upgradeAgreementById200(PersistentAgreement.toAPI(statusReply.getValue))
-      case Success(statusReply)                          =>
-        logger.error(s"Error while $operationLabel $agreementId, with data $seed", statusReply.getError)
-        statusReply.getError match {
-          case ex: AgreementNotFound           => upgradeAgreementById404(problemOf(StatusCodes.NotFound, ex))
-          case ex: AgreementNotInExpectedState => upgradeAgreementById400(problemOf(StatusCodes.BadRequest, ex))
-          case ex                              => internalServerError(operationLabel, ex.getMessage)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error while $operationLabel $agreementId, with data $seed", ex)
+      case Success(agreement)                       =>
+        upgradeAgreementById200(PersistentAgreement.toAPI(agreement))
+      case Failure(ex: AgreementNotFound)           =>
+        logger.error(s"Error while $operationLabel, with data $seed", ex)
+        upgradeAgreementById404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex: AgreementNotInExpectedState) =>
+        logger.error(s"Error while $operationLabel, with data $seed", ex)
+        upgradeAgreementById400(problemOf(StatusCodes.BadRequest, ex))
+      case Failure(ex)                              =>
+        logger.error(s"Error while $operationLabel, with data $seed", ex)
         internalServerError(operationLabel, ex.getMessage)
     }
   }
-
-  private def deactivateAgreementById(agreementId: String): Future[PersistentAgreement] =
-    commander(agreementId).askWithStatus(ref => DeactivateAgreement(agreementId, ref))
 
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, getShard(id))

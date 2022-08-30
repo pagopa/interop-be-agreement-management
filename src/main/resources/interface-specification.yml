@@ -20,7 +20,7 @@ tags:
       description: Find out more
       url: 'http://swagger.io'
 paths:
-  '/agreement/{agreement_id}':
+  '/agreements/{agreement_id}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'

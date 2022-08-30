@@ -220,18 +220,15 @@ class AgreementApiServiceSpec
     val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
 
     val response: Future[Agreement] = for {
-      draft   <- createAgreement(agreementSeed, agreementId)
-      pending <- submitAgreement(draft)
-    } yield pending
+      draft  <- createAgreement(agreementSeed, agreementId)
+      active <- activateAgreement(draft)
+    } yield active
 
     val bodyResponse: Agreement = Await.result(response, Duration.Inf)
     bodyResponse.verifiedAttributes shouldBe empty
     bodyResponse.certifiedAttributes shouldBe empty
     bodyResponse.declaredAttributes shouldBe empty
-    bodyResponse.state shouldBe AgreementState.PENDING
-
-    // after its activation
-    val _ = activateAgreement(bodyResponse).futureValue
+    bodyResponse.state shouldBe AgreementState.ACTIVE
 
     // and its upgrade
     val upgradedAgreementId = UUID.randomUUID()
@@ -243,6 +240,7 @@ class AgreementApiServiceSpec
 
     // when we retrieve the updated agreement, it should have its state changed to "active"
     val activeAgreement = getAgreement(upgradedAgreementId.toString).futureValue
+
     activeAgreement.state shouldBe AgreementState.ACTIVE
   }
 

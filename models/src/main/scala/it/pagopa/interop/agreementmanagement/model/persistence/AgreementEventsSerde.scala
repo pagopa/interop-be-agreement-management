@@ -13,7 +13,6 @@ object AgreementEventsSerde {
     case x: AgreementAdded                   => x.toJson
     case x: AgreementUpdated                 => x.toJson
     case x: AgreementDeleted                 => x.toJson
-    case x: AgreementDeactivated             => x.toJson
   }
 
   val jsonToAgreement: PartialFunction[String, JsValue => ProjectableEvent] = {
@@ -22,7 +21,6 @@ object AgreementEventsSerde {
     case `agreementAdded`                   => _.convertTo[AgreementAdded]
     case `agreementUpdated`                 => _.convertTo[AgreementUpdated]
     case `agreementDeleted`                 => _.convertTo[AgreementDeleted]
-    case `agreementDeactivated`             => _.convertTo[AgreementDeactivated]
   }
 
   def getKind(e: Event): String = e match {
@@ -31,7 +29,6 @@ object AgreementEventsSerde {
     case _: AgreementAdded                   => agreementAdded
     case _: AgreementUpdated                 => agreementUpdated
     case _: AgreementDeleted                 => agreementDeleted
-    case _: AgreementDeactivated             => agreementDeactivated
   }
 
   private val agreementConsumerDocumentAdded: String   = "agreement_consumer_document_added"
@@ -39,7 +36,6 @@ object AgreementEventsSerde {
   private val agreementAdded: String                   = "agreement_added"
   private val agreementDeleted: String                 = "agreement_deleted"
   private val agreementUpdated: String                 = "agreement_updated"
-  private val agreementDeactivated: String             = "agreement_deactivated"
 
   private implicit val pasFormat: RootJsonFormat[PersistentAgreementState] =
     new RootJsonFormat[PersistentAgreementState] {
@@ -77,6 +73,5 @@ object AgreementEventsSerde {
   private implicit val aadFormat: RootJsonFormat[AgreementAdded]                    = jsonFormat1(AgreementAdded)
   private implicit val aUpFormat: RootJsonFormat[AgreementUpdated]                  = jsonFormat1(AgreementUpdated)
   private implicit val adelFormat: RootJsonFormat[AgreementDeleted]                 = jsonFormat1(AgreementDeleted)
-  private implicit val adeaFormat: RootJsonFormat[AgreementDeactivated]             = jsonFormat1(AgreementDeactivated)
 
 }

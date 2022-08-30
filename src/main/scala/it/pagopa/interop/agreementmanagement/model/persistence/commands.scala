@@ -17,8 +17,6 @@ final case class GetAgreement(agreementId: String, replyTo: ActorRef[StatusReply
 final case class UpdateAgreement(agreement: PersistentAgreement, replyTo: ActorRef[StatusReply[PersistentAgreement]])
     extends Command
 final case class DeleteAgreement(agreementId: String, replyTo: ActorRef[StatusReply[Unit]])             extends Command
-final case class DeactivateAgreement(agreementId: String, replyTo: ActorRef[StatusReply[PersistentAgreement]])
-    extends Command
 final case class ListAgreements(
   from: Int,
   to: Int,

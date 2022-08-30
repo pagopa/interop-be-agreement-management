@@ -368,7 +368,7 @@ components:
         - PENDING
         - ACTIVE
         - SUSPENDED
-        - INACTIVE
+        - ARCHIVED
         - MISSING_CERTIFIED_ATTRIBUTES
     AgreementSeed:
       type: object

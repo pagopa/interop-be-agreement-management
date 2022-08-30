@@ -112,7 +112,7 @@ object protobufUtils {
       case Pending                    => AgreementStateV1.PENDING
       case Active                     => AgreementStateV1.ACTIVE
       case Suspended                  => AgreementStateV1.SUSPENDED
-      case Inactive                   => AgreementStateV1.INACTIVE
+      case Archived                   => AgreementStateV1.ARCHIVED
       case MissingCertifiedAttributes => AgreementStateV1.MISSING_CERTIFIED_ATTRIBUTES
     }
 
@@ -122,7 +122,7 @@ object protobufUtils {
       case AgreementStateV1.PENDING                      => Success(Pending)
       case AgreementStateV1.ACTIVE                       => Success(Active)
       case AgreementStateV1.SUSPENDED                    => Success(Suspended)
-      case AgreementStateV1.INACTIVE                     => Success(Inactive)
+      case AgreementStateV1.ARCHIVED                     => Success(Archived)
       case AgreementStateV1.MISSING_CERTIFIED_ATTRIBUTES => Success(MissingCertifiedAttributes)
       case AgreementStateV1.Unrecognized(value)          =>
         Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))

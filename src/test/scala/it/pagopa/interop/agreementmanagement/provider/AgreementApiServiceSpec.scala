@@ -235,8 +235,8 @@ class AgreementApiServiceSpec
     val _ = upgradeAgreement(agreementId.toString, upgradedAgreementId, upgradeAgreementSeed).futureValue
 
     // when we retrieve the original agreement. it should have its state changed to "inactive"
-    val inactiveAgreement = getAgreement(agreementId.toString).futureValue
-    inactiveAgreement.state shouldBe AgreementState.INACTIVE
+    val archivedAgreement = getAgreement(agreementId.toString).futureValue
+    archivedAgreement.state shouldBe AgreementState.ARCHIVED
 
     // when we retrieve the updated agreement, it should have its state changed to "active"
     val activeAgreement = getAgreement(upgradedAgreementId.toString).futureValue

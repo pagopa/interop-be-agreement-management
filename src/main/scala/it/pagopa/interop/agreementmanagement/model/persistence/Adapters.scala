@@ -1,36 +1,10 @@
 package it.pagopa.interop.agreementmanagement.model.persistence
 
-import cats.syntax.all._
-import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.commons.utils.service._
 
 object Adapters {
-
-  implicit class PersistentAgreementWrapper(private val p: PersistentAgreement) {
-
-    val SUBMITTABLE_STATES: Set[PersistentAgreementState] = Set(Draft)
-    val ACTIVABLE_STATES: Set[PersistentAgreementState]   = Set(Pending, Suspended)
-    val SUSPENDABLE_STATES: Set[PersistentAgreementState] = Set(Active, Suspended)
-    val DEACTIVABLE_STATES: Set[PersistentAgreementState] = Set(Active, Suspended)
-
-    def isSubmittable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
-      .withRight[Unit]
-      .unlessA(SUBMITTABLE_STATES.contains(p.state))
-
-    def isActivable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
-      .withRight[Unit]
-      .unlessA(ACTIVABLE_STATES.contains(p.state))
-
-    def isSuspendable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
-      .withRight[Unit]
-      .unlessA(SUSPENDABLE_STATES.contains(p.state))
-
-    def isDeactivable: Either[Throwable, Unit] = Left(AgreementNotInExpectedState(p.id.toString, p.state))
-      .withRight[Unit]
-      .unlessA(DEACTIVABLE_STATES.contains(p.state))
-  }
 
   implicit class PersistentAgreementObjectWrapper(private val p: PersistentAgreement.type) extends AnyVal {
 
@@ -119,7 +93,7 @@ object Adapters {
       case Pending                    => AgreementState.PENDING
       case Active                     => AgreementState.ACTIVE
       case Suspended                  => AgreementState.SUSPENDED
-      case Inactive                   => AgreementState.INACTIVE
+      case Archived                   => AgreementState.ARCHIVED
       case MissingCertifiedAttributes => AgreementState.MISSING_CERTIFIED_ATTRIBUTES
     }
   }
@@ -130,7 +104,7 @@ object Adapters {
       case AgreementState.PENDING                      => Pending
       case AgreementState.ACTIVE                       => Active
       case AgreementState.SUSPENDED                    => Suspended
-      case AgreementState.INACTIVE                     => Inactive
+      case AgreementState.ARCHIVED                     => Archived
       case AgreementState.MISSING_CERTIFIED_ATTRIBUTES => MissingCertifiedAttributes
     }
   }

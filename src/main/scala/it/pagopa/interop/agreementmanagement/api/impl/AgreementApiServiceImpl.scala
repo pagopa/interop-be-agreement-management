@@ -13,16 +13,9 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
-import it.pagopa.interop.agreementmanagement.model.AgreementState.INACTIVE
+import it.pagopa.interop.agreementmanagement.model.AgreementState.ARCHIVED
 import it.pagopa.interop.agreementmanagement.model._
-import it.pagopa.interop.agreementmanagement.model.agreement.{
-  PersistentAgreement,
-  PersistentAgreementDocument,
-  PersistentAgreementState,
-  PersistentCertifiedAttribute,
-  PersistentDeclaredAttribute,
-  PersistentVerifiedAttribute
-}
+import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.persistence._
 import it.pagopa.interop.commons.jwt._
@@ -367,7 +360,7 @@ final case class AgreementApiServiceImpl(
       deactivated = PersistentAgreement.update(
         oldAgreement,
         UpdateAgreementSeed(
-          state = INACTIVE,
+          state = ARCHIVED,
           certifiedAttributes = oldAgreement.certifiedAttributes.map(PersistentCertifiedAttribute.toAPI),
           declaredAttributes = oldAgreement.declaredAttributes.map(PersistentDeclaredAttribute.toAPI),
           verifiedAttributes = oldAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),

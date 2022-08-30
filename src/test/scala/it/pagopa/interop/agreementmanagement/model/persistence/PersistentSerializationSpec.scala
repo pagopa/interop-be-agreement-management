@@ -79,7 +79,7 @@ object PersistentSerializationSpec {
   } yield (time, time.toInstant.toEpochMilli)
 
   val persistentAgreementStateGen: Gen[(PersistentAgreementState, AgreementStateV1)] =
-    Gen.oneOf((Pending, PENDING), (Active, ACTIVE), (Suspended, SUSPENDED), (Inactive, INACTIVE))
+    Gen.oneOf((Pending, PENDING), (Active, ACTIVE), (Suspended, SUSPENDED), (Archived, ARCHIVED))
 
   val persistentDocumentGen: Gen[(PersistentAgreementDocument, AgreementDocumentV1)] = for {
     id              <- Gen.uuid

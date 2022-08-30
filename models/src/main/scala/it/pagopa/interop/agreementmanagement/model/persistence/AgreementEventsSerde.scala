@@ -44,7 +44,7 @@ object AgreementEventsSerde {
         case JsString("Pending")                     => Pending
         case JsString("Active")                      => Active
         case JsString("Suspended")                   => Suspended
-        case JsString("Inactive ")                   => Inactive
+        case JsString("Archived")                    => Archived
         case JsString("MissingCertifiedAttributes ") => MissingCertifiedAttributes
         case _ => deserializationError("Unable to deserialize json as a PersistentPurposeVersionState")
       }
@@ -54,7 +54,7 @@ object AgreementEventsSerde {
         case Pending                    => JsString("Pending")
         case Active                     => JsString("Active")
         case Suspended                  => JsString("Suspended")
-        case Inactive                   => JsString("Inactive")
+        case Archived                   => JsString("Archived")
         case MissingCertifiedAttributes => JsString("MissingCertifiedAttributes")
       }
     }

@@ -97,7 +97,10 @@ trait SpecHelper {
     )
 
   def activateAgreement(
-    agreement: Agreement
+    agreement: Agreement,
+    suspendedByConsumer: Option[Boolean] = None,
+    suspendedByProducer: Option[Boolean] = None,
+    suspendedByPlatform: Option[Boolean] = None
   )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = updateAgreement(
     agreement.id,
     UpdateAgreementSeed(
@@ -105,9 +108,9 @@ trait SpecHelper {
       certifiedAttributes = agreement.certifiedAttributes,
       declaredAttributes = agreement.declaredAttributes,
       verifiedAttributes = agreement.verifiedAttributes,
-      suspendedByConsumer = agreement.suspendedByConsumer,
-      suspendedByProducer = agreement.suspendedByProducer,
-      suspendedByPlatform = agreement.suspendedByPlatform
+      suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
+      suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
     )
   )
 
@@ -204,7 +207,7 @@ trait SpecHelper {
     val complete = for {
       _      <- createAgreement(agreementSeed1, AgreementOne.agreementId)
       draft1 <- createAgreement(agreementSeed2, AgreementTwo.agreementId)
-      active <- updateAgreement(
+      _      <- updateAgreement(
         draft1.id,
         UpdateAgreementSeed(
           state = ACTIVE,
@@ -216,9 +219,8 @@ trait SpecHelper {
           suspendedByPlatform = None
         )
       )
-      _ = println(active)
-      draft2    <- createAgreement(agreementSeed3, AgreementThree.agreementId)
-      suspended <- updateAgreement(
+      draft2 <- createAgreement(agreementSeed3, AgreementThree.agreementId)
+      _      <- updateAgreement(
         draft2.id,
         UpdateAgreementSeed(
           state = SUSPENDED,
@@ -230,7 +232,6 @@ trait SpecHelper {
           suspendedByPlatform = None
         )
       )
-      _ = println(suspended)
       draft4 <- createAgreement(agreementSeed4, AgreementFour.agreementId)
       _      <- updateAgreement(
         draft4.id,

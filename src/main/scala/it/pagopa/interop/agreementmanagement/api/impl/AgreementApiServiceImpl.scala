@@ -134,7 +134,6 @@ final case class AgreementApiServiceImpl(
   ): Future[PersistentAgreement] = for {
     agreement <- commander(agreementId).askWithStatus(ref => GetAgreement(agreementId, ref))
     updated = PersistentAgreement.update(agreement, updateAgreementSeed, dateTimeSupplier)
-    _       = println(updated)
     result <- commander(agreementId).askWithStatus(ref => UpdateAgreement(updated, ref))
   } yield result
 

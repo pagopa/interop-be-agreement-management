@@ -40,6 +40,7 @@ object AgreementPersistentBehavior {
       case UpdateAgreement(updated, replyTo) =>
         val agreement: Either[Throwable, PersistentAgreement] = state.agreements
           .get(updated.id.toString)
+          .map(_ => updated)
           .toRight(AgreementNotFound(updated.id.toString))
 
         agreement.fold(handleFailure(_)(replyTo), persistStateAndReply(_, AgreementUpdated)(replyTo))

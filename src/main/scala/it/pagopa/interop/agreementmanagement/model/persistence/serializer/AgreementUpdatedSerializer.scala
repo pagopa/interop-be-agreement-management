@@ -12,7 +12,7 @@ class AgreementUpdatedSerializer extends SerializerWithStringManifest {
 
   final val currentVersion: String = version1
 
-  override def identifier: Int = 100002
+  override def identifier: Int = 100007
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 

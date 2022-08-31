@@ -9,12 +9,12 @@ object JsonFormats {
   implicit val pasFormat: RootJsonFormat[PersistentAgreementState] =
     new RootJsonFormat[PersistentAgreementState] {
       override def read(json: JsValue): PersistentAgreementState = json match {
-        case JsString("Draft")                       => Draft
-        case JsString("Pending")                     => Pending
-        case JsString("Active")                      => Active
-        case JsString("Suspended")                   => Suspended
-        case JsString("Archived")                    => Archived
-        case JsString("MissingCertifiedAttributes ") => MissingCertifiedAttributes
+        case JsString("Draft")                      => Draft
+        case JsString("Pending")                    => Pending
+        case JsString("Active")                     => Active
+        case JsString("Suspended")                  => Suspended
+        case JsString("Archived")                   => Archived
+        case JsString("MissingCertifiedAttributes") => MissingCertifiedAttributes
         case _ => deserializationError("Unable to deserialize json as a PersistentPurposeVersionState")
       }
 

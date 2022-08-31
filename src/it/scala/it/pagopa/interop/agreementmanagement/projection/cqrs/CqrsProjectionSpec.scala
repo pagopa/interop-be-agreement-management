@@ -2,8 +2,6 @@ package it.pagopa.interop.agreementmanagement.projection.cqrs
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import it.pagopa.interop.agreementmanagement.ItSpecData._
-import it.pagopa.interop.agreementmanagement.model.ChangedBy.PRODUCER
-import it.pagopa.interop.agreementmanagement.model.StateChangeDetails
 import it.pagopa.interop.agreementmanagement.model.agreement.{Active, Pending, PersistentAgreement}
 import it.pagopa.interop.agreementmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.agreementmanagement.{ItSpecConfiguration, ItSpecHelper}
@@ -18,34 +16,20 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       compareAgreements(expected, persisted)
     }
 
-    "succeed for event AgreementActivated" in {
-      val stateChangeDetails = StateChangeDetails(changedBy = Some(PRODUCER))
-      val agreement          = createAgreement(persistentAgreement.copy(state = Pending))
-
-      val expected  = activateAgreement(agreement.id, stateChangeDetails)
+    "succeed for event AgreementUpdated" in {
+      val agreement = createAgreement(persistentAgreement.copy(state = Active))
+      val expected  = updateAgreement(agreement.copy(state = Pending))
       val persisted = findOne[PersistentAgreement](expected.id.toString).futureValue
 
       compareAgreements(expected, persisted)
     }
 
-    "succeed for event AgreementSuspended" in {
-      val stateChangeDetails = StateChangeDetails(changedBy = Some(PRODUCER))
-      val agreement          = createAgreement(persistentAgreement.copy(state = Active))
+    "succeed for event AgreementDeleted" in {
+      val agreement = createAgreement(persistentAgreement)
+      val _         = deletedAgreement(agreement.id.toString)
+      val persisted = find[PersistentAgreement](agreement.id.toString).futureValue
 
-      val expected  = suspendAgreement(agreement.id, stateChangeDetails)
-      val persisted = findOne[PersistentAgreement](expected.id.toString).futureValue
-
-      compareAgreements(expected, persisted)
-    }
-
-    "succeed for event AgreementDeactivated" in {
-      val stateChangeDetails = StateChangeDetails(changedBy = Some(PRODUCER))
-      val agreement          = createAgreement(persistentAgreement.copy(state = Active))
-
-      val expected  = deactivateAgreement(agreement.id, stateChangeDetails)
-      val persisted = findOne[PersistentAgreement](expected.id.toString).futureValue
-
-      compareAgreements(expected, persisted)
+      persisted shouldBe Seq.empty
     }
 
     "succeed for event AgreementConsumerDocumentAdded" in {

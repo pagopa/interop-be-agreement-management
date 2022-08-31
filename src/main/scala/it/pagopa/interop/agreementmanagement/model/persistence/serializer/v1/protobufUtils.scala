@@ -108,19 +108,23 @@ object protobufUtils {
 
   def toProtobufAgreementState(status: PersistentAgreementState): AgreementStateV1 =
     status match {
-      case Pending   => AgreementStateV1.PENDING
-      case Active    => AgreementStateV1.ACTIVE
-      case Suspended => AgreementStateV1.SUSPENDED
-      case Inactive  => AgreementStateV1.INACTIVE
+      case Draft                      => AgreementStateV1.DRAFT
+      case Pending                    => AgreementStateV1.PENDING
+      case Active                     => AgreementStateV1.ACTIVE
+      case Suspended                  => AgreementStateV1.SUSPENDED
+      case Archived                   => AgreementStateV1.ARCHIVED
+      case MissingCertifiedAttributes => AgreementStateV1.MISSING_CERTIFIED_ATTRIBUTES
     }
 
   def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
     status match {
-      case AgreementStateV1.PENDING             => Success(Pending)
-      case AgreementStateV1.ACTIVE              => Success(Active)
-      case AgreementStateV1.SUSPENDED           => Success(Suspended)
-      case AgreementStateV1.INACTIVE            => Success(Inactive)
-      case AgreementStateV1.Unrecognized(value) =>
+      case AgreementStateV1.DRAFT                        => Success(Draft)
+      case AgreementStateV1.PENDING                      => Success(Pending)
+      case AgreementStateV1.ACTIVE                       => Success(Active)
+      case AgreementStateV1.SUSPENDED                    => Success(Suspended)
+      case AgreementStateV1.ARCHIVED                     => Success(Archived)
+      case AgreementStateV1.MISSING_CERTIFIED_ATTRIBUTES => Success(MissingCertifiedAttributes)
+      case AgreementStateV1.Unrecognized(value)          =>
         Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }
 

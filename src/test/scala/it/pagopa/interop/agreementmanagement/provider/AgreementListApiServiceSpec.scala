@@ -55,7 +55,7 @@ class AgreementListApiServiceSpec
   implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory(mockDateTimeSupplier))
+    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory())
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
@@ -121,6 +121,16 @@ class AgreementListApiServiceSpec
       agreements.size should be(1)
       agreements.head.eserviceId should be(AgreementThree.eserviceId)
     }
+    "retrieves all draft agreements" in {
+
+      val response = makeRequest(emptyData, s"agreements?state=DRAFT", HttpMethods.GET)
+
+      val agreements: Seq[Agreement] =
+        Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
+
+      agreements.size should be(1)
+      agreements.head.id should be(AgreementOne.agreementId)
+    }
     "retrieves all pending agreements" in {
 
       val response = makeRequest(emptyData, s"agreements?state=PENDING", HttpMethods.GET)
@@ -129,7 +139,7 @@ class AgreementListApiServiceSpec
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
 
       agreements.size should be(1)
-      agreements.head.id should be(AgreementOne.agreementId)
+      agreements.head.id should be(AgreementFour.agreementId)
     }
     "retrieves all activated agreements" in {
 

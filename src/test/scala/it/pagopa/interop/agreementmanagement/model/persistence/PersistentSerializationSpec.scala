@@ -25,12 +25,8 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[State, StateV1](stateGen)
   serdeCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
   deserCheck[AgreementAdded, AgreementAddedV1](agreementAddedGen)
-  serdeCheck[AgreementActivated, AgreementActivatedV1](agreementActivatedGen)
-  deserCheck[AgreementActivated, AgreementActivatedV1](agreementActivatedGen)
-  serdeCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
-  deserCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
-  serdeCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
-  deserCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
+  serdeCheck[AgreementUpdated, AgreementUpdatedV1](agreementUpdatedGen)
+  deserCheck[AgreementUpdated, AgreementUpdatedV1](agreementUpdatedGen)
   serdeCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
   deserCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
   serdeCheck[AgreementConsumerDocumentRemoved, AgreementConsumerDocumentRemovedV1](agreementConsumerDocumentRemovedGen)
@@ -83,7 +79,7 @@ object PersistentSerializationSpec {
   } yield (time, time.toInstant.toEpochMilli)
 
   val persistentAgreementStateGen: Gen[(PersistentAgreementState, AgreementStateV1)] =
-    Gen.oneOf((Pending, PENDING), (Active, ACTIVE), (Suspended, SUSPENDED), (Inactive, INACTIVE))
+    Gen.oneOf((Pending, PENDING), (Active, ACTIVE), (Suspended, SUSPENDED), (Archived, ARCHIVED))
 
   val persistentDocumentGen: Gen[(PersistentAgreementDocument, AgreementDocumentV1)] = for {
     id              <- Gen.uuid
@@ -170,16 +166,8 @@ object PersistentSerializationSpec {
     (AgreementAdded(a), AgreementAddedV1(b))
   }
 
-  val agreementActivatedGen: Gen[(AgreementActivated, AgreementActivatedV1)] = persistentAgreementGen.map {
-    case (a, b) => (AgreementActivated(a), AgreementActivatedV1(b))
-  }
-
-  val agreementSuspendedGen: Gen[(AgreementSuspended, AgreementSuspendedV1)] = persistentAgreementGen.map {
-    case (a, b) => (AgreementSuspended(a), AgreementSuspendedV1(b))
-  }
-
-  val agreementDeactivatedGen: Gen[(AgreementDeactivated, AgreementDeactivatedV1)] = persistentAgreementGen.map {
-    case (a, b) => (AgreementDeactivated(a), AgreementDeactivatedV1(b))
+  val agreementUpdatedGen: Gen[(AgreementUpdated, AgreementUpdatedV1)] = persistentAgreementGen.map { case (a, b) =>
+    (AgreementUpdated(a), AgreementUpdatedV1(b))
   }
 
   val agreementConsumerDocumentAddedGen: Gen[(AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1)] =

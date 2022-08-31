@@ -14,34 +14,30 @@ object AgreementEventsSerde {
     case x: AgreementConsumerDocumentAdded   => x.toJson
     case x: AgreementConsumerDocumentRemoved => x.toJson
     case x: AgreementAdded                   => x.toJson
-    case x: AgreementActivated               => x.toJson
-    case x: AgreementSuspended               => x.toJson
-    case x: AgreementDeactivated             => x.toJson
+    case x: AgreementUpdated                 => x.toJson
+    case x: AgreementDeleted                 => x.toJson
   }
 
   val jsonToAgreement: PartialFunction[String, JsValue => ProjectableEvent] = {
     case `agreementConsumerDocumentAdded`   => _.convertTo[AgreementConsumerDocumentAdded]
     case `agreementConsumerDocumentRemoved` => _.convertTo[AgreementConsumerDocumentRemoved]
     case `agreementAdded`                   => _.convertTo[AgreementAdded]
-    case `agreementActivated`               => _.convertTo[AgreementActivated]
-    case `agreementSuspended`               => _.convertTo[AgreementSuspended]
-    case `agreementDeactivated`             => _.convertTo[AgreementDeactivated]
+    case `agreementUpdated`                 => _.convertTo[AgreementUpdated]
+    case `agreementDeleted`                 => _.convertTo[AgreementDeleted]
   }
 
   def getKind(e: Event): String = e match {
     case _: AgreementConsumerDocumentAdded   => agreementConsumerDocumentAdded
     case _: AgreementConsumerDocumentRemoved => agreementConsumerDocumentRemoved
     case _: AgreementAdded                   => agreementAdded
-    case _: AgreementActivated               => agreementActivated
-    case _: AgreementSuspended               => agreementSuspended
-    case _: AgreementDeactivated             => agreementDeactivated
+    case _: AgreementUpdated                 => agreementUpdated
+    case _: AgreementDeleted                 => agreementDeleted
   }
 
   private val agreementConsumerDocumentAdded: String   = "agreement_consumer_document_added"
   private val agreementConsumerDocumentRemoved: String = "agreement_consumer_document_removed"
   private val agreementAdded: String                   = "agreement_added"
-  private val agreementActivated: String               = "agreement_activated"
-  private val agreementSuspended: String               = "agreement_suspended"
-  private val agreementDeactivated: String             = "agreement_deactivated"
+  private val agreementDeleted: String                 = "agreement_deleted"
+  private val agreementUpdated: String                 = "agreement_updated"
 
 }

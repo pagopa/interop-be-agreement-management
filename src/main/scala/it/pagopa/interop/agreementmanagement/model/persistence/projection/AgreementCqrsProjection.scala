@@ -25,12 +25,9 @@ object AgreementCqrsProjection {
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
     case AgreementAdded(a)                            =>
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${a.toJson.compactPrint} }"))
-    case AgreementActivated(a)                        =>
+    case AgreementUpdated(a)                          =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
-    case AgreementSuspended(a)                        =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
-    case AgreementDeactivated(a)                      =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
+    case AgreementDeleted(aId)                        => Action(collection.deleteOne(Filters.eq("data.id", aId)))
     case AgreementConsumerDocumentAdded(aId, doc)     =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", aId), _),

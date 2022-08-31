@@ -46,19 +46,17 @@ trait Dependencies {
   val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
 
-  def behaviorFactory(offsetDateTimeSupplier: OffsetDateTimeSupplier): EntityContext[Command] => Behavior[Command] = {
-    entityContext =>
-      val index: Int = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
-      AgreementPersistentBehavior(
-        entityContext.shard,
-        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-        offsetDateTimeSupplier,
-        projectionTag(index)
-      )
+  def behaviorFactory(): EntityContext[Command] => Behavior[Command] = { entityContext =>
+    val index: Int = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
+    AgreementPersistentBehavior(
+      entityContext.shard,
+      PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+      projectionTag(index)
+    )
   }
 
   val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
-    Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory(dateTimeSupplier))
+    Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory())
 
   def initProjections(
     blockingEc: ExecutionContext

@@ -4,6 +4,7 @@ import akka.actor
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, MessageEntity}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import it.pagopa.interop.agreementmanagement.model.AgreementState.{ACTIVE, PENDING, SUSPENDED}
 import it.pagopa.interop.agreementmanagement.model._
 
 import java.time.{OffsetDateTime, ZoneOffset}
@@ -16,33 +17,41 @@ trait SpecHelper {
   final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
   object AgreementOne {
-    val agreementId: UUID  = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9210")
-    val eserviceId: UUID   = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9211")
-    val descriptorId: UUID = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9212")
-    val producerId: UUID   = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9213")
-    val consumerId: UUID   = UUID.fromString("17f8dce0-0a5b-476b-9fdd-a7a658eb9214")
+    val agreementId: UUID  = UUID.randomUUID()
+    val eserviceId: UUID   = UUID.randomUUID()
+    val descriptorId: UUID = UUID.randomUUID()
+    val producerId: UUID   = UUID.randomUUID()
+    val consumerId: UUID   = UUID.randomUUID()
   }
 
   object AgreementTwo {
-    val agreementId: UUID  = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9210")
-    val eserviceId: UUID   = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9211")
-    val descriptorId: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212")
-    val consumerId: UUID   = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213")
-    val producerId: UUID   = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214")
+    val agreementId: UUID  = UUID.randomUUID()
+    val eserviceId: UUID   = UUID.randomUUID()
+    val descriptorId: UUID = UUID.randomUUID()
+    val consumerId: UUID   = UUID.randomUUID()
+    val producerId: UUID   = UUID.randomUUID()
   }
 
   object AgreementThree {
-    val agreementId: UUID  = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9210")
-    val eserviceId: UUID   = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9211")
-    val descriptorId: UUID = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9212")
-    val consumerId: UUID   = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9213")
-    val producerId: UUID   = UUID.fromString("47f8dce0-0a5b-476b-9fdd-a7a658eb9214")
+    val agreementId: UUID  = UUID.randomUUID()
+    val eserviceId: UUID   = UUID.randomUUID()
+    val descriptorId: UUID = UUID.randomUUID()
+    val consumerId: UUID   = UUID.randomUUID()
+    val producerId: UUID   = UUID.randomUUID()
+  }
+
+  object AgreementFour {
+    val agreementId: UUID  = UUID.randomUUID()
+    val eserviceId: UUID   = UUID.randomUUID()
+    val descriptorId: UUID = UUID.randomUUID()
+    val consumerId: UUID   = UUID.randomUUID()
+    val producerId: UUID   = UUID.randomUUID()
   }
 
   object Attributes {
-    val id1: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
-    val id2: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9216")
-    val id3: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9217")
+    val id1: UUID = UUID.randomUUID()
+    val id2: UUID = UUID.randomUUID()
+    val id3: UUID = UUID.randomUUID()
   }
 
   def createAgreement(seed: AgreementSeed, agreementId: UUID)(implicit
@@ -57,31 +66,71 @@ trait SpecHelper {
   } yield agreement
 
   def getAgreement(id: String)(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
-    Unmarshal(makeRequest(emptyData, s"agreement/$id", HttpMethods.GET)).to[Agreement]
+    Unmarshal(makeRequest(emptyData, s"agreements/$id", HttpMethods.GET)).to[Agreement]
 
-  def activateAgreement(agreement: Agreement, changedBy: Option[ChangedBy] = Some(ChangedBy.CONSUMER))(implicit
+  def updateAgreement(agreementId: UUID, updateAgreementSeed: UpdateAgreementSeed)(implicit
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[Agreement] = for {
-    data <- Marshal(StateChangeDetails(changedBy = changedBy))
+    data <- Marshal(updateAgreementSeed)
       .to[MessageEntity]
       .map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
-    activated <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/activate", HttpMethods.POST))
+    updated <- Unmarshal(makeRequest(data, s"agreements/${agreementId.toString}/update", HttpMethods.POST))
       .to[Agreement]
-  } yield activated
+  } yield updated
 
-  def suspendAgreement(agreement: Agreement, changedBy: Option[ChangedBy] = Some(ChangedBy.CONSUMER))(implicit
-    ec: ExecutionContext,
-    actorSystem: actor.ActorSystem
-  ): Future[Agreement] = for {
-    data <- Marshal(StateChangeDetails(changedBy = changedBy))
-      .to[MessageEntity]
-      .map(_.dataBytes)
-    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
-    suspended <- Unmarshal(makeRequest(data, s"agreements/${agreement.id.toString}/suspend", HttpMethods.POST))
-      .to[Agreement]
-  } yield suspended
+  def submitAgreement(
+    agreement: Agreement
+  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
+    updateAgreement(
+      agreement.id,
+      UpdateAgreementSeed(
+        state = PENDING,
+        certifiedAttributes = agreement.certifiedAttributes,
+        declaredAttributes = agreement.declaredAttributes,
+        verifiedAttributes = agreement.verifiedAttributes,
+        suspendedByConsumer = agreement.suspendedByConsumer,
+        suspendedByProducer = agreement.suspendedByProducer,
+        suspendedByPlatform = agreement.suspendedByPlatform
+      )
+    )
+
+  def activateAgreement(
+    agreement: Agreement,
+    suspendedByConsumer: Option[Boolean] = None,
+    suspendedByProducer: Option[Boolean] = None,
+    suspendedByPlatform: Option[Boolean] = None
+  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = updateAgreement(
+    agreement.id,
+    UpdateAgreementSeed(
+      state = ACTIVE,
+      certifiedAttributes = agreement.certifiedAttributes,
+      declaredAttributes = agreement.declaredAttributes,
+      verifiedAttributes = agreement.verifiedAttributes,
+      suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
+      suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
+    )
+  )
+
+  def suspendAgreement(
+    agreement: Agreement,
+    suspendedByConsumer: Option[Boolean] = None,
+    suspendedByProducer: Option[Boolean] = None,
+    suspendedByPlatform: Option[Boolean] = None
+  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = updateAgreement(
+    agreement.id,
+    UpdateAgreementSeed(
+      state = SUSPENDED,
+      certifiedAttributes = agreement.certifiedAttributes,
+      declaredAttributes = agreement.declaredAttributes,
+      verifiedAttributes = agreement.verifiedAttributes,
+      suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
+      suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
+    )
+  )
 
   def upgradeAgreement(agreementId: String, newAgreementId: UUID, seed: UpgradeAgreementSeed)(implicit
     ec: ExecutionContext,
@@ -145,13 +194,57 @@ trait SpecHelper {
       declaredAttributes = Seq(AttributeSeed(id = Attributes.id3))
     )
 
+    val agreementSeed4 = agreementSeed1.copy(
+      eserviceId = AgreementFour.eserviceId,
+      descriptorId = AgreementFour.descriptorId,
+      consumerId = AgreementFour.consumerId,
+      producerId = AgreementFour.producerId,
+      verifiedAttributes = Seq(AttributeSeed(id = Attributes.id1)),
+      certifiedAttributes = Seq(AttributeSeed(id = Attributes.id2)),
+      declaredAttributes = Seq(AttributeSeed(id = Attributes.id3))
+    )
+
     val complete = for {
-      _         <- createAgreement(agreementSeed1, AgreementOne.agreementId)
-      pending1  <- createAgreement(agreementSeed2, AgreementTwo.agreementId)
-      _         <- activateAgreement(pending1)
-      pending2  <- createAgreement(agreementSeed3, AgreementThree.agreementId)
-      activated <- activateAgreement(pending2)
-      _         <- suspendAgreement(activated)
+      _      <- createAgreement(agreementSeed1, AgreementOne.agreementId)
+      draft1 <- createAgreement(agreementSeed2, AgreementTwo.agreementId)
+      _      <- updateAgreement(
+        draft1.id,
+        UpdateAgreementSeed(
+          state = ACTIVE,
+          certifiedAttributes = draft1.certifiedAttributes,
+          declaredAttributes = draft1.declaredAttributes,
+          verifiedAttributes = draft1.verifiedAttributes,
+          suspendedByConsumer = None,
+          suspendedByProducer = None,
+          suspendedByPlatform = None
+        )
+      )
+      draft2 <- createAgreement(agreementSeed3, AgreementThree.agreementId)
+      _      <- updateAgreement(
+        draft2.id,
+        UpdateAgreementSeed(
+          state = SUSPENDED,
+          certifiedAttributes = draft2.certifiedAttributes,
+          declaredAttributes = draft2.declaredAttributes,
+          verifiedAttributes = draft2.verifiedAttributes,
+          suspendedByConsumer = None,
+          suspendedByProducer = None,
+          suspendedByPlatform = None
+        )
+      )
+      draft4 <- createAgreement(agreementSeed4, AgreementFour.agreementId)
+      _      <- updateAgreement(
+        draft4.id,
+        UpdateAgreementSeed(
+          state = PENDING,
+          certifiedAttributes = draft4.certifiedAttributes,
+          declaredAttributes = draft4.declaredAttributes,
+          verifiedAttributes = draft4.verifiedAttributes,
+          suspendedByConsumer = None,
+          suspendedByProducer = None,
+          suspendedByPlatform = None
+        )
+      )
     } yield ()
 
     Await.result(complete, Duration.Inf)

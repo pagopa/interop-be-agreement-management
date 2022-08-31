@@ -20,13 +20,31 @@ message AgreementV1 {
   required int64 createdAt = 10;
   optional int64 updatedAt = 11;
   optional bool suspendedByPlatform = 12;
+  repeated CertifiedAttributeV1 certifiedAttributes = 13;
+  repeated DeclaredAttributeV1 declaredAttributes = 14;
+  repeated AgreementDocumentV1 consumerDocuments = 15;
 }
 
 message VerifiedAttributeV1 {
-  required string id = 1;                 // registry identifier
-  optional bool verified = 2;             // state of verification
-  optional string verificationDate = 4;   // timestamp of verification, None if not verified
-  optional string validityTimespan = 5;   // seconds of verification validity, None by default
+  required string id = 1;
+  // Places 2-5 are reserved for backward compatibility
+}
+
+message CertifiedAttributeV1 {
+  required string id = 1;
+}
+
+message DeclaredAttributeV1 {
+  required string id = 1;
+}
+
+message AgreementDocumentV1 {
+  required string id = 1;
+  required string name = 2;
+  required string prettyName = 3;
+  required string contentType = 4;
+  required string path = 5;
+  required int64 createdAt = 6;
 }
 
 enum AgreementStateV1 {

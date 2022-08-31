@@ -45,10 +45,12 @@ trait SpecHelper {
     val id3: UUID = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9217")
   }
 
-  def createAgreement(
-    seed: AgreementSeed
-  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] = for {
+  def createAgreement(seed: AgreementSeed, agreementId: UUID)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Agreement] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     _ = seed.verifiedAttributes.foreach(_ => (() => mockDateTimeSupplier.get).expects().returning(timestamp).once())
     agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
@@ -81,30 +83,46 @@ trait SpecHelper {
       .to[Agreement]
   } yield suspended
 
-  def upgradeAgreement(agreementId: String, seed: AgreementSeed)(implicit
+  def upgradeAgreement(agreementId: String, newAgreementId: UUID, seed: UpgradeAgreementSeed)(implicit
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[Agreement] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockUUIDSupplier.get).expects().returning(newAgreementId).once()
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
+  def addConsumerDocument(agreementId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Document] = for {
+    data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+    _ = (() => mockUUIDSupplier.get).expects().returning(documentId).once()
+    document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/consumer-documents", HttpMethods.POST))
+      .to[Document]
+  } yield document
+
+  def removeConsumerDocument(agreementId: UUID, documentId: UUID)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[String] = for {
+    response <- Unmarshal(
+      makeRequest(emptyData, s"agreements/$agreementId/consumer-documents/$documentId", HttpMethods.DELETE)
+    ).to[String]
+  } yield response
+
   def prepareDataForListingTests(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Unit = {
-    (() => mockUUIDSupplier.get).expects().returning(AgreementOne.agreementId).once()
-    (() => mockUUIDSupplier.get).expects().returning(AgreementTwo.agreementId).once()
-    (() => mockUUIDSupplier.get).expects().returning(AgreementThree.agreementId).once()
     val agreementSeed1 = AgreementSeed(
       eserviceId = AgreementOne.eserviceId,
       descriptorId = AgreementOne.descriptorId,
       producerId = AgreementOne.producerId,
       consumerId = AgreementOne.consumerId,
-      verifiedAttributes = Seq(
-        VerifiedAttributeSeed(id = Attributes.id1, verified = Some(true), validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id2, verified = None, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id3, verified = Some(false), validityTimespan = Some(123L))
-      )
+      verifiedAttributes = Seq(AttributeSeed(id = Attributes.id1)),
+      certifiedAttributes = Seq(AttributeSeed(id = Attributes.id2)),
+      declaredAttributes = Seq(AttributeSeed(id = Attributes.id3))
     )
 
     val agreementSeed2 = agreementSeed1.copy(
@@ -112,11 +130,9 @@ trait SpecHelper {
       descriptorId = AgreementTwo.descriptorId,
       consumerId = AgreementTwo.consumerId,
       producerId = AgreementTwo.producerId,
-      verifiedAttributes = Seq(
-        VerifiedAttributeSeed(id = Attributes.id1, verified = None, validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id2, verified = Some(true), validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id3, verified = Some(false), validityTimespan = Some(123L))
-      )
+      verifiedAttributes = Seq(AttributeSeed(id = Attributes.id1)),
+      certifiedAttributes = Seq(AttributeSeed(id = Attributes.id2)),
+      declaredAttributes = Seq(AttributeSeed(id = Attributes.id3))
     )
 
     val agreementSeed3 = agreementSeed1.copy(
@@ -124,18 +140,16 @@ trait SpecHelper {
       descriptorId = AgreementThree.descriptorId,
       consumerId = AgreementThree.consumerId,
       producerId = AgreementThree.producerId,
-      verifiedAttributes = Seq(
-        VerifiedAttributeSeed(id = Attributes.id1, verified = Some(false), validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id2, verified = Some(false), validityTimespan = None),
-        VerifiedAttributeSeed(id = Attributes.id3, verified = Some(false), validityTimespan = Some(123L))
-      )
+      verifiedAttributes = Seq(AttributeSeed(id = Attributes.id1)),
+      certifiedAttributes = Seq(AttributeSeed(id = Attributes.id2)),
+      declaredAttributes = Seq(AttributeSeed(id = Attributes.id3))
     )
 
     val complete = for {
-      _         <- createAgreement(agreementSeed1)
-      pending1  <- createAgreement(agreementSeed2)
+      _         <- createAgreement(agreementSeed1, AgreementOne.agreementId)
+      pending1  <- createAgreement(agreementSeed2, AgreementTwo.agreementId)
       _         <- activateAgreement(pending1)
-      pending2  <- createAgreement(agreementSeed3)
+      pending2  <- createAgreement(agreementSeed3, AgreementThree.agreementId)
       activated <- activateAgreement(pending2)
       _         <- suspendAgreement(activated)
     } yield ()

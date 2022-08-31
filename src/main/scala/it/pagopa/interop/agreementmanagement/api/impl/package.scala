@@ -5,32 +5,30 @@ import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCode
 import akka.util.Timeout
-import it.pagopa.interop.agreementmanagement.model.{
-  Agreement,
-  AgreementSeed,
-  StateChangeDetails,
-  VerifiedAttribute,
-  VerifiedAttributeSeed
-}
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.persistence.Command
+import it.pagopa.interop.commons.utils.SprayCommonFormats.{offsetDateTimeFormat, uuidFormat}
+import it.pagopa.interop.commons.utils.errors.ComponentError
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.annotation.tailrec
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import it.pagopa.interop.commons.utils.SprayCommonFormats.{offsetDateTimeFormat, uuidFormat}
-import it.pagopa.interop.commons.utils.errors.ComponentError
 
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute]         = jsonFormat4(VerifiedAttribute)
-  implicit val verifiedAttributeSeedFormat: RootJsonFormat[VerifiedAttributeSeed] = jsonFormat3(VerifiedAttributeSeed)
-  implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]                 = jsonFormat5(AgreementSeed)
-  implicit val agreementFormat: RootJsonFormat[Agreement]                         = jsonFormat12(Agreement)
-  implicit val stateChangeDetailsFormat: RootJsonFormat[StateChangeDetails]       = jsonFormat1(StateChangeDetails)
-  implicit val problemErrorFormat: RootJsonFormat[ProblemError]                   = jsonFormat2(ProblemError)
-  implicit val problemFormat: RootJsonFormat[Problem]                             = jsonFormat5(Problem)
+  implicit val documentFormat: RootJsonFormat[Document]                         = jsonFormat6(Document)
+  implicit val documentSeedFormat: RootJsonFormat[DocumentSeed]                 = jsonFormat4(DocumentSeed)
+  implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute]       = jsonFormat1(VerifiedAttribute)
+  implicit val certifiedAttributeFormat: RootJsonFormat[CertifiedAttribute]     = jsonFormat1(CertifiedAttribute)
+  implicit val declaredAttributeFormat: RootJsonFormat[DeclaredAttribute]       = jsonFormat1(DeclaredAttribute)
+  implicit val attributeSeedFormat: RootJsonFormat[AttributeSeed]               = jsonFormat1(AttributeSeed)
+  implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]               = jsonFormat7(AgreementSeed)
+  implicit val upgradeAgreementSeedFormat: RootJsonFormat[UpgradeAgreementSeed] = jsonFormat1(UpgradeAgreementSeed)
+  implicit val agreementFormat: RootJsonFormat[Agreement]                       = jsonFormat15(Agreement)
+  implicit val stateChangeDetailsFormat: RootJsonFormat[StateChangeDetails]     = jsonFormat1(StateChangeDetails)
+  implicit val problemErrorFormat: RootJsonFormat[ProblemError]                 = jsonFormat2(ProblemError)
+  implicit val problemFormat: RootJsonFormat[Problem]                           = jsonFormat5(Problem)
 
   def slices[A, B <: Command](commander: EntityRef[B], sliceSize: Int)(
     commandGenerator: (Int, Int) => ActorRef[Seq[A]] => B

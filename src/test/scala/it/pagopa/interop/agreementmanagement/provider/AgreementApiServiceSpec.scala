@@ -7,10 +7,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
-import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.agreementmanagement._
 import it.pagopa.interop.agreementmanagement.api.AgreementApi
 import it.pagopa.interop.agreementmanagement.api.impl.{AgreementApiMarshallerImpl, AgreementApiServiceImpl}
@@ -97,35 +94,20 @@ class AgreementApiServiceSpec
         descriptorId = descriptorId,
         producerId = producerId,
         consumerId = consumerId,
-        verifiedAttributes = Seq(
-          VerifiedAttributeSeed(id = attributeId1, verified = Some(true), validityTimespan = None),
-          VerifiedAttributeSeed(id = attributeId2, verified = None, validityTimespan = None),
-          VerifiedAttributeSeed(id = attributeId3, verified = Some(false), validityTimespan = Some(123L))
-        )
+        verifiedAttributes = Seq(AttributeSeed(id = attributeId1)),
+        certifiedAttributes = Seq(AttributeSeed(id = attributeId2)),
+        declaredAttributes = Seq(AttributeSeed(id = attributeId3))
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
-      val response: Future[Agreement] = createAgreement(agreementSeed)
+      val response: Future[Agreement] = createAgreement(agreementSeed, agreementId)
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
 
       bodyResponse.id shouldBe agreementId
       bodyResponse.state shouldBe AgreementState.PENDING
-      bodyResponse.verifiedAttributes
-        .find(p => p.id == attributeId1)
-        .get
-        .verificationDate shouldBe a[Some[_]]
-
-      bodyResponse.verifiedAttributes
-        .find(p => p.id == attributeId2)
-        .get
-        .verificationDate should be(None)
-
-      bodyResponse.verifiedAttributes
-        .find(p => p.id == attributeId3)
-        .get
-        .validityTimespan
-        .get should be(123L)
+      bodyResponse.verifiedAttributes.find(p => p.id == attributeId1) shouldBe a[Some[_]]
+      bodyResponse.certifiedAttributes.find(p => p.id == attributeId2) shouldBe a[Some[_]]
+      bodyResponse.declaredAttributes.find(p => p.id == attributeId3) shouldBe a[Some[_]]
     }
 
     "activate an agreement properly" in {
@@ -137,11 +119,12 @@ class AgreementApiServiceSpec
         descriptorId = UUID.fromString("77262ddf-7743-4f26-85fd-ec53febbfe56"),
         producerId = UUID.fromString("f318fcc9-5421-4081-8e13-ba508152af9e"),
         consumerId = UUID.fromString("1f538520-95b6-4d3f-accf-90c7b183df9f"),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
-      val response: Future[Agreement] = createAgreement(agreementSeed)
+      val response: Future[Agreement] = createAgreement(agreementSeed, agreementId)
 
       val bodyResponse: Agreement = Await.result(response, Duration.Inf)
       bodyResponse.verifiedAttributes shouldBe empty
@@ -165,12 +148,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed)
+        bodyResponse              <- createAgreement(agreementSeed, agreementId)
         activateAgreementResponse <- activateAgreement(bodyResponse)
         suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
       } yield suspendByConsumer
@@ -192,12 +176,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed)
+        bodyResponse              <- createAgreement(agreementSeed, agreementId)
         activateAgreementResponse <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
         suspendByProducer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.PRODUCER))
       } yield suspendByProducer
@@ -219,12 +204,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed)
+        bodyResponse              <- createAgreement(agreementSeed, agreementId)
         activateAgreementResponse <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
         suspendByPlatform         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.PLATFORM))
       } yield suspendByPlatform
@@ -247,12 +233,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed)
+        bodyResponse              <- createAgreement(agreementSeed, agreementId)
         activateAgreementResponse <- activateAgreement(bodyResponse)
         suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
         suspendByProducer         <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PRODUCER))
@@ -275,12 +262,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse              <- createAgreement(agreementSeed)
+        bodyResponse              <- createAgreement(agreementSeed, agreementId)
         activateAgreementResponse <- activateAgreement(bodyResponse)
         suspendByConsumer         <- suspendAgreement(activateAgreementResponse, Some(ChangedBy.CONSUMER))
         suspendByPlatform         <- suspendAgreement(suspendByConsumer, Some(ChangedBy.PLATFORM))
@@ -303,12 +291,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse <- createAgreement(agreementSeed)
+        bodyResponse <- createAgreement(agreementSeed, agreementId)
         activated    <- activateAgreement(bodyResponse, Some(ChangedBy.CONSUMER))
         suspended    <- suspendAgreement(activated, Some(ChangedBy.CONSUMER))
         reActivated  <- activateAgreement(suspended, Some(ChangedBy.CONSUMER))
@@ -331,12 +320,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse <- createAgreement(agreementSeed)
+        bodyResponse <- createAgreement(agreementSeed, agreementId)
         activated    <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
         suspended    <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
         reActivated  <- activateAgreement(suspended, Some(ChangedBy.PRODUCER))
@@ -357,12 +347,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse <- createAgreement(agreementSeed)
+        bodyResponse <- createAgreement(agreementSeed, agreementId)
         activated    <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
         suspended    <- suspendAgreement(activated, Some(ChangedBy.PLATFORM))
         reActivated  <- activateAgreement(suspended, Some(ChangedBy.PLATFORM))
@@ -383,12 +374,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed)
+        bodyResponse          <- createAgreement(agreementSeed, agreementId)
         activated             <- activateAgreement(bodyResponse, Some(ChangedBy.CONSUMER))
         suspendedByConsumer   <- suspendAgreement(activated, Some(ChangedBy.CONSUMER))
         suspendedByProducer   <- suspendAgreement(suspendedByConsumer, Some(ChangedBy.PRODUCER))
@@ -412,12 +404,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed)
+        bodyResponse          <- createAgreement(agreementSeed, agreementId)
         activated             <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
         suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
         suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
@@ -441,12 +434,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed)
+        bodyResponse          <- createAgreement(agreementSeed, agreementId)
         activated             <- activateAgreement(bodyResponse, Some(ChangedBy.PRODUCER))
         suspendedByPlatform   <- suspendAgreement(activated, Some(ChangedBy.PLATFORM))
         suspendedByConsumer   <- suspendAgreement(suspendedByPlatform, Some(ChangedBy.CONSUMER))
@@ -470,12 +464,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed)
+        bodyResponse          <- createAgreement(agreementSeed, agreementId)
         activated             <- activateAgreement(bodyResponse)
         suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
         suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
@@ -500,12 +495,13 @@ class AgreementApiServiceSpec
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
-      (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
 
       val response: Future[Agreement] = for {
-        bodyResponse          <- createAgreement(agreementSeed)
+        bodyResponse          <- createAgreement(agreementSeed, agreementId)
         activated             <- activateAgreement(bodyResponse)
         suspendedByProducer   <- suspendAgreement(activated, Some(ChangedBy.PRODUCER))
         suspendedByConsumer   <- suspendAgreement(suspendedByProducer, Some(ChangedBy.CONSUMER))
@@ -523,66 +519,93 @@ class AgreementApiServiceSpec
       bodyResponse.suspendedByPlatform shouldBe Some(false)
     }
 
-    "verify an attribute properly" in {
-      // given an agreement with an attribute not yet verified
-      val agreementId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9299"
-      val attributeId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9284"
+    "add a consumer document to an agreement" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId   = UUID.randomUUID()
 
       val agreementSeed = AgreementSeed(
-        eserviceId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9212"),
-        descriptorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9213"),
-        producerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9214"),
-        consumerId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
-        verifiedAttributes =
-          Seq(VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = None, validityTimespan = None))
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
       )
-      (() => mockUUIDSupplier.get).expects().returning(UUID.fromString(agreementId)).once()
 
-      val bodyResponse: Agreement = createAgreement(agreementSeed).futureValue
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
-      bodyResponse.verifiedAttributes
-        .find(p => p.id.toString == attributeId)
-        .get
-        .verified shouldBe None
+      val response: Future[Document] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        document <- addConsumerDocument(agreementId, documentId, documentSeed)
+      } yield document
 
-      bodyResponse.verifiedAttributes
-        .find(p => p.id.toString == attributeId)
-        .get
-        .verificationDate should be(None)
+      val bodyResponse: Document = response.futureValue
 
-      val verifiedAttributeSeed =
-        VerifiedAttributeSeed(id = UUID.fromString(attributeId), verified = Some(true), validityTimespan = None)
-      val updatedSeed = Await.result(Marshal(verifiedAttributeSeed).to[MessageEntity].map(_.dataBytes), Duration.Inf)
-
-      // when the verification occurs
-      val updatedAgreementResponse = makeRequest(updatedSeed, s"agreements/$agreementId/attribute", HttpMethods.POST)
-
-      // it should set its verified attribute to true and setup a verification date also.
-      updatedAgreementResponse.status shouldBe StatusCodes.OK
-      val updatedAgreement = Await.result(Unmarshal(updatedAgreementResponse.entity).to[Agreement], Duration.Inf)
-      val updatedAttribute = updatedAgreement.verifiedAttributes.find(p => p.id.toString == attributeId).get
-
-      updatedAttribute.verified shouldBe Some(true)
-      updatedAttribute.verificationDate shouldBe a[Some[_]]
+      bodyResponse.id shouldBe documentId
+      bodyResponse.name shouldBe documentSeed.name
+      bodyResponse.contentType shouldBe documentSeed.contentType
+      bodyResponse.path shouldBe documentSeed.path
+      bodyResponse.createdAt shouldBe timestamp
     }
+
+    "remove a consumer document from an agreement" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId   = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
+      )
+
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      val response: Future[String] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        _        <- addConsumerDocument(agreementId, documentId, documentSeed)
+        response <- removeConsumerDocument(agreementId, documentId)
+      } yield response
+
+      val bodyResponse: String = response.futureValue
+
+      bodyResponse shouldBe empty
+    }
+
   }
 
   "upgrade an agreement properly" in {
     // given a pending agreement
     val agreementId = UUID.randomUUID()
 
-    val agreementSeed = AgreementSeed(
+    val agreementSeed        = AgreementSeed(
       eserviceId = UUID.fromString("94c06558-c0f9-42e0-a11e-c5f82e4b8a9b"),
       descriptorId = UUID.fromString("77262ddf-7743-4f26-85fd-ec53febbfe56"),
       producerId = UUID.fromString("f318fcc9-5421-4081-8e13-ba508152af9e"),
       consumerId = UUID.fromString("1f538520-95b6-4d3f-accf-90c7b183df9f"),
-      verifiedAttributes = Seq.empty
+      verifiedAttributes = Seq.empty,
+      certifiedAttributes = Seq.empty,
+      declaredAttributes = Seq.empty
     )
-    (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
+    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
 
-    val response: Future[Agreement] = createAgreement(agreementSeed)
+    val response: Future[Agreement] = createAgreement(agreementSeed, agreementId)
     val bodyResponse: Agreement     = Await.result(response, Duration.Inf)
     bodyResponse.verifiedAttributes shouldBe empty
+    bodyResponse.certifiedAttributes shouldBe empty
+    bodyResponse.declaredAttributes shouldBe empty
     bodyResponse.state shouldBe AgreementState.PENDING
 
     // after its activation
@@ -590,8 +613,7 @@ class AgreementApiServiceSpec
 
     // and its upgrade
     val updateAgreementId = UUID.randomUUID()
-    (() => mockUUIDSupplier.get).expects().returning(updateAgreementId).once()
-    val _                 = upgradeAgreement(agreementId.toString, agreementSeed).futureValue
+    val _                 = upgradeAgreement(agreementId.toString, updateAgreementId, upgradeAgreementSeed).futureValue
 
     // when we retrieve the original agreement. it should have its state changed to "inactive"
     val inactiveAgreement = getAgreement(agreementId.toString).futureValue

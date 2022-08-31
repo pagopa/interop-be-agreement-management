@@ -6,8 +6,8 @@ import it.pagopa.interop.agreementmanagement.model.persistence._
 import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
 import it.pagopa.interop.commons.cqrs.service.DocumentConversions._
-import org.mongodb.scala.{MongoCollection, _}
 import org.mongodb.scala.model._
+import org.mongodb.scala.{MongoCollection, _}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import spray.json._
@@ -23,16 +23,24 @@ object AgreementCqrsProjection {
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId = projectionId, eventHandler)
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
-    case AgreementAdded(a)           =>
+    case AgreementAdded(a)                            =>
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${a.toJson.compactPrint} }"))
-    case AgreementActivated(a)       =>
+    case AgreementActivated(a)                        =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
-    case AgreementSuspended(a)       =>
+    case AgreementSuspended(a)                        =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
-    case AgreementDeactivated(a)     =>
+    case AgreementDeactivated(a)                      =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
-    case VerifiedAttributeUpdated(a) =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
+    case AgreementConsumerDocumentAdded(aId, doc)     =>
+      ActionWithBson(
+        collection.updateOne(Filters.eq("data.id", aId), _),
+        Updates.push("data.consumerDocuments", doc.toDocument)
+      )
+    case AgreementConsumerDocumentRemoved(aId, docId) =>
+      ActionWithBson(
+        collection.updateOne(Filters.eq("data.id", aId), _),
+        Updates.pull("data.consumerDocuments", Filters.eq("id", docId))
+      )
   }
 
 }

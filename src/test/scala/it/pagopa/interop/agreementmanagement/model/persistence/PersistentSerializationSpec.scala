@@ -1,23 +1,22 @@
 package it.pagopa.interop.agreementmanagement.model.persistence
 
 import cats.implicits._
-import org.scalacheck.Prop.forAll
-import org.scalacheck.Gen
-import munit.ScalaCheckSuite
-import PersistentSerializationSpec._
-
-import java.time.{OffsetDateTime, ZoneOffset}
-import java.time.format.DateTimeFormatter
-import it.pagopa.interop.agreementmanagement.model.agreement._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement.AgreementStateV1._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.state._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events._
-import it.pagopa.interop.agreementmanagement.model.persistence.serializer._
-import com.softwaremill.diffx.munit.DiffxAssertions
-import com.softwaremill.diffx.generic.auto._
 import com.softwaremill.diffx.Diff
+import com.softwaremill.diffx.generic.auto._
+import com.softwaremill.diffx.munit.DiffxAssertions
+import it.pagopa.interop.agreementmanagement.model.agreement._
+import it.pagopa.interop.agreementmanagement.model.persistence.PersistentSerializationSpec._
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer._
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement.AgreementStateV1._
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement._
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.events._
+import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.state._
+import munit.ScalaCheckSuite
+import org.scalacheck.Gen
+import org.scalacheck.Prop.forAll
 
+import java.time.format.DateTimeFormatter
+import java.time.{OffsetDateTime, ZoneOffset}
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
@@ -32,8 +31,10 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[AgreementSuspended, AgreementSuspendedV1](agreementSuspendedGen)
   serdeCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
   deserCheck[AgreementDeactivated, AgreementDeactivatedV1](agreementDeactivatedGen)
-  serdeCheck[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1](verifiedAttributeUpdatedGen)
-  deserCheck[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1](verifiedAttributeUpdatedGen)
+  serdeCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
+  deserCheck[AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1](agreementConsumerDocumentAddedGen)
+  serdeCheck[AgreementConsumerDocumentRemoved, AgreementConsumerDocumentRemovedV1](agreementConsumerDocumentRemovedGen)
+  deserCheck[AgreementConsumerDocumentRemoved, AgreementConsumerDocumentRemovedV1](agreementConsumerDocumentRemovedGen)
 
   // TODO move me in commons
   def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit
@@ -84,29 +85,43 @@ object PersistentSerializationSpec {
   val persistentAgreementStateGen: Gen[(PersistentAgreementState, AgreementStateV1)] =
     Gen.oneOf((Pending, PENDING), (Active, ACTIVE), (Suspended, SUSPENDED), (Inactive, INACTIVE))
 
-  val persistentVerifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
-    id               <- Gen.uuid
-    verified         <- Gen.option(Gen.oneOf(true, false))
-    (vDate, vDateS)  <- Gen.option(offsetDatetimeStringGen).map(_.separate)
-    validityTimespan <- Gen.option(Gen.posNum[Long])
+  val persistentDocumentGen: Gen[(PersistentAgreementDocument, AgreementDocumentV1)] = for {
+    id              <- Gen.uuid
+    name            <- stringGen
+    prettyName      <- stringGen
+    contentType     <- stringGen
+    path            <- stringGen
+    (vDate, vDateL) <- offsetDatetimeLongGen
   } yield (
-    PersistentVerifiedAttribute(id, verified, vDate, validityTimespan),
-    VerifiedAttributeV1(id.toString(), verified, vDateS, validityTimespan.map(_.toString()))
+    PersistentAgreementDocument(id, name, prettyName, contentType, path, vDate),
+    AgreementDocumentV1(id.toString, name, prettyName, contentType, path, vDateL)
   )
 
+  val persistentVerifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] =
+    Gen.uuid.map(id => (PersistentVerifiedAttribute(id), VerifiedAttributeV1(id.toString)))
+
+  val persistentCertifiedAttributeGen: Gen[(PersistentCertifiedAttribute, CertifiedAttributeV1)] =
+    Gen.uuid.map(id => (PersistentCertifiedAttribute(id), CertifiedAttributeV1(id.toString)))
+
+  val persistentDeclaredAttributeGen: Gen[(PersistentDeclaredAttribute, DeclaredAttributeV1)] =
+    Gen.uuid.map(id => (PersistentDeclaredAttribute(id), DeclaredAttributeV1(id.toString)))
+
   val persistentAgreementGen: Gen[(PersistentAgreement, AgreementV1)] = for {
-    id                       <- Gen.uuid
-    eserviceId               <- Gen.uuid
-    descriptorId             <- Gen.uuid
-    producerId               <- Gen.uuid
-    consumerId               <- Gen.uuid
-    (state, stateV1)         <- persistentAgreementStateGen
-    (vattrs, vattrsV1)       <- Gen.listOf(persistentVerifiedAttributeGen).map(_.separate)
-    suspendedByConsumer      <- Gen.option(Gen.oneOf(true, false))
-    suspendedByProducer      <- Gen.option(Gen.oneOf(true, false))
-    suspendedByPlatform      <- Gen.option(Gen.oneOf(true, false))
-    (createdAt, createdAtV1) <- offsetDatetimeLongGen
-    (updatedAt, updatedAtV1) <- Gen.option(offsetDatetimeLongGen).map(_.separate)
+    id                             <- Gen.uuid
+    eserviceId                     <- Gen.uuid
+    descriptorId                   <- Gen.uuid
+    producerId                     <- Gen.uuid
+    consumerId                     <- Gen.uuid
+    (state, stateV1)               <- persistentAgreementStateGen
+    (vattrs, vattrsV1)             <- Gen.listOfN(10, persistentVerifiedAttributeGen).map(_.separate)
+    (cattrs, cattrsV1)             <- Gen.listOfN(10, persistentCertifiedAttributeGen).map(_.separate)
+    (dattrs, dattrsV1)             <- Gen.listOfN(10, persistentDeclaredAttributeGen).map(_.separate)
+    suspendedByConsumer            <- Gen.option(Gen.oneOf(true, false))
+    suspendedByProducer            <- Gen.option(Gen.oneOf(true, false))
+    suspendedByPlatform            <- Gen.option(Gen.oneOf(true, false))
+    (consumerDocs, consumerDocsV1) <- Gen.listOfN(10, persistentDocumentGen).map(_.separate)
+    (createdAt, createdAtV1)       <- offsetDatetimeLongGen
+    (updatedAt, updatedAtV1)       <- Gen.option(offsetDatetimeLongGen).map(_.separate)
   } yield (
     PersistentAgreement(
       id = id,
@@ -116,9 +131,12 @@ object PersistentSerializationSpec {
       consumerId = consumerId,
       state = state,
       verifiedAttributes = vattrs,
+      certifiedAttributes = cattrs,
+      declaredAttributes = dattrs,
       suspendedByConsumer = suspendedByConsumer,
       suspendedByProducer = suspendedByProducer,
       suspendedByPlatform = suspendedByPlatform,
+      consumerDocuments = consumerDocs,
       createdAt = createdAt,
       updatedAt = updatedAt
     ),
@@ -130,19 +148,23 @@ object PersistentSerializationSpec {
       consumerId = consumerId.toString(),
       state = stateV1,
       verifiedAttributes = vattrsV1,
+      certifiedAttributes = cattrsV1,
+      declaredAttributes = dattrsV1,
       suspendedByConsumer = suspendedByConsumer,
       suspendedByProducer = suspendedByProducer,
       suspendedByPlatform = suspendedByPlatform,
+      consumerDocuments = consumerDocsV1,
       createdAt = createdAtV1,
       updatedAt = updatedAtV1
     )
   )
 
-  val stateGen: Gen[(State, StateV1)] = Gen.listOf(persistentAgreementGen).map(_.separate).map { case (ags, agsV1) =>
-    val state   = State(ags.map(ag => (ag.id.toString -> ag)).toMap)
-    val stateV1 = StateV1(agsV1.map(agV1 => AgreementsV1(agV1.id, agV1)))
-    (state, stateV1)
-  }
+  val stateGen: Gen[(State, StateV1)] =
+    Gen.listOfN(10, persistentAgreementGen).map(_.separate).map { case (ags, agsV1) =>
+      val state   = State(ags.map(ag => ag.id.toString -> ag).toMap)
+      val stateV1 = StateV1(agsV1.map(agV1 => AgreementsV1(agV1.id, agV1)))
+      (state, stateV1)
+    }
 
   val agreementAddedGen: Gen[(AgreementAdded, AgreementAddedV1)] = persistentAgreementGen.map { case (a, b) =>
     (AgreementAdded(a), AgreementAddedV1(b))
@@ -160,8 +182,23 @@ object PersistentSerializationSpec {
     case (a, b) => (AgreementDeactivated(a), AgreementDeactivatedV1(b))
   }
 
-  val verifiedAttributeUpdatedGen: Gen[(VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1)] =
-    persistentAgreementGen.map { case (a, b) => (VerifiedAttributeUpdated(a), VerifiedAttributeUpdatedV1(b)) }
+  val agreementConsumerDocumentAddedGen: Gen[(AgreementConsumerDocumentAdded, AgreementConsumerDocumentAddedV1)] =
+    for {
+      agreementId  <- Gen.uuid
+      (doc, docV1) <- persistentDocumentGen
+    } yield (
+      AgreementConsumerDocumentAdded(agreementId.toString, doc),
+      AgreementConsumerDocumentAddedV1(agreementId.toString, docV1)
+    )
+
+  val agreementConsumerDocumentRemovedGen: Gen[(AgreementConsumerDocumentRemoved, AgreementConsumerDocumentRemovedV1)] =
+    for {
+      agreementId <- Gen.uuid
+      documentId  <- Gen.uuid
+    } yield (
+      AgreementConsumerDocumentRemoved(agreementId.toString, documentId.toString),
+      AgreementConsumerDocumentRemovedV1(agreementId.toString, documentId.toString)
+    )
 
   implicit class PimpedStateV1(val stateV1: StateV1) extends AnyVal {
     def sorted: StateV1 = stateV1.copy(stateV1.agreements.sortBy(_.key))

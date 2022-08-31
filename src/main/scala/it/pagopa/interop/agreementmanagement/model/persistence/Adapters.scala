@@ -40,34 +40,38 @@ object Adapters {
       producerId = agreement.producerId,
       consumerId = agreement.consumerId,
       state = Pending,
-      verifiedAttributes =
-        agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)),
+      verifiedAttributes = agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI),
+      certifiedAttributes = agreement.certifiedAttributes.distinctBy(_.id).map(PersistentCertifiedAttribute.fromAPI),
+      declaredAttributes = agreement.declaredAttributes.distinctBy(_.id).map(PersistentDeclaredAttribute.fromAPI),
       suspendedByConsumer = None,
       suspendedByProducer = None,
       suspendedByPlatform = None,
+      consumerDocuments = Nil,
       createdAt = dateTimeSupplier.get,
       updatedAt = None
     )
 
-    def fromAPIWithActiveState(
-      agreement: AgreementSeed,
-      uuidSupplier: UUIDSupplier,
-      dateTimeSupplier: OffsetDateTimeSupplier
-    ): PersistentAgreement = PersistentAgreement(
-      id = uuidSupplier.get,
-      eserviceId = agreement.eserviceId,
-      descriptorId = agreement.descriptorId,
-      producerId = agreement.producerId,
-      consumerId = agreement.consumerId,
-      state = Active,
-      verifiedAttributes =
-        agreement.verifiedAttributes.distinctBy(_.id).map(PersistentVerifiedAttribute.fromAPI(dateTimeSupplier)),
-      suspendedByConsumer = None,
-      suspendedByProducer = None,
-      suspendedByPlatform = None,
-      createdAt = dateTimeSupplier.get,
-      updatedAt = None
-    )
+    def upgrade(
+      oldAgreement: PersistentAgreement,
+      seed: UpgradeAgreementSeed
+    )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreement =
+      PersistentAgreement(
+        id = uuidSupplier.get,
+        eserviceId = oldAgreement.eserviceId,
+        descriptorId = seed.descriptorId,
+        producerId = oldAgreement.producerId,
+        consumerId = oldAgreement.consumerId,
+        state = Active,
+        verifiedAttributes = oldAgreement.verifiedAttributes,
+        certifiedAttributes = oldAgreement.certifiedAttributes,
+        declaredAttributes = oldAgreement.declaredAttributes,
+        suspendedByConsumer = None,
+        suspendedByProducer = None,
+        suspendedByPlatform = None,
+        consumerDocuments = oldAgreement.consumerDocuments,
+        createdAt = dateTimeSupplier.get,
+        updatedAt = None
+      )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
       id = persistentAgreement.id,
@@ -77,9 +81,12 @@ object Adapters {
       consumerId = persistentAgreement.consumerId,
       state = persistentAgreement.state.toApi,
       verifiedAttributes = persistentAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
+      certifiedAttributes = persistentAgreement.certifiedAttributes.map(PersistentCertifiedAttribute.toAPI),
+      declaredAttributes = persistentAgreement.declaredAttributes.map(PersistentDeclaredAttribute.toAPI),
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
       suspendedByPlatform = persistentAgreement.suspendedByPlatform,
+      consumerDocuments = persistentAgreement.consumerDocuments.map(PersistentAgreementDocument.toAPI),
       createdAt = persistentAgreement.createdAt,
       updatedAt = persistentAgreement.updatedAt
     )
@@ -105,23 +112,50 @@ object Adapters {
 
   implicit class PersistentVerifiedAttributeObjectWrapper(private val p: PersistentVerifiedAttribute.type)
       extends AnyVal {
+    // Note: It's possible to set documents = Nil because this function is only used when creating a new attribute
+    def fromAPI(attribute: AttributeSeed): PersistentVerifiedAttribute            =
+      PersistentVerifiedAttribute(id = attribute.id)
+    def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute =
+      VerifiedAttribute(id = persistedAttribute.id)
+  }
+
+  implicit class PersistentCertifiedAttributeObjectWrapper(private val p: PersistentCertifiedAttribute.type)
+      extends AnyVal {
+    def fromAPI(attribute: AttributeSeed): PersistentCertifiedAttribute             =
+      PersistentCertifiedAttribute(id = attribute.id)
+    def toAPI(persistedAttribute: PersistentCertifiedAttribute): CertifiedAttribute =
+      CertifiedAttribute(id = persistedAttribute.id)
+  }
+
+  implicit class PersistentDeclaredAttributeObjectWrapper(private val p: PersistentDeclaredAttribute.type)
+      extends AnyVal {
+    def fromAPI(attribute: AttributeSeed): PersistentDeclaredAttribute = PersistentDeclaredAttribute(id = attribute.id)
+    def toAPI(persistedAttribute: PersistentDeclaredAttribute): DeclaredAttribute =
+      DeclaredAttribute(id = persistedAttribute.id)
+  }
+
+  implicit class PersistentAgreementDocumentObjectWrapper(private val p: PersistentAgreementDocument.type)
+      extends AnyVal {
     def fromAPI(
-      dateTimeSupplier: OffsetDateTimeSupplier
-    )(attribute: VerifiedAttributeSeed): PersistentVerifiedAttribute = PersistentVerifiedAttribute(
-      id = attribute.id,
-      verified = attribute.verified,
-      verificationDate = attribute.verified match {
-        case Some(_) => Some(dateTimeSupplier.get)
-        case None    => None
-      },
-      validityTimespan = attribute.validityTimespan
-    )
-    def toAPI(persistedAttribute: PersistentVerifiedAttribute): VerifiedAttribute = VerifiedAttribute(
-      id = persistedAttribute.id,
-      verified = persistedAttribute.verified,
-      verificationDate = persistedAttribute.verificationDate,
-      validityTimespan = persistedAttribute.validityTimespan
-    )
+      seed: DocumentSeed
+    )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreementDocument =
+      PersistentAgreementDocument(
+        id = uuidSupplier.get,
+        name = seed.name,
+        prettyName = seed.prettyName,
+        contentType = seed.contentType,
+        path = seed.path,
+        createdAt = dateTimeSupplier.get
+      )
+    def toAPI(document: PersistentAgreementDocument): Document =
+      Document(
+        id = document.id,
+        name = document.name,
+        prettyName = document.prettyName,
+        contentType = document.contentType,
+        path = document.path,
+        createdAt = document.createdAt
+      )
   }
 
 }

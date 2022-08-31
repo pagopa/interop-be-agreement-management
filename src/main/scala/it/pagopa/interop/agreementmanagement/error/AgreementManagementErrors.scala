@@ -15,4 +15,7 @@ object AgreementManagementErrors {
   case class GenericError(operation: String, resourceId: String, error: String)
       extends ComponentError("0004", s"Error while $operation $resourceId - $error")
 
+  case class AgreementDocumentNotFound(agreementId: String, documentId: String)
+      extends ComponentError("0005", s"Document $documentId not found for agreement $agreementId")
+
 }

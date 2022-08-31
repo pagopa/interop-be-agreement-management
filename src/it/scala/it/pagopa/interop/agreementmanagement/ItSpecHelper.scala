@@ -15,7 +15,7 @@ import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDi
 import it.pagopa.interop.agreementmanagement.api._
 import it.pagopa.interop.agreementmanagement.api.impl._
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration
-import it.pagopa.interop.agreementmanagement.model.{StateChangeDetails, VerifiedAttributeSeed}
+import it.pagopa.interop.agreementmanagement.model.StateChangeDetails
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence._
 import it.pagopa.interop.agreementmanagement.server.Controller
@@ -139,12 +139,16 @@ trait ItSpecHelper
       .getValue
   }
 
-  def updateVerifiedAttribute(agreementId: UUID, seed: VerifiedAttributeSeed): PersistentAgreement = {
-    (() => mockDateTimeSupplier.get).expects().returning(ItSpecData.timestamp).once()
+  def addConsumerDocument(agreementId: UUID, document: PersistentAgreementDocument): PersistentAgreementDocument =
     commander(agreementId)
-      .ask(ref => UpdateVerifiedAttribute(agreementId.toString, seed, ref))
+      .ask(ref => AddAgreementConsumerDocument(agreementId.toString, document, ref))
       .futureValue
       .getValue
-  }
+
+  def removeConsumerDocument(agreementId: UUID, documentId: UUID): Unit =
+    commander(agreementId)
+      .ask(ref => RemoveAgreementConsumerDocument(agreementId.toString, documentId.toString, ref))
+      .futureValue
+      .getValue
 
 }

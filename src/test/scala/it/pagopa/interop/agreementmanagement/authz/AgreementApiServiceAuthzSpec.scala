@@ -5,7 +5,12 @@ import akka.cluster.sharding.typed.scaladsl.Entity
 import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiMarshallerImpl._
 import it.pagopa.interop.agreementmanagement.api.impl.AgreementApiServiceImpl
 import it.pagopa.interop.agreementmanagement.model.persistence.Command
-import it.pagopa.interop.agreementmanagement.model.{AgreementSeed, StateChangeDetails, VerifiedAttributeSeed}
+import it.pagopa.interop.agreementmanagement.model.{
+  AgreementSeed,
+  DocumentSeed,
+  StateChangeDetails,
+  UpgradeAgreementSeed
+}
 import it.pagopa.interop.agreementmanagement.server.impl.Main.agreementPersistenceEntity
 import it.pagopa.interop.agreementmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
@@ -42,7 +47,9 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
         descriptorId = UUID.randomUUID(),
         producerId = UUID.randomUUID(),
         consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
+        verifiedAttributes = Seq.empty,
+        certifiedAttributes = Seq.empty,
+        declaredAttributes = Seq.empty
       )
 
       validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.addAgreement(fakeSeed) })
@@ -80,26 +87,42 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
       )
     }
 
-    "accept authorized roles for updateAgreementVerifiedAttribute" in {
-      val endpoint = AuthorizedRoutes.endpoints("updateAgreementVerifiedAttribute")
-
-      val fakeSeed = VerifiedAttributeSeed(id = UUID.randomUUID())
+    "accept authorized roles for getAgreementConsumerDocument" in {
+      val endpoint = AuthorizedRoutes.endpoints("getAgreementConsumerDocument")
       validateAuthorization(
         endpoint,
-        { implicit c: Seq[(String, String)] => service.updateAgreementVerifiedAttribute("test", fakeSeed) }
+        { implicit c: Seq[(String, String)] => service.getAgreementConsumerDocument("agreementId", "documentId") }
+      )
+    }
+
+    "accept authorized roles for addAgreementConsumerDocument" in {
+      val endpoint = AuthorizedRoutes.endpoints("addAgreementConsumerDocument")
+
+      val fakeSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] =>
+          service.addAgreementConsumerDocument("agreementId", fakeSeed)
+        }
+      )
+    }
+
+    "accept authorized roles for removeAgreementConsumerDocument" in {
+      val endpoint = AuthorizedRoutes.endpoints("removeAgreementConsumerDocument")
+
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] =>
+          service.removeAgreementConsumerDocument("agreementId", "documentId")
+        }
       )
     }
 
     "accept authorized roles for upgradeAgreementById" in {
       val endpoint = AuthorizedRoutes.endpoints("upgradeAgreementById")
 
-      val fakeSeed = AgreementSeed(
-        eserviceId = UUID.randomUUID(),
-        descriptorId = UUID.randomUUID(),
-        producerId = UUID.randomUUID(),
-        consumerId = UUID.randomUUID(),
-        verifiedAttributes = Seq.empty
-      )
+      val fakeSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
 
       validateAuthorization(
         endpoint,

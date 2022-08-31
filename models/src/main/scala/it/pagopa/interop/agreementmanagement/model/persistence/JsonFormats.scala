@@ -24,13 +24,18 @@ object JsonFormats {
       }
     }
 
-  implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] =
-    jsonFormat4(PersistentVerifiedAttribute.apply)
-  implicit val paFormat: RootJsonFormat[PersistentAgreement]          = jsonFormat12(PersistentAgreement.apply)
-  implicit val vauFormat: RootJsonFormat[VerifiedAttributeUpdated]    = jsonFormat1(VerifiedAttributeUpdated.apply)
-  implicit val aadFormat: RootJsonFormat[AgreementAdded]              = jsonFormat1(AgreementAdded.apply)
-  implicit val aacFormat: RootJsonFormat[AgreementActivated]          = jsonFormat1(AgreementActivated.apply)
-  implicit val asFormat: RootJsonFormat[AgreementSuspended]           = jsonFormat1(AgreementSuspended.apply)
-  implicit val adFormat: RootJsonFormat[AgreementDeactivated]         = jsonFormat1(AgreementDeactivated.apply)
+  implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat1(PersistentCertifiedAttribute.apply)
+  implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute]  = jsonFormat1(PersistentDeclaredAttribute.apply)
+  implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat1(PersistentVerifiedAttribute.apply)
+  implicit val padFormat: RootJsonFormat[PersistentAgreementDocument]  = jsonFormat6(PersistentAgreementDocument.apply)
+  implicit val paFormat: RootJsonFormat[PersistentAgreement]           = jsonFormat15(PersistentAgreement.apply)
+  implicit val aadFormat: RootJsonFormat[AgreementAdded]               = jsonFormat1(AgreementAdded.apply)
+  implicit val aacFormat: RootJsonFormat[AgreementActivated]           = jsonFormat1(AgreementActivated.apply)
+  implicit val asFormat: RootJsonFormat[AgreementSuspended]            = jsonFormat1(AgreementSuspended.apply)
+  implicit val adFormat: RootJsonFormat[AgreementDeactivated]          = jsonFormat1(AgreementDeactivated.apply)
+  implicit val acdaFormat: RootJsonFormat[AgreementConsumerDocumentAdded]   =
+    jsonFormat2(AgreementConsumerDocumentAdded.apply)
+  implicit val acdrFormat: RootJsonFormat[AgreementConsumerDocumentRemoved] =
+    jsonFormat2(AgreementConsumerDocumentRemoved.apply)
 
 }

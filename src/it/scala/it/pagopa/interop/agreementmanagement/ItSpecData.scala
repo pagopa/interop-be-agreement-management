@@ -42,6 +42,7 @@ object ItSpecData {
     verifiedAttributes = Seq(persistentVerifiedAttribute),
     consumerDocuments = Seq(persistentConsumerDocument),
     createdAt = timestamp,
-    updatedAt = Some(timestamp)
+    updatedAt = Some(timestamp),
+    details = None
   )
 }

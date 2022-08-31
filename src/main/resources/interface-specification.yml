@@ -401,6 +401,8 @@ components:
           description: 'set of the declared attributes belonging to this agreement, if any.'
           items:
             $ref: '#/components/schemas/AttributeSeed'
+        details:
+          type: string
       required:
         - eserviceId
         - descriptorId
@@ -436,6 +438,8 @@ components:
           type: boolean
         suspendedByPlatform:
           type: boolean
+        details:
+          type: string
       required:
         - state
         - verifiedAttributes

@@ -23,6 +23,7 @@ message AgreementV1 {
   repeated CertifiedAttributeV1 certifiedAttributes = 13;
   repeated DeclaredAttributeV1 declaredAttributes = 14;
   repeated AgreementDocumentV1 consumerDocuments = 15;
+  optional string details = 16;
 }
 
 message VerifiedAttributeV1 {

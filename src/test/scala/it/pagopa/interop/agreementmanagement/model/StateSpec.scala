@@ -1,5 +1,6 @@
 package it.pagopa.interop.agreementmanagement.model
 
+import cats.implicits._
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.State
 import munit.FunSuite
@@ -140,7 +141,8 @@ class StateSpec extends FunSuite {
     suspendedByPlatform = None,
     consumerDocuments = documentIds.map(persistentDocument),
     createdAt = OffsetDateTime.now(),
-    updatedAt = None
+    updatedAt = None,
+    details = "these are details".some
   )
 
 }

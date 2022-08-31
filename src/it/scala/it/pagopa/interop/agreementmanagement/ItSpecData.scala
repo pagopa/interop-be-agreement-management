@@ -23,6 +23,7 @@ object ItSpecData {
     producerId = UUID.randomUUID(),
     suspendedByConsumer = Some(false),
     suspendedByProducer = Some(true),
+    suspendedByPlatform = Some(false),
     state = Pending,
     verifiedAttributes = Seq(persistentVerifiedAttribute),
     createdAt = timestamp,

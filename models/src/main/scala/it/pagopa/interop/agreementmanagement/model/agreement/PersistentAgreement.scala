@@ -14,6 +14,7 @@ final case class PersistentAgreement(
   verifiedAttributes: Seq[PersistentVerifiedAttribute],
   suspendedByConsumer: Option[Boolean],
   suspendedByProducer: Option[Boolean],
+  suspendedByPlatform: Option[Boolean],
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime]
 )

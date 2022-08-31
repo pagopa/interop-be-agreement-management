@@ -337,6 +337,7 @@ components:
       enum:
         - PRODUCER
         - CONSUMER
+        - PLATFORM
     AgreementState:
       type: string
       description: Agreement State
@@ -400,6 +401,8 @@ components:
         suspendedByConsumer:
           type: boolean
         suspendedByProducer:
+          type: boolean
+        suspendedByPlatform:
           type: boolean
         createdAt:
           type: string

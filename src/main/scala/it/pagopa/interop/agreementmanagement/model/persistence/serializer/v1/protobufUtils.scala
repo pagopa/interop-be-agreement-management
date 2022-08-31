@@ -1,13 +1,13 @@
 package it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1
 
 import cats.implicits.toTraverseOps
-import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement.{
   AgreementStateV1,
   AgreementV1,
   VerifiedAttributeV1
 }
+import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
 
 import java.util.UUID
 import scala.util.{Failure, Success, Try}
@@ -35,6 +35,7 @@ object protobufUtils {
       verifiedAttributes = attributes,
       suspendedByConsumer = protobufAgreement.suspendedByConsumer,
       suspendedByProducer = protobufAgreement.suspendedByProducer,
+      suspendedByPlatform = protobufAgreement.suspendedByPlatform,
       createdAt = createdAt,
       updatedAt = updatedAt
     )
@@ -54,6 +55,7 @@ object protobufUtils {
       verifiedAttributes = attributes,
       suspendedByConsumer = persistentAgreement.suspendedByConsumer,
       suspendedByProducer = persistentAgreement.suspendedByProducer,
+      suspendedByPlatform = persistentAgreement.suspendedByPlatform,
       createdAt = persistentAgreement.createdAt.toMillis,
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
     )

@@ -18,10 +18,13 @@ import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfigurat
   numberOfProjectionTags,
   projectionTag
 }
+import it.pagopa.interop.agreementmanagement.model.persistence.projection.{
+  AgreementCqrsProjection,
+  AgreementNotificationProjection
+}
 import it.pagopa.interop.agreementmanagement.model.persistence.{
   AgreementEventsSerde,
   AgreementPersistentBehavior,
-  AgreementPersistentProjection,
   Command
 }
 import it.pagopa.interop.commons.jwt.service.JWTReader
@@ -34,6 +37,7 @@ import it.pagopa.interop.commons.utils.errors.GenericComponentErrors
 import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,7 +46,7 @@ trait Dependencies {
   val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
 
-  val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
+  def behaviorFactory(): EntityContext[Command] => Behavior[Command] = { entityContext =>
     val index: Int = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
     AgreementPersistentBehavior(
       entityContext.shard,
@@ -52,21 +56,45 @@ trait Dependencies {
   }
 
   val agreementPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
-    Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory)
+    Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory())
 
-  def initProjections(blockingEc: ExecutionContext)(implicit actorSystem: ActorSystem[_]): Unit = {
+  def initProjections(
+    blockingEc: ExecutionContext
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    initNotificationProjection(blockingEc)
+    initCqrsProjection
+  }
+
+  def initNotificationProjection(blockingEc: ExecutionContext)(implicit actorSystem: ActorSystem[_]): Unit = {
     val queueWriter: QueueWriter =
-      QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.agreementToJson)(blockingEc)
+      QueueWriter.get(ApplicationConfiguration.queueUrl)(AgreementEventsSerde.projectableAgreementToJson)(blockingEc)
 
-    val agreementPersistentProjection: AgreementPersistentProjection = new AgreementPersistentProjection(
-      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick"),
-      queueWriter
-    )
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
+    val notificationProjectionId = "agreement-notification-projections"
+    val notificationProjection   = AgreementNotificationProjection(dbConfig, queueWriter, notificationProjectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "agreement-projections",
+      name = notificationProjectionId,
       numberOfInstances = numberOfProjectionTags,
-      behaviorFactory = (i: Int) => ProjectionBehavior(agreementPersistentProjection.projection(projectionTag(i))),
+      behaviorFactory = (i: Int) => ProjectionBehavior(notificationProjection.projection(projectionTag(i))),
+      stopMessage = ProjectionBehavior.Stop
+    )
+  }
+
+  def initCqrsProjection(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+    val mongoDbConfig                         = ApplicationConfiguration.mongoDb
+
+    val cqrsProjectionId = "agreement-cqrs-projections"
+    val cqrsProjection   = AgreementCqrsProjection.projection(dbConfig, mongoDbConfig, cqrsProjectionId)
+
+    ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
+      name = cqrsProjectionId,
+      numberOfInstances = numberOfProjectionTags,
+      behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }

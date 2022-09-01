@@ -28,7 +28,7 @@ object Adapters {
       consumerDocuments = Nil,
       createdAt = dateTimeSupplier.get,
       updatedAt = None,
-      details = agreement.details
+      consumerNotes = agreement.consumerNotes
     )
 
     def update(
@@ -45,7 +45,7 @@ object Adapters {
         suspendedByProducer = updateAgreementSeed.suspendedByProducer,
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
         updatedAt = Some(dateTimeSupplier.get),
-        details = updateAgreementSeed.details
+        consumerNotes = updateAgreementSeed.consumerNotes
       )
 
     def upgrade(
@@ -68,7 +68,7 @@ object Adapters {
         consumerDocuments = oldAgreement.consumerDocuments,
         createdAt = dateTimeSupplier.get,
         updatedAt = None,
-        details = oldAgreement.details
+        consumerNotes = oldAgreement.consumerNotes
       )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(

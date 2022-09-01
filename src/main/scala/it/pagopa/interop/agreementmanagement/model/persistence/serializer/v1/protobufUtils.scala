@@ -40,7 +40,7 @@ object protobufUtils {
       consumerDocuments = consumerDocuments,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      details = protobufAgreement.details
+      consumerNotes = protobufAgreement.consumerNotes
     )
     agreement.toEither
   }
@@ -77,7 +77,7 @@ object protobufUtils {
       consumerDocuments = persistentAgreement.consumerDocuments.map(toProtobufDocument),
       createdAt = persistentAgreement.createdAt.toMillis,
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
-      details = persistentAgreement.details
+      consumerNotes = persistentAgreement.consumerNotes
     )
 
   def toProtobufDocument(persistentDocument: PersistentAgreementDocument): AgreementDocumentV1 =

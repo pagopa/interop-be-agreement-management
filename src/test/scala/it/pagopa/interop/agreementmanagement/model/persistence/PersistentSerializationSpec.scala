@@ -118,7 +118,7 @@ object PersistentSerializationSpec {
     (consumerDocs, consumerDocsV1) <- Gen.listOfN(10, persistentDocumentGen).map(_.separate)
     (createdAt, createdAtV1)       <- offsetDatetimeLongGen
     (updatedAt, updatedAtV1)       <- Gen.option(offsetDatetimeLongGen).map(_.separate)
-    details                        <- Gen.option(stringGen)
+    consumerNotes                  <- Gen.option(stringGen)
   } yield (
     PersistentAgreement(
       id = id,
@@ -136,7 +136,7 @@ object PersistentSerializationSpec {
       consumerDocuments = consumerDocs,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      details = details
+      consumerNotes = consumerNotes
     ),
     AgreementV1(
       id = id.toString(),
@@ -154,7 +154,7 @@ object PersistentSerializationSpec {
       consumerDocuments = consumerDocsV1,
       createdAt = createdAtV1,
       updatedAt = updatedAtV1,
-      details = details
+      consumerNotes = consumerNotes
     )
   )
 

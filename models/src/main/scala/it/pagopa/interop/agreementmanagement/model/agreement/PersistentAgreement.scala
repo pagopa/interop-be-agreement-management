@@ -18,5 +18,6 @@ final case class PersistentAgreement(
   suspendedByPlatform: Option[Boolean],
   consumerDocuments: Seq[PersistentAgreementDocument],
   createdAt: OffsetDateTime,
-  updatedAt: Option[OffsetDateTime]
+  updatedAt: Option[OffsetDateTime],
+  consumerNotes: Option[String]
 )

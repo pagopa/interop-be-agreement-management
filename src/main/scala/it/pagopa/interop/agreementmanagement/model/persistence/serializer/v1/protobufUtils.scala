@@ -39,7 +39,8 @@ object protobufUtils {
       suspendedByPlatform = protobufAgreement.suspendedByPlatform,
       consumerDocuments = consumerDocuments,
       createdAt = createdAt,
-      updatedAt = updatedAt
+      updatedAt = updatedAt,
+      consumerNotes = protobufAgreement.consumerNotes
     )
     agreement.toEither
   }
@@ -75,7 +76,8 @@ object protobufUtils {
       suspendedByPlatform = persistentAgreement.suspendedByPlatform,
       consumerDocuments = persistentAgreement.consumerDocuments.map(toProtobufDocument),
       createdAt = persistentAgreement.createdAt.toMillis,
-      updatedAt = persistentAgreement.updatedAt.map(_.toMillis)
+      updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
+      consumerNotes = persistentAgreement.consumerNotes
     )
 
   def toProtobufDocument(persistentDocument: PersistentAgreementDocument): AgreementDocumentV1 =

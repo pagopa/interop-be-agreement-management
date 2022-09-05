@@ -33,7 +33,6 @@ import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, S
 import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.utils.errors.GenericComponentErrors
 import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
@@ -122,8 +121,7 @@ trait Dependencies {
   )
 
   val validationExceptionToRoute: ValidationReport => Route = report => {
-    val validationReport: String = OpenapiUtils.errorFromRequestValidationReport(report)
-    val error = problemOf(StatusCodes.BadRequest, GenericComponentErrors.ValidationRequestError(validationReport))
+    val error = problemOf(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report))
     complete(error.status, error)(AgreementApiMarshallerImpl.toEntityMarshallerProblem)
   }
 }

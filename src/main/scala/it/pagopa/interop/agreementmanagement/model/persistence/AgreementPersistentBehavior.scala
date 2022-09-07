@@ -101,14 +101,14 @@ object AgreementPersistentBehavior {
 
         document.fold(handleFailure(_)(replyTo), doc => Effect.reply(replyTo)(StatusReply.Success(doc)))
 
-      case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, agreementState, replyTo) =>
+      case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, agreementStates, replyTo) =>
         val agreements: Seq[PersistentAgreement] = state.agreements
           .slice(from, to)
           .filter(agreement => producerId.forall(filter => filter == agreement._2.producerId.toString))
           .filter(agreement => consumerId.forall(filter => filter == agreement._2.consumerId.toString))
           .filter(agreement => eserviceId.forall(filter => filter == agreement._2.eserviceId.toString))
           .filter(agreement => descriptorId.forall(filter => filter == agreement._2.descriptorId.toString))
-          .filter(agreement => agreementState.forall(filter => filter == agreement._2.state))
+          .filter(agreement => agreementStates.isEmpty || agreementStates.contains(agreement._2.state))
           .values
           .toSeq
 

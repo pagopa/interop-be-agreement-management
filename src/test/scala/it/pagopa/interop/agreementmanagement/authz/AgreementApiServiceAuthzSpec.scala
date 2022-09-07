@@ -80,7 +80,7 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
       val endpoint = AuthorizedRoutes.endpoints("getAgreements")
       validateAuthorization(
         endpoint,
-        { implicit c: Seq[(String, String)] => service.getAgreements(None, None, None, None, None) }
+        { implicit c: Seq[(String, String)] => service.getAgreements(None, None, None, None, "") }
       )
     }
 

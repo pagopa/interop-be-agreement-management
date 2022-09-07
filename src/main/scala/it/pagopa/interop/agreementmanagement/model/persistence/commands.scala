@@ -24,7 +24,7 @@ final case class ListAgreements(
   consumerId: Option[String],
   eserviceId: Option[String],
   descriptorId: Option[String],
-  state: Option[PersistentAgreementState],
+  states: List[PersistentAgreementState],
   replyTo: ActorRef[Seq[PersistentAgreement]]
 ) extends Command
 

@@ -123,7 +123,7 @@ class AgreementListApiServiceSpec
     }
     "retrieves all draft agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=DRAFT", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=DRAFT", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -133,7 +133,7 @@ class AgreementListApiServiceSpec
     }
     "retrieves all pending agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=PENDING", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=PENDING", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -143,7 +143,7 @@ class AgreementListApiServiceSpec
     }
     "retrieves all activated agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=ACTIVE", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=ACTIVE", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -153,13 +153,23 @@ class AgreementListApiServiceSpec
     }
     "retrieves all suspended agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=SUSPENDED", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=SUSPENDED", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
 
       agreements.size should be(1)
       agreements.head.id should be(AgreementThree.agreementId)
+    }
+
+    "retrieves draft and active agreements" in {
+
+      val response = makeRequest(emptyData, s"agreements?states=DRAFT,ACTIVE", HttpMethods.GET)
+
+      val agreements: Seq[Agreement] =
+        Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
+
+      agreements.map(_.id) should contain only (AgreementOne.agreementId, AgreementTwo.agreementId)
     }
   }
 }

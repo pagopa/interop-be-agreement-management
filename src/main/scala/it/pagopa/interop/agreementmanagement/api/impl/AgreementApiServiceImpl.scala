@@ -20,6 +20,7 @@ import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.persistence._
 import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.OpenapiUtils.parseArrayParameters
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.OperationForbidden
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 
@@ -196,7 +197,7 @@ final case class AgreementApiServiceImpl(
     consumerId: Option[String],
     eserviceId: Option[String],
     descriptorId: Option[String],
-    state: Option[String]
+    states: String
   )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
@@ -209,7 +210,7 @@ final case class AgreementApiServiceImpl(
          |consumer=${consumerId.getOrElse("")}/
          |eservice=${eserviceId.getOrElse("")}/
          |descriptor=${descriptorId.getOrElse("")}/
-         |state=${state.getOrElse("")}
+         |states=$states
          |""".stripMargin.replaceAll("\n", "")
 
     val operationLabel: String = s"Getting agreements with $resourceId"
@@ -222,13 +223,13 @@ final case class AgreementApiServiceImpl(
       (0 until settings.numberOfShards).map(shard => commander(shard.toString))
 
     val result: Either[Throwable, Seq[PersistentAgreement]] = for {
-      stateEnum <- state.traverse(AgreementState.fromValue)
+      statesEnums <- parseArrayParameters(states).traverse(AgreementState.fromValue)
       generator  = createListAgreementsGenerator(
         producerId = producerId,
         consumerId = consumerId,
         eserviceId = eserviceId,
         descriptorId = descriptorId,
-        state = stateEnum
+        states = statesEnums
       )(_, _)
       agreements = commanders.flatMap(ref => slices(ref, sliceSize)(generator))
     } yield agreements
@@ -247,7 +248,7 @@ final case class AgreementApiServiceImpl(
     consumerId: Option[String],
     eserviceId: Option[String],
     descriptorId: Option[String],
-    state: Option[AgreementState]
+    states: List[AgreementState]
   )(from: Int, to: Int): ActorRef[Seq[PersistentAgreement]] => ListAgreements =
     (ref: ActorRef[Seq[PersistentAgreement]]) =>
       ListAgreements(
@@ -257,7 +258,7 @@ final case class AgreementApiServiceImpl(
         consumerId,
         eserviceId,
         descriptorId,
-        state.map(PersistentAgreementState.fromApi),
+        states.map(PersistentAgreementState.fromApi),
         ref
       )
 

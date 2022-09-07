@@ -86,7 +86,8 @@ object Adapters {
       suspendedByPlatform = persistentAgreement.suspendedByPlatform,
       consumerDocuments = persistentAgreement.consumerDocuments.map(PersistentAgreementDocument.toAPI),
       createdAt = persistentAgreement.createdAt,
-      updatedAt = persistentAgreement.updatedAt
+      updatedAt = persistentAgreement.updatedAt,
+      consumerNotes = persistentAgreement.consumerNotes
     )
   }
 

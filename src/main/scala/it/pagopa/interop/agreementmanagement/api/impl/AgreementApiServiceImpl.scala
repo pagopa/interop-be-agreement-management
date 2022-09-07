@@ -197,7 +197,8 @@ final case class AgreementApiServiceImpl(
     consumerId: Option[String],
     eserviceId: Option[String],
     descriptorId: Option[String],
-    states: String
+    states: String,
+    attributeId: Option[String]
   )(implicit
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
@@ -210,6 +211,7 @@ final case class AgreementApiServiceImpl(
          |consumer=${consumerId.getOrElse("")}/
          |eservice=${eserviceId.getOrElse("")}/
          |descriptor=${descriptorId.getOrElse("")}/
+         |attributeId=${attributeId.getOrElse("")}/
          |states=$states
          |""".stripMargin.replaceAll("\n", "")
 
@@ -229,6 +231,7 @@ final case class AgreementApiServiceImpl(
         consumerId = consumerId,
         eserviceId = eserviceId,
         descriptorId = descriptorId,
+        attributeId = attributeId,
         states = statesEnums
       )(_, _)
       agreements = commanders.flatMap(ref => slices(ref, sliceSize)(generator))
@@ -248,6 +251,7 @@ final case class AgreementApiServiceImpl(
     consumerId: Option[String],
     eserviceId: Option[String],
     descriptorId: Option[String],
+    attributeId: Option[String],
     states: List[AgreementState]
   )(from: Int, to: Int): ActorRef[Seq[PersistentAgreement]] => ListAgreements =
     (ref: ActorRef[Seq[PersistentAgreement]]) =>
@@ -258,6 +262,7 @@ final case class AgreementApiServiceImpl(
         consumerId,
         eserviceId,
         descriptorId,
+        attributeId,
         states.map(PersistentAgreementState.fromApi),
         ref
       )

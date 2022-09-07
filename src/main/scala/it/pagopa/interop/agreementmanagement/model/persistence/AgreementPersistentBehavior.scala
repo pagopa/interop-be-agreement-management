@@ -101,14 +101,30 @@ object AgreementPersistentBehavior {
 
         document.fold(handleFailure(_)(replyTo), doc => Effect.reply(replyTo)(StatusReply.Success(doc)))
 
-      case ListAgreements(from, to, producerId, consumerId, eserviceId, descriptorId, agreementStates, replyTo) =>
+      case ListAgreements(
+            from,
+            to,
+            producerId,
+            consumerId,
+            eserviceId,
+            descriptorId,
+            attributeId,
+            agreementStates,
+            replyTo
+          ) =>
         val agreements: Seq[PersistentAgreement] = state.agreements
           .slice(from, to)
-          .filter(agreement => producerId.forall(filter => filter == agreement._2.producerId.toString))
-          .filter(agreement => consumerId.forall(filter => filter == agreement._2.consumerId.toString))
-          .filter(agreement => eserviceId.forall(filter => filter == agreement._2.eserviceId.toString))
-          .filter(agreement => descriptorId.forall(filter => filter == agreement._2.descriptorId.toString))
+          .filter(agreement => producerId.forall(_ == agreement._2.producerId.toString))
+          .filter(agreement => consumerId.forall(_ == agreement._2.consumerId.toString))
+          .filter(agreement => eserviceId.forall(_ == agreement._2.eserviceId.toString))
+          .filter(agreement => descriptorId.forall(_ == agreement._2.descriptorId.toString))
           .filter(agreement => agreementStates.isEmpty || agreementStates.contains(agreement._2.state))
+          .filter(agreement =>
+            attributeId.forall(id =>
+              agreement._2.verifiedAttributes.exists(_.id.toString == id) || agreement._2.certifiedAttributes
+                .exists(_.id.toString == id) || agreement._2.declaredAttributes.exists(_.id.toString == id)
+            )
+          )
           .values
           .toSeq
 

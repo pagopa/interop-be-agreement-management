@@ -15,7 +15,7 @@ object AgreementApiMarshallerImpl extends AgreementApiMarshaller with SprayJsonS
   override implicit def toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]] =
     sprayJsonMarshaller[Seq[Agreement]]
 
-  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = sprayJsonMarshaller[Problem]
+  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = entityMarshallerProblem
 
   override implicit def fromEntityUnmarshallerUpdateAgreementSeed: FromEntityUnmarshaller[UpdateAgreementSeed] =
     sprayJsonUnmarshaller[UpdateAgreementSeed]

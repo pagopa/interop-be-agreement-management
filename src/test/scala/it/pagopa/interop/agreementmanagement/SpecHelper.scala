@@ -16,6 +16,8 @@ trait SpecHelper {
 
   final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
+  val attributeId: UUID = UUID.randomUUID()
+
   object AgreementOne {
     val agreementId: UUID  = UUID.randomUUID()
     val eserviceId: UUID   = UUID.randomUUID()
@@ -211,7 +213,7 @@ trait SpecHelper {
         draft1.id,
         UpdateAgreementSeed(
           state = ACTIVE,
-          certifiedAttributes = draft1.certifiedAttributes,
+          certifiedAttributes = Seq(CertifiedAttribute(attributeId)),
           declaredAttributes = draft1.declaredAttributes,
           verifiedAttributes = draft1.verifiedAttributes,
           suspendedByConsumer = None,
@@ -225,7 +227,7 @@ trait SpecHelper {
         UpdateAgreementSeed(
           state = SUSPENDED,
           certifiedAttributes = draft2.certifiedAttributes,
-          declaredAttributes = draft2.declaredAttributes,
+          declaredAttributes = Seq(DeclaredAttribute(attributeId)),
           verifiedAttributes = draft2.verifiedAttributes,
           suspendedByConsumer = None,
           suspendedByProducer = None,
@@ -239,7 +241,7 @@ trait SpecHelper {
           state = PENDING,
           certifiedAttributes = draft4.certifiedAttributes,
           declaredAttributes = draft4.declaredAttributes,
-          verifiedAttributes = draft4.verifiedAttributes,
+          verifiedAttributes = Seq(VerifiedAttribute(attributeId)),
           suspendedByConsumer = None,
           suspendedByProducer = None,
           suspendedByPlatform = None

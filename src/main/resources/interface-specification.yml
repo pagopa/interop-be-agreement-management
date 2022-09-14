@@ -228,6 +228,10 @@ paths:
               $ref: '#/components/schemas/AgreementState'
             default: [ ]
           explode: false
+        - in: query
+          name: attributeId
+          schema:
+            type: string
       responses:
         '200':
           description: A list of Agreement

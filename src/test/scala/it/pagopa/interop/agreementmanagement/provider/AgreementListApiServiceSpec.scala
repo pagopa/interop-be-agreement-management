@@ -171,5 +171,18 @@ class AgreementListApiServiceSpec
 
       agreements.map(_.id) should contain only (AgreementOne.agreementId, AgreementTwo.agreementId)
     }
+
+    "retrieves all agreements containing the given attribute" in {
+
+      val response = makeRequest(emptyData, s"agreements?attributeId=$attributeId", HttpMethods.GET)
+
+      val agreements: Seq[Agreement] =
+        Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
+
+      agreements.size should be(3)
+      agreements.map(
+        _.id
+      ) should contain only (AgreementTwo.agreementId, AgreementThree.agreementId, AgreementFour.agreementId)
+    }
   }
 }

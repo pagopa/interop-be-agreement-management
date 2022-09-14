@@ -55,7 +55,7 @@ class AgreementListApiServiceSpec
   implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
 
   override def beforeAll(): Unit = {
-    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory(mockDateTimeSupplier))
+    val persistentEntity = Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory())
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
@@ -121,9 +121,9 @@ class AgreementListApiServiceSpec
       agreements.size should be(1)
       agreements.head.eserviceId should be(AgreementThree.eserviceId)
     }
-    "retrieves all pending agreements" in {
+    "retrieves all draft agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=PENDING", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=DRAFT", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -131,9 +131,19 @@ class AgreementListApiServiceSpec
       agreements.size should be(1)
       agreements.head.id should be(AgreementOne.agreementId)
     }
+    "retrieves all pending agreements" in {
+
+      val response = makeRequest(emptyData, s"agreements?states=PENDING", HttpMethods.GET)
+
+      val agreements: Seq[Agreement] =
+        Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
+
+      agreements.size should be(1)
+      agreements.head.id should be(AgreementFour.agreementId)
+    }
     "retrieves all activated agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=ACTIVE", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=ACTIVE", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
@@ -143,13 +153,36 @@ class AgreementListApiServiceSpec
     }
     "retrieves all suspended agreements" in {
 
-      val response = makeRequest(emptyData, s"agreements?state=SUSPENDED", HttpMethods.GET)
+      val response = makeRequest(emptyData, s"agreements?states=SUSPENDED", HttpMethods.GET)
 
       val agreements: Seq[Agreement] =
         Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
 
       agreements.size should be(1)
       agreements.head.id should be(AgreementThree.agreementId)
+    }
+
+    "retrieves draft and active agreements" in {
+
+      val response = makeRequest(emptyData, s"agreements?states=DRAFT,ACTIVE", HttpMethods.GET)
+
+      val agreements: Seq[Agreement] =
+        Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
+
+      agreements.map(_.id) should contain only (AgreementOne.agreementId, AgreementTwo.agreementId)
+    }
+
+    "retrieves all agreements containing the given attribute" in {
+
+      val response = makeRequest(emptyData, s"agreements?attributeId=$attributeId", HttpMethods.GET)
+
+      val agreements: Seq[Agreement] =
+        Await.result(Unmarshal(response.entity).to[Seq[Agreement]], Duration.Inf)
+
+      agreements.size should be(3)
+      agreements.map(
+        _.id
+      ) should contain only (AgreementTwo.agreementId, AgreementThree.agreementId, AgreementFour.agreementId)
     }
   }
 }

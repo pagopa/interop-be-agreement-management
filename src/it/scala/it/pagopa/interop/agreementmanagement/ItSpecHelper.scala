@@ -15,7 +15,6 @@ import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDi
 import it.pagopa.interop.agreementmanagement.api._
 import it.pagopa.interop.agreementmanagement.api.impl._
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration
-import it.pagopa.interop.agreementmanagement.model.{StateChangeDetails, VerifiedAttributeSeed}
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence._
 import it.pagopa.interop.agreementmanagement.server.Controller
@@ -74,7 +73,7 @@ trait ItSpecHelper
 
   override def startServer(): Unit = {
     val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
-      Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory(mockDateTimeSupplier))
+      Entity(AgreementPersistentBehavior.TypeKey)(behaviorFactory())
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
@@ -115,36 +114,22 @@ trait ItSpecHelper
   def createAgreement(agreement: PersistentAgreement): PersistentAgreement =
     commander(agreement.id).ask(ref => AddAgreement(agreement, ref)).futureValue.getValue
 
-  def activateAgreement(agreementId: UUID, stateChangeDetails: StateChangeDetails): PersistentAgreement = {
-    (() => mockDateTimeSupplier.get).expects().returning(ItSpecData.timestamp).once()
-    commander(agreementId)
-      .ask(ref => ActivateAgreement(agreementId.toString, stateChangeDetails, ref))
-      .futureValue
-      .getValue
-  }
+  def updateAgreement(agreement: PersistentAgreement): PersistentAgreement =
+    commander(agreement.id).ask(ref => UpdateAgreement(agreement, ref)).futureValue.getValue
 
-  def suspendAgreement(agreementId: UUID, stateChangeDetails: StateChangeDetails): PersistentAgreement = {
-    (() => mockDateTimeSupplier.get).expects().returning(ItSpecData.timestamp).once()
-    commander(agreementId)
-      .ask(ref => SuspendAgreement(agreementId.toString, stateChangeDetails, ref))
-      .futureValue
-      .getValue
-  }
+  def deletedAgreement(agreementId: String): Unit =
+    commander(agreementId).ask(ref => DeleteAgreement(agreementId, ref)).futureValue.getValue
 
-  def deactivateAgreement(agreementId: UUID, stateChangeDetails: StateChangeDetails): PersistentAgreement = {
-    (() => mockDateTimeSupplier.get).expects().returning(ItSpecData.timestamp).once()
+  def addConsumerDocument(agreementId: UUID, document: PersistentAgreementDocument): PersistentAgreementDocument =
     commander(agreementId)
-      .ask(ref => DeactivateAgreement(agreementId.toString, stateChangeDetails, ref))
+      .ask(ref => AddAgreementConsumerDocument(agreementId.toString, document, ref))
       .futureValue
       .getValue
-  }
 
-  def updateVerifiedAttribute(agreementId: UUID, seed: VerifiedAttributeSeed): PersistentAgreement = {
-    (() => mockDateTimeSupplier.get).expects().returning(ItSpecData.timestamp).once()
+  def removeConsumerDocument(agreementId: UUID, documentId: UUID): Unit =
     commander(agreementId)
-      .ask(ref => UpdateVerifiedAttribute(agreementId.toString, seed, ref))
+      .ask(ref => RemoveAgreementConsumerDocument(agreementId.toString, documentId.toString, ref))
       .futureValue
       .getValue
-  }
 
 }

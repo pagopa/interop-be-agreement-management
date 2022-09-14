@@ -18,13 +18,18 @@ import scala.concurrent.duration.Duration
 
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute]         = jsonFormat4(VerifiedAttribute)
-  implicit val verifiedAttributeSeedFormat: RootJsonFormat[VerifiedAttributeSeed] = jsonFormat3(VerifiedAttributeSeed)
-  implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]                 = jsonFormat5(AgreementSeed)
-  implicit val agreementFormat: RootJsonFormat[Agreement]                         = jsonFormat11(Agreement)
-  implicit val stateChangeDetailsFormat: RootJsonFormat[StateChangeDetails]       = jsonFormat1(StateChangeDetails)
-  implicit val problemErrorFormat: RootJsonFormat[ProblemError]                   = jsonFormat2(ProblemError)
-  implicit val problemFormat: RootJsonFormat[Problem]                             = jsonFormat5(Problem)
+  implicit val documentFormat: RootJsonFormat[Document]                         = jsonFormat6(Document)
+  implicit val documentSeedFormat: RootJsonFormat[DocumentSeed]                 = jsonFormat4(DocumentSeed)
+  implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute]       = jsonFormat1(VerifiedAttribute)
+  implicit val certifiedAttributeFormat: RootJsonFormat[CertifiedAttribute]     = jsonFormat1(CertifiedAttribute)
+  implicit val declaredAttributeFormat: RootJsonFormat[DeclaredAttribute]       = jsonFormat1(DeclaredAttribute)
+  implicit val attributeSeedFormat: RootJsonFormat[AttributeSeed]               = jsonFormat1(AttributeSeed)
+  implicit val updateAgreementSeedFormat: RootJsonFormat[UpdateAgreementSeed]   = jsonFormat8(UpdateAgreementSeed)
+  implicit val agreementSeedFormat: RootJsonFormat[AgreementSeed]               = jsonFormat8(AgreementSeed)
+  implicit val upgradeAgreementSeedFormat: RootJsonFormat[UpgradeAgreementSeed] = jsonFormat1(UpgradeAgreementSeed)
+  implicit val agreementFormat: RootJsonFormat[Agreement]                       = jsonFormat16(Agreement)
+  implicit val problemErrorFormat: RootJsonFormat[ProblemError]                 = jsonFormat2(ProblemError)
+  implicit val problemFormat: RootJsonFormat[Problem]                           = jsonFormat5(Problem)
 
   final val entityMarshallerProblem: ToEntityMarshaller[Problem] = sprayJsonMarshaller[Problem]
 

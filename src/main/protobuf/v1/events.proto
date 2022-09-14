@@ -12,18 +12,20 @@ message AgreementAddedV1 {
   required AgreementV1 agreement = 1;
 }
 
-message VerifiedAttributeUpdatedV1 {
+message AgreementUpdatedV1 {
   required AgreementV1 agreement = 1;
 }
 
-message AgreementActivatedV1 {
-  required AgreementV1 agreement = 1;
+message AgreementDeletedV1 {
+  required string agreementId = 1;
 }
 
-message AgreementSuspendedV1 {
-  required AgreementV1 agreement = 1;
+message AgreementConsumerDocumentAddedV1 {
+  required string agreementId = 1;
+  required AgreementDocumentV1 document = 2;
 }
 
-message AgreementDeactivatedV1 {
-  required AgreementV1 agreement = 1;
+message AgreementConsumerDocumentRemovedV1 {
+  required string agreementId = 1;
+  required string documentId = 2;
 }

@@ -20,10 +20,16 @@ tags:
       description: Find out more
       url: 'http://swagger.io'
 paths:
-  '/agreement/{agreement_id}':
+  '/agreements/{agreement_id}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
+      - name: agreement_id
+        in: path
+        description: the agreement id
+        required: true
+        schema:
+          type: string
     get:
       tags:
         - agreement
@@ -31,13 +37,6 @@ paths:
       operationId: getAgreement
       security:
         - bearerAuth: []
-      parameters:
-        - name: agreement_id
-          in: path
-          description: the agreement id
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Agreement retrieved
@@ -45,8 +44,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Agreement'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - agreement
+      summary: Delete an agreement. This operation is valid only for agreements in draft
+      operationId: deleteAgreement
+      responses:
+        '204':
+          description: Agreement deleted
         '400':
-          description: Bad request
+          description: Invalid input
           content:
             application/problem+json:
               schema:
@@ -72,21 +87,21 @@ paths:
       parameters:
         - name: agreementId
           in: path
-          description: The identifier of the agreement to update
+          description: The identifier of the agreement to upgrade
           required: true
           schema:
             type: string
             format: uuid
       requestBody:
-        description: The updated agreement data
+        description: The upgraded agreement data
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AgreementSeed'
+              $ref: '#/components/schemas/UpgradeAgreementSeed'
         required: true
       responses:
         '200':
-          description: Agreement updated.
+          description: Agreement upgraded.
           content:
             application/json:
               schema:
@@ -99,6 +114,46 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '400':
           description: Invalid ID supplied
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/agreements/{agreementId}/update':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - agreement
+      summary: updates an agreement.
+      description: updates an agreement
+      operationId: updateAgreementById
+      parameters:
+        - name: agreementId
+          in: path
+          description: The identifier of the agreement to update
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: The updated agreement data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgreementSeed'
+        required: true
+      responses:
+        '200':
+          description: Agreement updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agreement'
+        '404':
+          description: Agreement not found
           content:
             application/problem+json:
               schema:
@@ -165,9 +220,18 @@ paths:
           schema:
             type: string
         - in: query
-          name: state
+          name: states
+          description: comma separated sequence of agreement states to filter the response with
           schema:
-            $ref: '#/components/schemas/AgreementState'
+            type: array
+            items:
+              $ref: '#/components/schemas/AgreementState'
+            default: [ ]
+          explode: false
+        - in: query
+          name: attributeId
+          schema:
+            type: string
       responses:
         '200':
           description: A list of Agreement
@@ -181,29 +245,31 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/agreements/{agreement_id}/attribute':
+  '/agreements/{agreementId}/consumer-documents':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
-      - schema:
-          type: string
-        name: agreement_id
+      - name: agreementId
         in: path
+        schema:
+          type: string
+          format: uuid
         required: true
     post:
       security:
         - bearerAuth: []
       tags:
         - agreement
-      summary: Update Verified Attribute
-      operationId: updateAgreementVerifiedAttribute
+      summary: Add a consumer Document to an Agreement
+      description: Add a consumer Document to an Agreement
+      operationId: addAgreementConsumerDocument
       responses:
         '200':
-          description: Returns the agreement with the updated attribute state.
+          description: Returns the document.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Agreement'
+                $ref: '#/components/schemas/Document'
         '400':
           description: Bad Request
           content:
@@ -216,42 +282,44 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      description: updates the verified attribute of the agreement as specified in the operation payload.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifiedAttributeSeed'
-        description: the updated attribute
+              $ref: '#/components/schemas/DocumentSeed'
+        description: the document seed
         required: true
-  '/agreements/{agreement_id}/activate':
+  '/agreements/{agreementId}/consumer-documents/{documentId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
-    post:
+      - name: agreementId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: documentId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+    get:
       security:
         - bearerAuth: []
-      summary: Activate Agreement
-      operationId: activateAgreement
-      parameters:
-        - schema:
-            type: string
-          name: agreement_id
-          in: path
-          required: true
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StateChangeDetails'
-        required: true
+      tags:
+        - agreement
+      summary: Retrieve a consumer Document of an Agreement
+      description: Retrieve a consumer Document of an Agreement
+      operationId: getAgreementConsumerDocument
       responses:
         '200':
-          description: Agreement activated
+          description: Document retrieved
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Agreement'
+                $ref: '#/components/schemas/Document'
         '400':
           description: Bad Request
           content:
@@ -259,43 +327,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '404':
-          description: Agreement not found
+          description: Resource Not Found
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      description: 'activates the agreement, if any.'
-      tags:
-        - agreement
-  '/agreements/{agreement_id}/suspend':
-    parameters:
-      - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
-    post:
+    delete:
       security:
         - bearerAuth: []
-      summary: Suspend Agreement
-      operationId: suspendAgreement
-      parameters:
-        - schema:
-            type: string
-          name: agreement_id
-          in: path
-          required: true
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StateChangeDetails'
-        description: the updated attribute
-        required: true
+      tags:
+        - agreement
+      summary: Remove a consumer Document from an Agreement
+      description: Remove a consumer Document from an Agreement
+      operationId: removeAgreementConsumerDocument
       responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agreement'
+        '204':
+          description: Document removed
         '400':
           description: Bad Request
           content:
@@ -303,14 +350,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '404':
-          description: Agreement Not Found
+          description: Resource Not Found
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      tags:
-        - agreement
-      description: suspends the agreement by id
 components:
   parameters:
     CorrelationIdHeader:
@@ -325,26 +369,16 @@ components:
       schema:
         type: string
   schemas:
-    StateChangeDetails:
-      type: object
-      description: tracks the owner of the change.
-      properties:
-        changedBy:
-          $ref: '#/components/schemas/ChangedBy'
-    ChangedBy:
-      type: string
-      description: Role who made the change
-      enum:
-        - PRODUCER
-        - CONSUMER
     AgreementState:
       type: string
       description: Agreement State
       enum:
-        - ACTIVE
+        - DRAFT
         - PENDING
+        - ACTIVE
         - SUSPENDED
-        - INACTIVE
+        - ARCHIVED
+        - MISSING_CERTIFIED_ATTRIBUTES
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -365,13 +399,70 @@ components:
           type: array
           description: 'set of the verified attributes belonging to this agreement, if any.'
           items:
-            $ref: '#/components/schemas/VerifiedAttributeSeed'
+            $ref: '#/components/schemas/AttributeSeed'
+        certifiedAttributes:
+          type: array
+          description: 'set of the certified attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/AttributeSeed'
+        declaredAttributes:
+          type: array
+          description: 'set of the declared attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/AttributeSeed'
+        consumerNotes:
+          type: string
       required:
         - eserviceId
         - descriptorId
         - producerId
         - consumerId
         - verifiedAttributes
+        - certifiedAttributes
+        - declaredAttributes
+    UpdateAgreementSeed:
+      type: object
+      description: contains the admitted payload for agreement update.
+      properties:
+        state:
+          $ref: '#/components/schemas/AgreementState'
+        certifiedAttributes:
+          type: array
+          description: 'set of the certified attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/CertifiedAttribute'
+        declaredAttributes:
+          type: array
+          description: 'set of the declared attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/DeclaredAttribute'
+        verifiedAttributes:
+          type: array
+          description: 'set of the verified attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/VerifiedAttribute'
+        suspendedByConsumer:
+          type: boolean
+        suspendedByProducer:
+          type: boolean
+        suspendedByPlatform:
+          type: boolean
+        consumerNotes:
+          type: string
+      required:
+        - state
+        - verifiedAttributes
+        - certifiedAttributes
+        - declaredAttributes
+    UpgradeAgreementSeed:
+      type: object
+      description: contains the expected payload for attributes persistence.
+      properties:
+        descriptorId:
+          type: string
+          format: uuid
+      required:
+        - descriptorId
     Agreement:
       type: object
       properties:
@@ -397,16 +488,34 @@ components:
           description: 'set of the verified attributes belonging to this agreement, if any.'
           items:
             $ref: '#/components/schemas/VerifiedAttribute'
+        certifiedAttributes:
+          type: array
+          description: 'set of the certified attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/CertifiedAttribute'
+        declaredAttributes:
+          type: array
+          description: 'set of the declared attributes belonging to this agreement, if any.'
+          items:
+            $ref: '#/components/schemas/DeclaredAttribute'
         suspendedByConsumer:
           type: boolean
         suspendedByProducer:
           type: boolean
+        suspendedByPlatform:
+          type: boolean
+        consumerDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+        consumerNotes:
+          type: String
       required:
         - id
         - eserviceId
@@ -415,6 +524,9 @@ components:
         - consumerId
         - state
         - verifiedAttributes
+        - certifiedAttributes
+        - declaredAttributes
+        - consumerDocuments
         - createdAt
       description: business representation of an agreement
     Agreements:
@@ -484,39 +596,79 @@ components:
           type: string
           description: identifier of the attribute as defined on the attribute registry
           format: uuid
-        verified:
-          type: boolean
-          description: flag stating the current verification state of this attribute
-        verificationDate:
-          type: string
-          description: 'timestamp containing the instant of the verification, if any.'
-          format: date-time
-        validityTimespan:
-          type: integer
-          format: int64
-          description: 'optional validity timespan, in seconds.'
-          exclusiveMinimum: false
-          minimum: 1
       required:
         - id
-    VerifiedAttributeSeed:
-      title: VerifiedAttributeSeed
+    CertifiedAttribute:
+      title: CertifiedAttribute
       type: object
-      description: represents the details of a verified attribute bound to the agreement.
+      description: represents the details of a certified attribute bound to the agreement.
       properties:
         id:
           type: string
           description: identifier of the attribute as defined on the attribute registry
           format: uuid
-        verified:
-          type: boolean
-          description: flag stating the current verification state of this attribute
-        validityTimespan:
-          type: integer
-          format: int64
-          description: 'optional validity timespan, in seconds.'
-          exclusiveMinimum: false
-          minimum: 1
+      required:
+        - id
+    DeclaredAttribute:
+      title: DeclaredAttribute
+      type: object
+      description: represents the details of a declared attribute bound to the agreement.
+      properties:
+        id:
+          type: string
+          description: identifier of the attribute as defined on the attribute registry
+          format: uuid
+      required:
+        - id
+    Document:
+      type: object
+      required:
+        - id
+        - name
+        - prettyName
+        - contentType
+        - path
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prettyName:
+          type: string
+        contentType:
+          type: string
+        path:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    DocumentSeed:
+      type: object
+      required:
+        - name
+        - prettyName
+        - contentType
+        - path
+      properties:
+        name:
+          type: string
+        prettyName:
+          type: string
+        contentType:
+          type: string
+        path:
+          type: string
+    AttributeSeed:
+      title: AttributeSeed
+      type: object
+      description: represents the details of an attribute bound to the agreement.
+      properties:
+        id:
+          type: string
+          description: identifier of the attribute as defined on the attribute registry
+          format: uuid
       required:
         - id
   securitySchemes:

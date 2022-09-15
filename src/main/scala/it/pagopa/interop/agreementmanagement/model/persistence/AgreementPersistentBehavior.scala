@@ -151,6 +151,7 @@ object AgreementPersistentBehavior {
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case AgreementAdded(agreement)                                 => state.add(agreement)
+      case VerifiedAttributeUpdated(agreement)                       => state.updateAgreement(agreement)
       case AgreementDeleted(agreementId)                             => state.delete(agreementId)
       case AgreementUpdated(agreement)                               => state.updateAgreement(agreement)
       case AgreementConsumerDocumentAdded(agreementId, document)     =>

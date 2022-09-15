@@ -38,6 +38,7 @@ object AgreementCqrsProjection {
         collection.updateOne(Filters.eq("data.id", aId), _),
         Updates.pull("data.consumerDocuments", Filters.eq("id", docId))
       )
+    case VerifiedAttributeUpdated(_)                  => NoOpAction
   }
 
 }

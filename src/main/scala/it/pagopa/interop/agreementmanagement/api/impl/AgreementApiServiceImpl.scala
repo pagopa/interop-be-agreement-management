@@ -222,7 +222,9 @@ final case class AgreementApiServiceImpl(
     val sliceSize = 100
 
     val commanders: Seq[EntityRef[Command]] =
-      (0 until settings.numberOfShards).map(shard => commander(shard.toString))
+      (0 until settings.numberOfShards).map(shard =>
+        sharding.entityRefFor(AgreementPersistentBehavior.TypeKey, shard.toString)
+      )
 
     val result: Either[Throwable, Seq[PersistentAgreement]] = for {
       statesEnums <- parseArrayParameters(states).traverse(AgreementState.fromValue)

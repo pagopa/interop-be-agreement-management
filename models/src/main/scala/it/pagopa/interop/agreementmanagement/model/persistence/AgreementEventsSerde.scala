@@ -42,6 +42,6 @@ object AgreementEventsSerde {
   private val agreementAdded: String                   = "agreement_added"
   private val agreementDeleted: String                 = "agreement_deleted"
   private val agreementUpdated: String                 = "agreement_updated"
-  private val verifiedAttributeUpdated: String         = "verified-attribute-updated"
+  private val verifiedAttributeUpdated: String         = "verified_attribute_updated"
 
 }

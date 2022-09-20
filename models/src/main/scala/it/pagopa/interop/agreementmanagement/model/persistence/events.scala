@@ -12,3 +12,8 @@ final case class AgreementConsumerDocumentAdded(agreementId: String, document: P
     extends Event
 final case class AgreementConsumerDocumentRemoved(agreementId: String, documentId: String) extends Event
 final case class VerifiedAttributeUpdated(agreement: PersistentAgreement)                  extends Event
+
+// deprecated
+final case class AgreementActivated(agreement: PersistentAgreement)   extends Event
+final case class AgreementSuspended(agreement: PersistentAgreement)   extends Event
+final case class AgreementDeactivated(agreement: PersistentAgreement) extends Event

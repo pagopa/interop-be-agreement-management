@@ -1,26 +1,26 @@
 package it.pagopa.interop.agreementmanagement.model.persistence.serializer
 
 import akka.serialization.SerializerWithStringManifest
-import it.pagopa.interop.agreementmanagement.model.persistence.AgreementAdded
+import it.pagopa.interop.agreementmanagement.model.persistence.AgreementSuspended
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1._
 
 import java.io.NotSerializableException
 
-class AgreementActivatedSerializer extends SerializerWithStringManifest {
+class AgreementSuspendedSerializer extends SerializerWithStringManifest {
 
   final val version1: String = "1"
 
   final val currentVersion: String = version1
 
-  override def identifier: Int = 100000
+  override def identifier: Int = 100003
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
-  final val className: String = classOf[AgreementAdded].getName
+  final val className: String = classOf[AgreementSuspended].getName
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case event: AgreementAdded => serialize(event, className, currentVersion)
-    case _                     =>
+    case event: AgreementSuspended => serialize(event, className, currentVersion)
+    case _                         =>
       throw new NotSerializableException(
         s"Unable to serialize object of type [[${o.getClass.getName}]] for manifest [[$className]] and version [[$currentVersion]]"
       )

@@ -35,6 +35,9 @@ object JsonFormats {
   implicit val paFormat: RootJsonFormat[PersistentAgreement]           = jsonFormat16(PersistentAgreement.apply)
   implicit val aadFormat: RootJsonFormat[AgreementAdded]               = jsonFormat1(AgreementAdded.apply)
   implicit val aUpFormat: RootJsonFormat[AgreementUpdated]             = jsonFormat1(AgreementUpdated)
+  implicit val aAcFormat: RootJsonFormat[AgreementActivated]           = jsonFormat1(AgreementActivated)
+  implicit val aSuFormat: RootJsonFormat[AgreementSuspended]           = jsonFormat1(AgreementSuspended)
+  implicit val aDeaFormat: RootJsonFormat[AgreementDeactivated]        = jsonFormat1(AgreementDeactivated)
   implicit val adelFormat: RootJsonFormat[AgreementDeleted]            = jsonFormat1(AgreementDeleted)
   implicit val vapFormat: RootJsonFormat[VerifiedAttributeUpdated]     = jsonFormat1(VerifiedAttributeUpdated)
   implicit val acdaFormat: RootJsonFormat[AgreementConsumerDocumentAdded]   =

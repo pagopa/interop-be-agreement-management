@@ -39,6 +39,12 @@ object AgreementCqrsProjection {
         Updates.pull("data.consumerDocuments", Filters.eq("id", docId))
       )
     case VerifiedAttributeUpdated(_)                  => NoOpAction
+    case AgreementActivated(a)                        =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
+    case AgreementSuspended(a)                        =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
+    case AgreementDeactivated(a)                      =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
   }
 
 }

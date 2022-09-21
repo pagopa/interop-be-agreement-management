@@ -158,6 +158,9 @@ object AgreementPersistentBehavior {
         state.addAgreementConsumerDocument(agreementId, document)
       case AgreementConsumerDocumentRemoved(agreementId, documentId) =>
         state.removeAgreementConsumerDocument(agreementId, documentId)
+      case AgreementActivated(agreement)                             => state.updateAgreement(agreement)
+      case AgreementSuspended(agreement)                             => state.updateAgreement(agreement)
+      case AgreementDeactivated(agreement)                           => state.updateAgreement(agreement)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-agreement-management-persistence")

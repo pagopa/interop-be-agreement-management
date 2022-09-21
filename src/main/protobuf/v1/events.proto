@@ -12,6 +12,18 @@ message AgreementAddedV1 {
   required AgreementV1 agreement = 1;
 }
 
+message AgreementActivatedV1 {
+  required AgreementV1 agreement = 1;
+}
+
+message AgreementSuspendedV1 {
+  required AgreementV1 agreement = 1;
+}
+
+message AgreementDeactivatedV1 {
+  required AgreementV1 agreement = 1;
+}
+
 message AgreementUpdatedV1 {
   required AgreementV1 agreement = 1;
 }

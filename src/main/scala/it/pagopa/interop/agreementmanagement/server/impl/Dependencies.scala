@@ -33,7 +33,6 @@ import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, S
 import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -42,8 +41,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait Dependencies {
 
-  val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl
-  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
+  val uuidSupplier: UUIDSupplier               = UUIDSupplier
+  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
   def behaviorFactory(): EntityContext[Command] => Behavior[Command] = { entityContext =>
     val index: Int = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)

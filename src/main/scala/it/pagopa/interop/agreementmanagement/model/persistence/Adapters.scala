@@ -13,7 +13,7 @@ object Adapters {
       uuidSupplier: UUIDSupplier,
       dateTimeSupplier: OffsetDateTimeSupplier
     ): PersistentAgreement = PersistentAgreement(
-      id = uuidSupplier.get,
+      id = uuidSupplier.get(),
       eserviceId = agreement.eserviceId,
       descriptorId = agreement.descriptorId,
       producerId = agreement.producerId,
@@ -26,7 +26,7 @@ object Adapters {
       suspendedByProducer = None,
       suspendedByPlatform = None,
       consumerDocuments = Nil,
-      createdAt = dateTimeSupplier.get,
+      createdAt = dateTimeSupplier.get(),
       updatedAt = None,
       consumerNotes = agreement.consumerNotes
     )
@@ -44,7 +44,7 @@ object Adapters {
         suspendedByConsumer = updateAgreementSeed.suspendedByConsumer,
         suspendedByProducer = updateAgreementSeed.suspendedByProducer,
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
-        updatedAt = Some(dateTimeSupplier.get),
+        updatedAt = Some(dateTimeSupplier.get()),
         consumerNotes = updateAgreementSeed.consumerNotes
       )
 
@@ -53,7 +53,7 @@ object Adapters {
       seed: UpgradeAgreementSeed
     )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreement =
       PersistentAgreement(
-        id = uuidSupplier.get,
+        id = uuidSupplier.get(),
         eserviceId = oldAgreement.eserviceId,
         descriptorId = seed.descriptorId,
         producerId = oldAgreement.producerId,
@@ -66,7 +66,7 @@ object Adapters {
         suspendedByProducer = None,
         suspendedByPlatform = None,
         consumerDocuments = oldAgreement.consumerDocuments,
-        createdAt = dateTimeSupplier.get,
+        createdAt = dateTimeSupplier.get(),
         updatedAt = None,
         consumerNotes = oldAgreement.consumerNotes
       )
@@ -149,12 +149,12 @@ object Adapters {
       seed: DocumentSeed
     )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreementDocument =
       PersistentAgreementDocument(
-        id = uuidSupplier.get,
+        id = uuidSupplier.get(),
         name = seed.name,
         prettyName = seed.prettyName,
         contentType = seed.contentType,
         path = seed.path,
-        createdAt = dateTimeSupplier.get
+        createdAt = dateTimeSupplier.get()
       )
     def toAPI(document: PersistentAgreementDocument): Document =
       Document(

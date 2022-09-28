@@ -61,9 +61,9 @@ trait SpecHelper {
     actorSystem: actor.ActorSystem
   ): Future[Agreement] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
-    _ = (() => mockUUIDSupplier.get).expects().returning(agreementId).once()
-    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
-    _ = seed.verifiedAttributes.foreach(_ => (() => mockDateTimeSupplier.get).expects().returning(timestamp).once())
+    _ = (() => mockUUIDSupplier.get()).expects().returning(agreementId).once()
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
+    _ = seed.verifiedAttributes.foreach(_ => (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once())
     agreement <- Unmarshal(makeRequest(data, "agreements", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
@@ -77,7 +77,7 @@ trait SpecHelper {
     data <- Marshal(updateAgreementSeed)
       .to[MessageEntity]
       .map(_.dataBytes)
-    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
     updated <- Unmarshal(makeRequest(data, s"agreements/${agreementId.toString}/update", HttpMethods.POST))
       .to[Agreement]
   } yield updated
@@ -139,9 +139,9 @@ trait SpecHelper {
     actorSystem: actor.ActorSystem
   ): Future[Agreement] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
-    _ = (() => mockUUIDSupplier.get).expects().returning(newAgreementId).once()
-    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
-    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
+    _ = (() => mockUUIDSupplier.get()).expects().returning(newAgreementId).once()
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
@@ -150,8 +150,8 @@ trait SpecHelper {
     actorSystem: actor.ActorSystem
   ): Future[Document] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
-    _ = (() => mockDateTimeSupplier.get).expects().returning(timestamp).once()
-    _ = (() => mockUUIDSupplier.get).expects().returning(documentId).once()
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
+    _ = (() => mockUUIDSupplier.get()).expects().returning(documentId).once()
     document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/consumer-documents", HttpMethods.POST))
       .to[Document]
   } yield document

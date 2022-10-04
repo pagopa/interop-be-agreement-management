@@ -24,6 +24,7 @@ object protobufUtils {
       certifiedAttributes <- protobufAgreement.certifiedAttributes.traverse(deserializeCertifiedAttribute)
       declaredAttributes  <- protobufAgreement.declaredAttributes.traverse(deserializeDeclaredAttribute)
       consumerDocuments   <- protobufAgreement.consumerDocuments.traverse(toPersistentDocument).toTry
+      document            <- protobufAgreement.document.traverse(toPersistentDocument).toTry
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
@@ -40,7 +41,8 @@ object protobufUtils {
       consumerDocuments = consumerDocuments,
       createdAt = createdAt,
       updatedAt = updatedAt,
-      consumerNotes = protobufAgreement.consumerNotes
+      consumerNotes = protobufAgreement.consumerNotes,
+      document = document
     )
     agreement.toEither
   }
@@ -77,7 +79,8 @@ object protobufUtils {
       consumerDocuments = persistentAgreement.consumerDocuments.map(toProtobufDocument),
       createdAt = persistentAgreement.createdAt.toMillis,
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
-      consumerNotes = persistentAgreement.consumerNotes
+      consumerNotes = persistentAgreement.consumerNotes,
+      document = persistentAgreement.document.map(toProtobufDocument)
     )
 
   def toProtobufDocument(persistentDocument: PersistentAgreementDocument): AgreementDocumentV1 =

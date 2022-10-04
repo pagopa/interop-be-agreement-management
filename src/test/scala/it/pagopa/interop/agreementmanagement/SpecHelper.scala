@@ -2,8 +2,8 @@ package it.pagopa.interop.agreementmanagement
 
 import akka.actor
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, MessageEntity}
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, MessageEntity}
+import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import it.pagopa.interop.agreementmanagement.model.AgreementState.{ACTIVE, PENDING, SUSPENDED}
 import it.pagopa.interop.agreementmanagement.model._
 
@@ -144,6 +144,18 @@ trait SpecHelper {
     _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
+
+  def addDocument[T](agreementId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem,
+    unmarshal: Unmarshaller[HttpResponse, T]
+  ): Future[T] = for {
+    data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
+    _ = (() => mockUUIDSupplier.get()).expects().returning(documentId).once()
+    document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/document", HttpMethods.POST))
+      .to[T]
+  } yield document
 
   def addConsumerDocument(agreementId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
     ec: ExecutionContext,

@@ -137,6 +137,77 @@ class AgreementApiServiceSpec
       updatedAgreement.state shouldBe AgreementState.PENDING
     }
 
+    "add a document to an agreement" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId   = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
+      )
+
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      val response: Future[Document] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        document <- addDocument[Document](agreementId, documentId, documentSeed)
+      } yield document
+
+      val bodyResponse: Document = response.futureValue
+
+      bodyResponse.id shouldBe documentId
+      bodyResponse.name shouldBe documentSeed.name
+      bodyResponse.contentType shouldBe documentSeed.contentType
+      bodyResponse.path shouldBe documentSeed.path
+      bodyResponse.createdAt shouldBe timestamp
+    }
+
+    "fail trying to add a document to an agreement if a document already exists" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId1  = UUID.randomUUID()
+      val documentId2  = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
+      )
+
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      val response: Future[Problem] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        _        <- addDocument[Document](agreementId, documentId1, documentSeed)
+        document <- addDocument[Problem](agreementId, documentId2, documentSeed)
+      } yield document
+
+      response.futureValue shouldBe Problem(
+        "about:blank",
+        409,
+        "The request could not be processed because of conflict in the request, such as an edit conflict.",
+        None,
+        List(ProblemError("004-0006", s"Agreement document for ${agreementId.toString} already exists"))
+      )
+
+    }
+
     "add a consumer document to an agreement" in {
       val agreementId  = UUID.randomUUID()
       val eserviceId   = UUID.randomUUID()

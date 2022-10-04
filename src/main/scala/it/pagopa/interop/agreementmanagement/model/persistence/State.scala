@@ -10,6 +10,14 @@ final case class State(agreements: Map[String, PersistentAgreement]) extends Per
   def updateAgreement(agreement: PersistentAgreement): State =
     copy(agreements = agreements + (agreement.id.toString -> agreement))
 
+  def addAgreementDocument(agreementId: String, document: PersistentAgreementDocument): State         = {
+    val updatedAgreement = for {
+      agreement <- agreements.get(agreementId)
+      updatedAgreement = agreement.copy(document = Some(document))
+    } yield updatedAgreement
+
+    updatedAgreement.fold(this)(agreement => copy(agreements = agreements + (agreementId -> agreement)))
+  }
   def addAgreementConsumerDocument(agreementId: String, document: PersistentAgreementDocument): State = {
     val updatedAgreement = for {
       agreement <- agreements.get(agreementId)

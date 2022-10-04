@@ -18,4 +18,7 @@ object AgreementManagementErrors {
   case class AgreementDocumentNotFound(agreementId: String, documentId: String)
       extends ComponentError("0005", s"Document $documentId not found for agreement $agreementId")
 
+  case class AgreementDocumentAlreadyExists(agreementId: String)
+      extends ComponentError("0006", s"Agreement document for $agreementId already exists")
+
 }

@@ -28,7 +28,8 @@ object Adapters {
       consumerDocuments = Nil,
       createdAt = dateTimeSupplier.get(),
       updatedAt = None,
-      consumerNotes = agreement.consumerNotes
+      consumerNotes = agreement.consumerNotes,
+      document = None
     )
 
     def update(
@@ -68,7 +69,8 @@ object Adapters {
         consumerDocuments = oldAgreement.consumerDocuments,
         createdAt = dateTimeSupplier.get(),
         updatedAt = None,
-        consumerNotes = oldAgreement.consumerNotes
+        consumerNotes = oldAgreement.consumerNotes,
+        document = oldAgreement.document // TODO new agreement must be passed?
       )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
@@ -87,7 +89,8 @@ object Adapters {
       consumerDocuments = persistentAgreement.consumerDocuments.map(PersistentAgreementDocument.toAPI),
       createdAt = persistentAgreement.createdAt,
       updatedAt = persistentAgreement.updatedAt,
-      consumerNotes = persistentAgreement.consumerNotes
+      consumerNotes = persistentAgreement.consumerNotes,
+      document = persistentAgreement.document.map(PersistentAgreementDocument.toAPI)
     )
   }
 

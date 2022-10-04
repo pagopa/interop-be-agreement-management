@@ -245,6 +245,56 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/agreements/{agreement_id}/document':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      tags:
+        - agreement
+      summary: Create the agreement document
+      operationId: addAgreementDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: agreement_id
+          in: path
+          description: the agreement id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: A Agreement Document seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentSeed'
+        required: true
+      responses:
+        '200':
+          description: Agreement Document create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Agreement Document already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/agreements/{agreementId}/consumer-documents':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -515,7 +565,9 @@ components:
           type: string
           format: date-time
         consumerNotes:
-          type: String
+          type: String,
+        document:
+          $ref: '#/components/schemas/Document'
       required:
         - id
         - eserviceId

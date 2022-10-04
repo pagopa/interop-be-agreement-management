@@ -18,7 +18,7 @@ object ItSpecData {
   def persistentCertifiedAttribute: PersistentCertifiedAttribute = PersistentCertifiedAttribute(id = UUID.randomUUID())
   def persistentDeclaredAttribute: PersistentDeclaredAttribute   = PersistentDeclaredAttribute(id = UUID.randomUUID())
   def persistentVerifiedAttribute: PersistentVerifiedAttribute   = PersistentVerifiedAttribute(id = UUID.randomUUID())
-  def persistentConsumerDocument: PersistentAgreementDocument    = PersistentAgreementDocument(
+  def persistentDocument: PersistentAgreementDocument            = PersistentAgreementDocument(
     id = UUID.randomUUID(),
     name = "doc",
     prettyName = "document",
@@ -40,9 +40,10 @@ object ItSpecData {
     certifiedAttributes = Seq(persistentCertifiedAttribute),
     declaredAttributes = Seq(persistentDeclaredAttribute),
     verifiedAttributes = Seq(persistentVerifiedAttribute),
-    consumerDocuments = Seq(persistentConsumerDocument),
+    consumerDocuments = Seq(persistentDocument),
     createdAt = timestamp,
     updatedAt = Some(timestamp),
-    consumerNotes = None
+    consumerNotes = None,
+    document = None
   )
 }

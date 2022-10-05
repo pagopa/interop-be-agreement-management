@@ -18,17 +18,17 @@ class StateSpec extends FunSuite {
     val existingDocumentId3 = UUID.randomUUID()
     val newDocumentId       = UUID.randomUUID()
     val newDocument         = persistentDocument(newDocumentId)
-    val documentId1         = UUID.randomUUID()
-    val documentId2         = UUID.randomUUID()
+    val contractId1         = UUID.randomUUID()
+    val contractId2         = UUID.randomUUID()
 
     val state        = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(
           agreementId1,
           Seq(existingDocumentId1, existingDocumentId2),
-          documentId1
+          contractId1
         ),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(existingDocumentId3), documentId2)
+        agreementId2.toString -> persistentAgreement(agreementId2, Seq(existingDocumentId3), contractId2)
       )
     )
     val updatedState = state.addAgreementConsumerDocument(agreementId1.toString, newDocument)
@@ -49,17 +49,17 @@ class StateSpec extends FunSuite {
     val existingDocumentId3 = UUID.randomUUID()
     val newDocumentId       = UUID.randomUUID()
     val newDocument         = persistentDocument(newDocumentId)
-    val documentId1         = UUID.randomUUID()
-    val documentId2         = UUID.randomUUID()
+    val contractId1         = UUID.randomUUID()
+    val contractId2         = UUID.randomUUID()
 
     val state = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(
           agreementId1,
           Seq(existingDocumentId1, existingDocumentId2),
-          documentId1
+          contractId1
         ),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(existingDocumentId3), documentId2)
+        agreementId2.toString -> persistentAgreement(agreementId2, Seq(existingDocumentId3), contractId2)
       )
     )
 
@@ -74,17 +74,17 @@ class StateSpec extends FunSuite {
     val consumerDocumentId1 = UUID.randomUUID()
     val consumerDocumentId2 = UUID.randomUUID()
     val consumerDocumentId3 = UUID.randomUUID()
-    val documentId1         = UUID.randomUUID()
-    val documentId2         = UUID.randomUUID()
+    val contractId1         = UUID.randomUUID()
+    val contractId2         = UUID.randomUUID()
 
     val state = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(
           agreementId1,
           Seq(consumerDocumentId1, consumerDocumentId2),
-          documentId1
+          contractId1
         ),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(consumerDocumentId3), documentId2)
+        agreementId2.toString -> persistentAgreement(agreementId2, Seq(consumerDocumentId3), contractId2)
       )
     )
 
@@ -104,17 +104,17 @@ class StateSpec extends FunSuite {
     val consumerDocumentId1 = UUID.randomUUID()
     val consumerDocumentId2 = UUID.randomUUID()
     val consumerDocumentId3 = UUID.randomUUID()
-    val documentId1         = UUID.randomUUID()
-    val documentId2         = UUID.randomUUID()
+    val contractId1         = UUID.randomUUID()
+    val contractId2         = UUID.randomUUID()
 
     val state = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(
           agreementId1,
           Seq(consumerDocumentId1, consumerDocumentId2),
-          documentId1
+          contractId1
         ),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(consumerDocumentId3), documentId2)
+        agreementId2.toString -> persistentAgreement(agreementId2, Seq(consumerDocumentId3), contractId2)
       )
     )
 
@@ -129,17 +129,17 @@ class StateSpec extends FunSuite {
     val consumerDocumentId1 = UUID.randomUUID()
     val consumerDocumentId2 = UUID.randomUUID()
     val consumerDocumentId3 = UUID.randomUUID()
-    val documentId1         = UUID.randomUUID()
-    val documentId2         = UUID.randomUUID()
+    val contractId1         = UUID.randomUUID()
+    val contractId2         = UUID.randomUUID()
 
     val state = State(agreements =
       Map(
         agreementId1.toString -> persistentAgreement(
           agreementId1,
           Seq(consumerDocumentId1, consumerDocumentId2),
-          documentId1
+          contractId1
         ),
-        agreementId2.toString -> persistentAgreement(agreementId2, Seq(consumerDocumentId3), documentId2)
+        agreementId2.toString -> persistentAgreement(agreementId2, Seq(consumerDocumentId3), contractId2)
       )
     )
 
@@ -156,7 +156,7 @@ class StateSpec extends FunSuite {
     path = "somewhere",
     createdAt = OffsetDateTime.now()
   )
-  def persistentAgreement(agreementId: UUID, consumerDocumentIds: Seq[UUID], documentId: UUID): PersistentAgreement =
+  def persistentAgreement(agreementId: UUID, consumerDocumentIds: Seq[UUID], contractId: UUID): PersistentAgreement =
     PersistentAgreement(
       id = agreementId,
       eserviceId = UUID.randomUUID(),
@@ -174,7 +174,7 @@ class StateSpec extends FunSuite {
       createdAt = OffsetDateTime.now(),
       updatedAt = None,
       consumerNotes = "these are consumer notes".some,
-      document = persistentDocument(documentId).some
+      contract = persistentDocument(contractId).some
     )
 
 }

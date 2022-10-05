@@ -24,7 +24,7 @@ message AgreementV1 {
   repeated DeclaredAttributeV1 declaredAttributes = 14;
   repeated AgreementDocumentV1 consumerDocuments = 15;
   optional string consumerNotes = 16;
-  optional AgreementDocumentV1 document = 17;
+  optional AgreementDocumentV1 contract = 17;
 }
 
 message VerifiedAttributeV1 {

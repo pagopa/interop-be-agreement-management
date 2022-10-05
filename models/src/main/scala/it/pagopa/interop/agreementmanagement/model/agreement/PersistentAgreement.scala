@@ -20,5 +20,5 @@ final case class PersistentAgreement(
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime],
   consumerNotes: Option[String],
-  document: Option[PersistentAgreementDocument]
+  contract: Option[PersistentAgreementDocument]
 )

@@ -269,19 +269,19 @@ final case class AgreementApiServiceImpl(
         ref
       )
 
-  override def addAgreementDocument(agreementId: String, documentSeed: DocumentSeed)(implicit
+  override def addAgreementContract(agreementId: String, documentSeed: DocumentSeed)(implicit
     toEntityMarshallerDocument: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
 
-    val operationLabel: String = s"Adding agreement $agreementId document"
+    val operationLabel: String = s"Adding agreement $agreementId contract"
 
     logger.info(operationLabel)
 
     val result: Future[PersistentAgreementDocument] =
       commander(agreementId).askWithStatus(ref =>
-        AddAgreementDocument(
+        AddAgreementContract(
           agreementId,
           PersistentAgreementDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
           ref
@@ -290,13 +290,13 @@ final case class AgreementApiServiceImpl(
 
     onComplete(result) {
       case Success(document)                           =>
-        addAgreementDocument200(PersistentAgreementDocument.toAPI(document))
+        addAgreementContract200(PersistentAgreementDocument.toAPI(document))
       case Failure(ex: AgreementNotFound)              =>
         logger.error(s"Error while $operationLabel", ex)
-        addAgreementDocument404(problemOf(StatusCodes.NotFound, ex))
+        addAgreementContract404(problemOf(StatusCodes.NotFound, ex))
       case Failure(ex: AgreementDocumentAlreadyExists) =>
         logger.error(s"Error while $operationLabel", ex)
-        addAgreementDocument409(problemOf(StatusCodes.Conflict, ex))
+        addAgreementContract409(problemOf(StatusCodes.Conflict, ex))
       case Failure(ex)                                 =>
         logger.error(s"Error while $operationLabel", ex)
         internalServerError(operationLabel, ex.getMessage)

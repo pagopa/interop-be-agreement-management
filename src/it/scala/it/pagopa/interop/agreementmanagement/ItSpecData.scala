@@ -44,6 +44,6 @@ object ItSpecData {
     createdAt = timestamp,
     updatedAt = Some(timestamp),
     consumerNotes = None,
-    document = None
+    contract = None
   )
 }

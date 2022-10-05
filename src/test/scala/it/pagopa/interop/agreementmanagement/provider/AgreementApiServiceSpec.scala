@@ -159,7 +159,7 @@ class AgreementApiServiceSpec
 
       val response: Future[Document] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        document <- addDocument[Document](agreementId, documentId, documentSeed)
+        document <- addContract[Document](agreementId, documentId, documentSeed)
       } yield document
 
       val bodyResponse: Document = response.futureValue
@@ -194,8 +194,8 @@ class AgreementApiServiceSpec
 
       val response: Future[Problem] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        _        <- addDocument[Document](agreementId, documentId1, documentSeed)
-        document <- addDocument[Problem](agreementId, documentId2, documentSeed)
+        _        <- addContract[Document](agreementId, documentId1, documentSeed)
+        document <- addContract[Problem](agreementId, documentId2, documentSeed)
       } yield document
 
       response.futureValue shouldBe Problem(

@@ -57,18 +57,18 @@ object AgreementPersistentBehavior {
           )
           .getOrElse(handleFailure(AgreementNotFound(agreementId))(replyTo))
 
-      case AddAgreementDocument(agreementId, document, replyTo) =>
+      case AddAgreementContract(agreementId, contract, replyTo) =>
         val addedDocument: Either[ComponentError, PersistentAgreementDocument] =
           for {
             agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
-            document  <- agreement.document.fold[Either[ComponentError, PersistentAgreementDocument]](Right(document))(
+            contract  <- agreement.contract.fold[Either[ComponentError, PersistentAgreementDocument]](Right(contract))(
               _ => Left(AgreementDocumentAlreadyExists(agreementId))
             )
-          } yield document
+          } yield contract
 
         addedDocument.fold(
           handleFailure(_)(replyTo),
-          persistStateAndReply(_, AgreementDocumentAdded(agreementId, _))(replyTo)
+          persistStateAndReply(_, AgreementContractAdded(agreementId, _))(replyTo)
         )
 
       case AddAgreementConsumerDocument(agreementId, document, replyTo) =>
@@ -169,7 +169,7 @@ object AgreementPersistentBehavior {
       case VerifiedAttributeUpdated(agreement)                   => state.updateAgreement(agreement)
       case AgreementDeleted(agreementId)                         => state.delete(agreementId)
       case AgreementUpdated(agreement)                           => state.updateAgreement(agreement)
-      case AgreementDocumentAdded(agreementId, document)         => state.addAgreementDocument(agreementId, document)
+      case AgreementContractAdded(agreementId, contract)         => state.addAgreementContract(agreementId, contract)
       case AgreementConsumerDocumentAdded(agreementId, document) =>
         state.addAgreementConsumerDocument(agreementId, document)
       case AgreementConsumerDocumentRemoved(agreementId, documentId) =>

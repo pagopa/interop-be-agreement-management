@@ -37,8 +37,8 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
 
       val document = persistentDocument
 
-      val createdDoc = addDocument(agreement.id, document)
-      val expected   = agreement.copy(document = Some(createdDoc))
+      val createdDoc = addContract(agreement.id, document)
+      val expected   = agreement.copy(contract = Some(createdDoc))
       val persisted  = findOne[PersistentAgreement](expected.id.toString).futureValue
 
       compareAgreements(expected, persisted)

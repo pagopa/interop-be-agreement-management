@@ -28,8 +28,8 @@ object AgreementCqrsProjection {
     case AgreementUpdated(a)                          =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", a.id.toString), _), Updates.set("data", a.toDocument))
     case AgreementDeleted(aId)                        => Action(collection.deleteOne(Filters.eq("data.id", aId)))
-    case AgreementDocumentAdded(aId, doc)             =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", aId), _), Updates.set("data.document", doc.toDocument))
+    case AgreementContractAdded(aId, c)               =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", aId), _), Updates.set("data.contract", c.toDocument))
     case AgreementConsumerDocumentAdded(aId, doc)     =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", aId), _),

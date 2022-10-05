@@ -11,7 +11,7 @@ object AgreementEventsSerde {
   }
 
   def agreementToJson(event: Event): JsValue = event match {
-    case x: AgreementDocumentAdded           => x.toJson
+    case x: AgreementContractAdded           => x.toJson
     case x: AgreementConsumerDocumentAdded   => x.toJson
     case x: AgreementConsumerDocumentRemoved => x.toJson
     case x: AgreementAdded                   => x.toJson
@@ -24,7 +24,7 @@ object AgreementEventsSerde {
   }
 
   val jsonToAgreement: PartialFunction[String, JsValue => ProjectableEvent] = {
-    case `agreementDocumentAdded`           => _.convertTo[AgreementDocumentAdded]
+    case `agreementDocumentAdded`           => _.convertTo[AgreementContractAdded]
     case `agreementConsumerDocumentAdded`   => _.convertTo[AgreementConsumerDocumentAdded]
     case `agreementConsumerDocumentRemoved` => _.convertTo[AgreementConsumerDocumentRemoved]
     case `agreementAdded`                   => _.convertTo[AgreementAdded]
@@ -37,7 +37,7 @@ object AgreementEventsSerde {
   }
 
   def getKind(e: Event): String = e match {
-    case _: AgreementDocumentAdded           => agreementDocumentAdded
+    case _: AgreementContractAdded           => agreementDocumentAdded
     case _: AgreementConsumerDocumentAdded   => agreementConsumerDocumentAdded
     case _: AgreementConsumerDocumentRemoved => agreementConsumerDocumentRemoved
     case _: AgreementAdded                   => agreementAdded

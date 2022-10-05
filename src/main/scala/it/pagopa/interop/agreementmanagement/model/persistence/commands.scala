@@ -29,7 +29,7 @@ final case class ListAgreements(
   replyTo: ActorRef[Seq[PersistentAgreement]]
 ) extends Command
 
-final case class AddAgreementDocument(
+final case class AddAgreementContract(
   agreementId: String,
   document: PersistentAgreementDocument,
   replyTo: ActorRef[StatusReply[PersistentAgreementDocument]]

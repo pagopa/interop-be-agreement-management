@@ -44,5 +44,5 @@ object JsonFormats {
     jsonFormat2(AgreementConsumerDocumentAdded.apply)
   implicit val acdrFormat: RootJsonFormat[AgreementConsumerDocumentRemoved] =
     jsonFormat2(AgreementConsumerDocumentRemoved.apply)
-  implicit val ada: RootJsonFormat[AgreementDocumentAdded]                  = jsonFormat2(AgreementDocumentAdded.apply)
+  implicit val ada: RootJsonFormat[AgreementContractAdded]                  = jsonFormat2(AgreementContractAdded.apply)
 }

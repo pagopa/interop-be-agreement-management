@@ -20,11 +20,11 @@ tags:
       description: Find out more
       url: 'http://swagger.io'
 paths:
-  '/agreements/{agreement_id}':
+  '/agreements/{agreementId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
-      - name: agreement_id
+      - name: agreementId
         in: path
         description: the agreement id
         required: true
@@ -245,26 +245,26 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/agreements/{agreement_id}/document':
+  '/agreements/{agreementId}/contract':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - agreement
-      summary: Create the agreement document
-      operationId: addAgreementDocument
+      summary: Create the agreement contract
+      operationId: addAgreementContract
       security:
         - bearerAuth: []
       parameters:
-        - name: agreement_id
+        - name: agreementId
           in: path
           description: the agreement id
           required: true
           schema:
             type: string
       requestBody:
-        description: A Agreement Document seed
+        description: A Agreement Contract seed
         content:
           application/json:
             schema:
@@ -290,7 +290,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '409':
-          description: Agreement Document already exists
+          description: Agreement Contract already exists
           content:
             application/problem+json:
               schema:
@@ -565,8 +565,8 @@ components:
           type: string
           format: date-time
         consumerNotes:
-          type: String,
-        document:
+          type: string
+        contract:
           $ref: '#/components/schemas/Document'
       required:
         - id

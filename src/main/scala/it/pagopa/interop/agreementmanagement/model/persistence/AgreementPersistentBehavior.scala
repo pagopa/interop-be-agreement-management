@@ -14,7 +14,7 @@ import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors.{
 }
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.commons.utils.errors.ComponentError
-
+import cats.implicits._
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -61,10 +61,8 @@ object AgreementPersistentBehavior {
         val addedDocument: Either[ComponentError, PersistentAgreementDocument] =
           for {
             agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
-            contract  <- agreement.contract.fold[Either[ComponentError, PersistentAgreementDocument]](Right(contract))(
-              _ => Left(AgreementDocumentAlreadyExists(agreementId))
-            )
-          } yield contract
+            result    <- agreement.contract.toLeft(contract).leftMap(_ => AgreementDocumentAlreadyExists(agreementId))
+          } yield result
 
         addedDocument.fold(
           handleFailure(_)(replyTo),

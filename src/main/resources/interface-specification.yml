@@ -506,6 +506,7 @@ components:
         - verifiedAttributes
         - certifiedAttributes
         - declaredAttributes
+        - stamps
     UpgradeAgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -533,7 +534,7 @@ components:
     Stamps:
       type: object
       properties:
-        subscription:
+        submission:
           $ref: '#/components/schemas/Stamp'
         activation:
           $ref: '#/components/schemas/Stamp'

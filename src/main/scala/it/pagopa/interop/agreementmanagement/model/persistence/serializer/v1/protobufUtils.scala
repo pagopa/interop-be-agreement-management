@@ -65,14 +65,14 @@ object protobufUtils {
   }
 
   def toPersistentStamps(stampsV1: StampsV1): Either[Throwable, PersistentStamps] = for {
-    subscription <- stampsV1.subscription.traverse(toPersistentStamp)
-    activation   <- stampsV1.activation.traverse(toPersistentStamp)
-    rejection    <- stampsV1.rejection.traverse(toPersistentStamp)
-    suspension   <- stampsV1.suspension.traverse(toPersistentStamp)
-    upgrade      <- stampsV1.upgrade.traverse(toPersistentStamp)
-    archiving    <- stampsV1.archiving.traverse(toPersistentStamp)
+    submission <- stampsV1.submission.traverse(toPersistentStamp)
+    activation <- stampsV1.activation.traverse(toPersistentStamp)
+    rejection  <- stampsV1.rejection.traverse(toPersistentStamp)
+    suspension <- stampsV1.suspension.traverse(toPersistentStamp)
+    upgrade    <- stampsV1.upgrade.traverse(toPersistentStamp)
+    archiving  <- stampsV1.archiving.traverse(toPersistentStamp)
   } yield PersistentStamps(
-    subscription = subscription,
+    submission = submission,
     activation = activation,
     rejection = rejection,
     suspension = suspension,
@@ -114,7 +114,7 @@ object protobufUtils {
   def toProtobufStamp(stamp: PersistentStamp): StampV1 = StampV1(who = stamp.who.toString, when = stamp.when.toMillis)
   def toProtobufStamps(stamps: PersistentStamps): StampsV1 =
     StampsV1(
-      subscription = stamps.subscription.map(toProtobufStamp),
+      submission = stamps.submission.map(toProtobufStamp),
       activation = stamps.activation.map(toProtobufStamp),
       rejection = stamps.rejection.map(toProtobufStamp),
       suspension = stamps.suspension.map(toProtobufStamp),

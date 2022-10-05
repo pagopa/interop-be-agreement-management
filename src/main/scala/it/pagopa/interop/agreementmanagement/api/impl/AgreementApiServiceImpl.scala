@@ -408,7 +408,7 @@ final case class AgreementApiServiceImpl(
           suspendedByConsumer = oldAgreement.suspendedByConsumer,
           suspendedByProducer = oldAgreement.suspendedByProducer,
           suspendedByPlatform = oldAgreement.suspendedByPlatform,
-          stamps = PersistentStamps.toAPI(oldAgreement.stamps).copy(archiving = seed.stamp.some).some
+          stamps = PersistentStamps.toAPI(oldAgreement.stamps).copy(archiving = seed.stamp.some)
         ),
         dateTimeSupplier
       )

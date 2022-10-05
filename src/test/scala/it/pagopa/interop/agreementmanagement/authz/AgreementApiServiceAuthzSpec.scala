@@ -10,6 +10,7 @@ import it.pagopa.interop.agreementmanagement.model.{
   AgreementSeed,
   DocumentSeed,
   Stamp,
+  Stamps,
   UpdateAgreementSeed,
   UpgradeAgreementSeed
 }
@@ -64,7 +65,8 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
         state = DRAFT,
         verifiedAttributes = Seq.empty,
         certifiedAttributes = Seq.empty,
-        declaredAttributes = Seq.empty
+        declaredAttributes = Seq.empty,
+        stamps = Stamps()
       )
 
       validateAuthorization(

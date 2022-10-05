@@ -49,7 +49,7 @@ object Adapters {
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
         updatedAt = Some(dateTimeSupplier.get()),
         consumerNotes = updateAgreementSeed.consumerNotes,
-        stamps = updateAgreementSeed.stamps.map(PersistentStamps.fromAPI).getOrElse(agreement.stamps)
+        stamps = PersistentStamps.fromAPI(updateAgreementSeed.stamps)
       )
 
     def upgrade(
@@ -184,7 +184,7 @@ object Adapters {
   implicit class PersistentStampsObjectWrapper(private val p: PersistentStamps.type) extends AnyVal {
     def fromAPI(stamps: Stamps): PersistentStamps =
       PersistentStamps(
-        subscription = stamps.subscription.map(PersistentStamp.fromAPI),
+        submission = stamps.submission.map(PersistentStamp.fromAPI),
         activation = stamps.activation.map(PersistentStamp.fromAPI),
         rejection = stamps.rejection.map(PersistentStamp.fromAPI),
         suspension = stamps.suspension.map(PersistentStamp.fromAPI),
@@ -194,7 +194,7 @@ object Adapters {
 
     def toAPI(stamps: PersistentStamps): Stamps =
       Stamps(
-        subscription = stamps.subscription.map(PersistentStamp.toAPI),
+        submission = stamps.submission.map(PersistentStamp.toAPI),
         activation = stamps.activation.map(PersistentStamp.toAPI),
         rejection = stamps.rejection.map(PersistentStamp.toAPI),
         suspension = stamps.suspension.map(PersistentStamp.toAPI),

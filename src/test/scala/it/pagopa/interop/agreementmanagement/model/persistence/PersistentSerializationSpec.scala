@@ -111,15 +111,15 @@ object PersistentSerializationSpec {
 
   val stampsGen: Gen[(PersistentStamps, StampsV1)] = {
     for {
-      (subscription, subscriptionV1) <- Gen.option(stampGen).map(_.separate)
-      (activation, activationV1)     <- Gen.option(stampGen).map(_.separate)
-      (rejection, rejectionV1)       <- Gen.option(stampGen).map(_.separate)
-      (suspension, suspensionV1)     <- Gen.option(stampGen).map(_.separate)
-      (upgrade, upgradeV1)           <- Gen.option(stampGen).map(_.separate)
-      (archiving, archivingV1)       <- Gen.option(stampGen).map(_.separate)
+      (submission, submissionV1) <- Gen.option(stampGen).map(_.separate)
+      (activation, activationV1) <- Gen.option(stampGen).map(_.separate)
+      (rejection, rejectionV1)   <- Gen.option(stampGen).map(_.separate)
+      (suspension, suspensionV1) <- Gen.option(stampGen).map(_.separate)
+      (upgrade, upgradeV1)       <- Gen.option(stampGen).map(_.separate)
+      (archiving, archivingV1)   <- Gen.option(stampGen).map(_.separate)
     } yield (
       PersistentStamps(
-        subscription = subscription,
+        submission = submission,
         activation = activation,
         rejection = rejection,
         suspension = suspension,
@@ -127,7 +127,7 @@ object PersistentSerializationSpec {
         archiving = archiving
       ),
       StampsV1(
-        subscription = subscriptionV1,
+        submission = submissionV1,
         activation = activationV1,
         rejection = rejectionV1,
         suspension = suspensionV1,

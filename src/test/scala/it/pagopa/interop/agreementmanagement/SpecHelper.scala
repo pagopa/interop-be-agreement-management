@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpMethods, HttpResponse, MessageEntity}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import it.pagopa.interop.agreementmanagement.model.AgreementState.{ACTIVE, PENDING, SUSPENDED}
 import it.pagopa.interop.agreementmanagement.model._
-
+import cats.implicits._
 import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.duration.Duration
@@ -94,7 +94,8 @@ trait SpecHelper {
         verifiedAttributes = agreement.verifiedAttributes,
         suspendedByConsumer = agreement.suspendedByConsumer,
         suspendedByProducer = agreement.suspendedByProducer,
-        suspendedByPlatform = agreement.suspendedByPlatform
+        suspendedByPlatform = agreement.suspendedByPlatform,
+        stamps = agreement.stamps.copy(submission = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
       )
     )
 
@@ -112,7 +113,8 @@ trait SpecHelper {
       verifiedAttributes = agreement.verifiedAttributes,
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
-      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
+      stamps = agreement.stamps.copy(activation = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
     )
   )
 
@@ -130,7 +132,8 @@ trait SpecHelper {
       verifiedAttributes = agreement.verifiedAttributes,
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
-      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
+      stamps = agreement.stamps.copy(suspension = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
     )
   )
 
@@ -230,7 +233,8 @@ trait SpecHelper {
           verifiedAttributes = draft1.verifiedAttributes,
           suspendedByConsumer = None,
           suspendedByProducer = None,
-          suspendedByPlatform = None
+          suspendedByPlatform = None,
+          stamps = Stamps(activation = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
       draft2 <- createAgreement(agreementSeed3, AgreementThree.agreementId)
@@ -243,7 +247,8 @@ trait SpecHelper {
           verifiedAttributes = draft2.verifiedAttributes,
           suspendedByConsumer = None,
           suspendedByProducer = None,
-          suspendedByPlatform = None
+          suspendedByPlatform = None,
+          stamps = Stamps(suspension = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
       draft4 <- createAgreement(agreementSeed4, AgreementFour.agreementId)
@@ -256,7 +261,8 @@ trait SpecHelper {
           verifiedAttributes = Seq(VerifiedAttribute(attributeId)),
           suspendedByConsumer = None,
           suspendedByProducer = None,
-          suspendedByPlatform = None
+          suspendedByPlatform = None,
+          stamps = Stamps(submission = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
     } yield ()

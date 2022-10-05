@@ -25,7 +25,7 @@ message AgreementV1 {
   repeated AgreementDocumentV1 consumerDocuments = 15;
   optional string consumerNotes = 16;
   optional AgreementDocumentV1 contract = 17;
-  required StampsV1 stamps = 18;
+  optional StampsV1 stamps = 18;
 }
 
 message VerifiedAttributeV1 {
@@ -65,8 +65,10 @@ message StampV1 {
 }
 
 message StampsV1 {
-  optional StampV1 subscription = 18;
-  optional StampV1 activation = 19;
-  optional StampV1 rejection = 20;
-  optional StampV1 suspension = 21;
+  optional StampV1 subscription = 1;
+  optional StampV1 activation = 2;
+  optional StampV1 rejection = 3;
+  optional StampV1 suspension = 4;
+  optional StampV1 upgrade = 5;
+  optional StampV1 archiving = 6;
 }

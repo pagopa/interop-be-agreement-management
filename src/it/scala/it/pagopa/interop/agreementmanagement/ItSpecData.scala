@@ -6,6 +6,7 @@ import it.pagopa.interop.agreementmanagement.model.agreement.{
   PersistentAgreementDocument,
   PersistentCertifiedAttribute,
   PersistentDeclaredAttribute,
+  PersistentStamps,
   PersistentVerifiedAttribute
 }
 
@@ -44,6 +45,7 @@ object ItSpecData {
     createdAt = timestamp,
     updatedAt = Some(timestamp),
     consumerNotes = None,
-    contract = None
+    contract = None,
+    stamps = PersistentStamps()
   )
 }

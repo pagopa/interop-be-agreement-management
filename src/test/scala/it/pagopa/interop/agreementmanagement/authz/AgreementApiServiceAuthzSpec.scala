@@ -9,6 +9,7 @@ import it.pagopa.interop.agreementmanagement.model.persistence.Command
 import it.pagopa.interop.agreementmanagement.model.{
   AgreementSeed,
   DocumentSeed,
+  Stamp,
   UpdateAgreementSeed,
   UpgradeAgreementSeed
 }
@@ -119,7 +120,10 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
     "accept authorized roles for upgradeAgreementById" in {
       val endpoint = AuthorizedRoutes.endpoints("upgradeAgreementById")
 
-      val fakeSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
+      val fakeSeed = UpgradeAgreementSeed(
+        descriptorId = UUID.randomUUID(),
+        Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now())
+      )
 
       validateAuthorization(
         endpoint,

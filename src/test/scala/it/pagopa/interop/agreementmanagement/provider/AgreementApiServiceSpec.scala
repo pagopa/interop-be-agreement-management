@@ -17,6 +17,7 @@ import it.pagopa.interop.agreementmanagement.server.Controller
 import it.pagopa.interop.agreementmanagement.server.impl.Dependencies
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -278,6 +279,7 @@ class AgreementApiServiceSpec
   "upgrade an agreement properly" in {
     // given a pending agreement
     val agreementId = UUID.randomUUID()
+    val stamp       = Stamp(UUID.randomUUID(), OffsetDateTime.now())
 
     val agreementSeed        = AgreementSeed(
       eserviceId = UUID.randomUUID(),
@@ -288,7 +290,7 @@ class AgreementApiServiceSpec
       certifiedAttributes = Seq.empty,
       declaredAttributes = Seq.empty
     )
-    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
+    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID(), stamp)
 
     val response: Future[Agreement] = for {
       draft  <- createAgreement(agreementSeed, agreementId)
@@ -308,11 +310,13 @@ class AgreementApiServiceSpec
     // when we retrieve the original agreement. it should have its state changed to "inactive"
     val archivedAgreement = getAgreement(agreementId.toString).futureValue
     archivedAgreement.state shouldBe AgreementState.ARCHIVED
-
+    archivedAgreement.stamps.archiving shouldBe Some(stamp)
     // when we retrieve the updated agreement, it should have its state changed to "active"
-    val activeAgreement = getAgreement(upgradedAgreementId.toString).futureValue
+    val activeAgreement   = getAgreement(upgradedAgreementId.toString).futureValue
 
     activeAgreement.state shouldBe AgreementState.ACTIVE
+    activeAgreement.stamps.upgrade shouldBe Some(stamp)
+
   }
 
 }

@@ -33,7 +33,7 @@ object JsonFormats {
   implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat1(PersistentVerifiedAttribute.apply)
   implicit val padFormat: RootJsonFormat[PersistentAgreementDocument]  = jsonFormat6(PersistentAgreementDocument.apply)
   implicit val psFormat: RootJsonFormat[PersistentStamp]               = jsonFormat2(PersistentStamp.apply)
-  implicit val pssFormat: RootJsonFormat[PersistentStamps]             = jsonFormat4(PersistentStamps.apply)
+  implicit val pssFormat: RootJsonFormat[PersistentStamps]             = jsonFormat6(PersistentStamps.apply)
   implicit val paFormat: RootJsonFormat[PersistentAgreement]           = jsonFormat18(PersistentAgreement.apply)
   implicit val aadFormat: RootJsonFormat[AgreementAdded]               = jsonFormat1(AgreementAdded.apply)
   implicit val aUpFormat: RootJsonFormat[AgreementUpdated]             = jsonFormat1(AgreementUpdated)

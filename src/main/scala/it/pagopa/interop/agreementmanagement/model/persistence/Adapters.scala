@@ -1,5 +1,6 @@
 package it.pagopa.interop.agreementmanagement.model.persistence
 
+import cats.implicits._
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.commons.utils.service._
@@ -30,7 +31,7 @@ object Adapters {
       updatedAt = None,
       consumerNotes = agreement.consumerNotes,
       contract = None,
-      stamps = PersistentStamps(None, None, None, None)
+      stamps = PersistentStamps()
     )
 
     def update(
@@ -48,7 +49,7 @@ object Adapters {
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
         updatedAt = Some(dateTimeSupplier.get()),
         consumerNotes = updateAgreementSeed.consumerNotes,
-        stamps = PersistentStamps.fromAPI(updateAgreementSeed.stamps)
+        stamps = updateAgreementSeed.stamps.map(PersistentStamps.fromAPI).getOrElse(agreement.stamps)
       )
 
     def upgrade(
@@ -73,7 +74,7 @@ object Adapters {
         updatedAt = None,
         consumerNotes = oldAgreement.consumerNotes,
         contract = oldAgreement.contract,
-        stamps = oldAgreement.stamps
+        stamps = oldAgreement.stamps.copy(upgrade = PersistentStamp.fromAPI(seed.stamp).some)
       )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
@@ -186,7 +187,9 @@ object Adapters {
         subscription = stamps.subscription.map(PersistentStamp.fromAPI),
         activation = stamps.activation.map(PersistentStamp.fromAPI),
         rejection = stamps.rejection.map(PersistentStamp.fromAPI),
-        suspension = stamps.suspension.map(PersistentStamp.fromAPI)
+        suspension = stamps.suspension.map(PersistentStamp.fromAPI),
+        archiving = stamps.archiving.map(PersistentStamp.fromAPI),
+        upgrade = stamps.upgrade.map(PersistentStamp.fromAPI)
       )
 
     def toAPI(stamps: PersistentStamps): Stamps =
@@ -194,7 +197,9 @@ object Adapters {
         subscription = stamps.subscription.map(PersistentStamp.toAPI),
         activation = stamps.activation.map(PersistentStamp.toAPI),
         rejection = stamps.rejection.map(PersistentStamp.toAPI),
-        suspension = stamps.suspension.map(PersistentStamp.toAPI)
+        suspension = stamps.suspension.map(PersistentStamp.toAPI),
+        archiving = stamps.archiving.map(PersistentStamp.toAPI),
+        upgrade = stamps.upgrade.map(PersistentStamp.toAPI)
       )
   }
 

@@ -506,7 +506,6 @@ components:
         - verifiedAttributes
         - certifiedAttributes
         - declaredAttributes
-        - stamps
     UpgradeAgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -514,8 +513,11 @@ components:
         descriptorId:
           type: string
           format: uuid
+        stamp:
+          $ref: '#/components/schemas/Stamp'
       required:
         - descriptorId
+        - stamp
     Stamp:
       type: object
       properties:
@@ -538,6 +540,10 @@ components:
         rejection:
           $ref: '#/components/schemas/Stamp'
         suspension:
+          $ref: '#/components/schemas/Stamp'
+        upgrade:
+          $ref: '#/components/schemas/Stamp'
+        archiving:
           $ref: '#/components/schemas/Stamp'
     Agreement:
       type: object

@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Directives.{complete, onComplete}
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.pattern.StatusReply
 import akka.util.Timeout
-import cats.implicits.toTraverseOps
+import cats.implicits._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
@@ -408,7 +408,7 @@ final case class AgreementApiServiceImpl(
           suspendedByConsumer = oldAgreement.suspendedByConsumer,
           suspendedByProducer = oldAgreement.suspendedByProducer,
           suspendedByPlatform = oldAgreement.suspendedByPlatform,
-          stamps = PersistentStamps.toAPI(oldAgreement.stamps)
+          stamps = PersistentStamps.toAPI(oldAgreement.stamps).copy(archiving = seed.stamp.some).some
         ),
         dateTimeSupplier
       )

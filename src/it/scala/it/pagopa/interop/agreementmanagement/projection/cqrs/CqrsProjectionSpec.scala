@@ -32,7 +32,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       persisted shouldBe Seq.empty
     }
 
-    "succeed for event AgreementDocumentAdded" in {
+    "succeed for event AgreementContractAdded" in {
       val agreement = createAgreement(persistentAgreement.copy(state = Active))
 
       val document = persistentDocument

@@ -31,7 +31,7 @@ final case class ListAgreements(
 
 final case class AddAgreementContract(
   agreementId: String,
-  document: PersistentAgreementDocument,
+  contract: PersistentAgreementDocument,
   replyTo: ActorRef[StatusReply[PersistentAgreementDocument]]
 ) extends Command
 

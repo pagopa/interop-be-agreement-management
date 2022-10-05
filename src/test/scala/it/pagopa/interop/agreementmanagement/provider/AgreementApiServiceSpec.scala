@@ -137,7 +137,7 @@ class AgreementApiServiceSpec
       updatedAgreement.state shouldBe AgreementState.PENDING
     }
 
-    "add a document to an agreement" in {
+    "add a contract to an agreement" in {
       val agreementId  = UUID.randomUUID()
       val eserviceId   = UUID.randomUUID()
       val descriptorId = UUID.randomUUID()
@@ -171,7 +171,7 @@ class AgreementApiServiceSpec
       bodyResponse.createdAt shouldBe timestamp
     }
 
-    "fail trying to add a document to an agreement if a document already exists" in {
+    "fail trying to add a contract to an agreement if a contract already exists" in {
       val agreementId  = UUID.randomUUID()
       val eserviceId   = UUID.randomUUID()
       val descriptorId = UUID.randomUUID()

@@ -113,7 +113,8 @@ class AgreementApiServiceSpec
 
     "update an agreement properly" in {
       // given a pending agreement
-      val agreementId = UUID.randomUUID()
+      val agreementId     = UUID.randomUUID()
+      val submissionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
 
       val agreementSeed = AgreementSeed(
         eserviceId = UUID.randomUUID(),
@@ -131,11 +132,12 @@ class AgreementApiServiceSpec
       bodyResponse.verifiedAttributes shouldBe empty
       bodyResponse.state shouldBe AgreementState.DRAFT
 
-      val updatedAgreementResponse = submitAgreement(bodyResponse)
+      val updatedAgreementResponse = submitAgreement(bodyResponse, submissionStamp)
 
       val updatedAgreement = Await.result(updatedAgreementResponse, Duration.Inf)
 
       updatedAgreement.state shouldBe AgreementState.PENDING
+      updatedAgreement.stamps.submission shouldBe Some(submissionStamp)
     }
 
     "add a contract to an agreement" in {
@@ -278,8 +280,10 @@ class AgreementApiServiceSpec
 
   "upgrade an agreement properly" in {
     // given a pending agreement
-    val agreementId = UUID.randomUUID()
-    val stamp       = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val agreementId     = UUID.randomUUID()
+    val submissionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val activationStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val upgradeStamp    = Stamp(UUID.randomUUID(), OffsetDateTime.now())
 
     val agreementSeed        = AgreementSeed(
       eserviceId = UUID.randomUUID(),
@@ -290,11 +294,12 @@ class AgreementApiServiceSpec
       certifiedAttributes = Seq.empty,
       declaredAttributes = Seq.empty
     )
-    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID(), stamp)
+    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID(), upgradeStamp)
 
     val response: Future[Agreement] = for {
-      draft  <- createAgreement(agreementSeed, agreementId)
-      active <- activateAgreement(draft)
+      draft     <- createAgreement(agreementSeed, agreementId)
+      submitted <- submitAgreement(draft, submissionStamp)
+      active    <- activateAgreement(submitted, activationStamp)
     } yield active
 
     val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -310,12 +315,18 @@ class AgreementApiServiceSpec
     // when we retrieve the original agreement. it should have its state changed to "inactive"
     val archivedAgreement = getAgreement(agreementId.toString).futureValue
     archivedAgreement.state shouldBe AgreementState.ARCHIVED
-    archivedAgreement.stamps.archiving shouldBe Some(stamp)
+    archivedAgreement.stamps.submission shouldBe Some(submissionStamp)
+    archivedAgreement.stamps.activation shouldBe Some(activationStamp)
+    archivedAgreement.stamps.archiving shouldBe Some(upgradeStamp)
+    archivedAgreement.stamps.upgrade shouldBe None
     // when we retrieve the updated agreement, it should have its state changed to "active"
     val activeAgreement   = getAgreement(upgradedAgreementId.toString).futureValue
 
     activeAgreement.state shouldBe AgreementState.ACTIVE
-    activeAgreement.stamps.upgrade shouldBe Some(stamp)
+    activeAgreement.stamps.submission shouldBe Some(submissionStamp)
+    activeAgreement.stamps.activation shouldBe Some(activationStamp)
+    activeAgreement.stamps.upgrade shouldBe Some(upgradeStamp)
+    activeAgreement.stamps.archiving shouldBe None
 
   }
 

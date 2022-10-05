@@ -82,9 +82,10 @@ trait SpecHelper {
       .to[Agreement]
   } yield updated
 
-  def submitAgreement(
-    agreement: Agreement
-  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
+  def submitAgreement(agreement: Agreement, stamp: Stamp)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Agreement] =
     updateAgreement(
       agreement.id,
       UpdateAgreementSeed(
@@ -95,12 +96,13 @@ trait SpecHelper {
         suspendedByConsumer = agreement.suspendedByConsumer,
         suspendedByProducer = agreement.suspendedByProducer,
         suspendedByPlatform = agreement.suspendedByPlatform,
-        stamps = agreement.stamps.copy(submission = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
+        stamps = agreement.stamps.copy(submission = stamp.some)
       )
     )
 
   def activateAgreement(
     agreement: Agreement,
+    stamp: Stamp,
     suspendedByConsumer: Option[Boolean] = None,
     suspendedByProducer: Option[Boolean] = None,
     suspendedByPlatform: Option[Boolean] = None
@@ -114,12 +116,13 @@ trait SpecHelper {
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
       suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
-      stamps = agreement.stamps.copy(activation = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
+      stamps = agreement.stamps.copy(activation = stamp.some)
     )
   )
 
   def suspendAgreement(
     agreement: Agreement,
+    stamp: Stamp,
     suspendedByConsumer: Option[Boolean] = None,
     suspendedByProducer: Option[Boolean] = None,
     suspendedByPlatform: Option[Boolean] = None
@@ -133,7 +136,7 @@ trait SpecHelper {
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
       suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
-      stamps = agreement.stamps.copy(suspension = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
+      stamps = agreement.stamps.copy(suspension = stamp.some)
     )
   )
 

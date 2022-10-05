@@ -25,6 +25,7 @@ object protobufUtils {
       declaredAttributes  <- protobufAgreement.declaredAttributes.traverse(deserializeDeclaredAttribute)
       consumerDocuments   <- protobufAgreement.consumerDocuments.traverse(toPersistentDocument).toTry
       contract            <- protobufAgreement.contract.traverse(toPersistentDocument).toTry
+      stamps              <- toPersistentStamps(protobufAgreement.stamps).toTry
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
@@ -42,7 +43,8 @@ object protobufUtils {
       createdAt = createdAt,
       updatedAt = updatedAt,
       consumerNotes = protobufAgreement.consumerNotes,
-      contract = contract
+      contract = contract,
+      stamps = stamps
     )
     agreement.toEither
   }
@@ -60,6 +62,28 @@ object protobufUtils {
       createdAt = createdAt
     )
     document.toEither
+  }
+
+  def toPersistentStamps(stampsV1: StampsV1): Either[Throwable, PersistentStamps] =
+    for {
+      subscription <- stampsV1.subscription.traverse(toPersistentStamp)
+      activation   <- stampsV1.activation.traverse(toPersistentStamp)
+      rejection    <- stampsV1.rejection.traverse(toPersistentStamp)
+      suspension   <- stampsV1.suspension.traverse(toPersistentStamp)
+    } yield PersistentStamps(
+      subscription = subscription,
+      activation = activation,
+      rejection = rejection,
+      suspension = suspension
+    )
+
+  def toPersistentStamp(stampV1: StampV1): Either[Throwable, PersistentStamp] = {
+    val stamp: Try[PersistentStamp] = for {
+      who  <- stampV1.who.toUUID
+      when <- stampV1.when.toOffsetDateTime
+    } yield PersistentStamp(who = who, when = when)
+
+    stamp.toEither
   }
 
   def toProtobufAgreement(persistentAgreement: PersistentAgreement): AgreementV1 =
@@ -80,7 +104,17 @@ object protobufUtils {
       createdAt = persistentAgreement.createdAt.toMillis,
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
       consumerNotes = persistentAgreement.consumerNotes,
-      contract = persistentAgreement.contract.map(toProtobufDocument)
+      contract = persistentAgreement.contract.map(toProtobufDocument),
+      stamps = toProtobufStamps(persistentAgreement.stamps)
+    )
+
+  def toProtobufStamp(stamp: PersistentStamp): StampV1 = StampV1(who = stamp.who.toString, when = stamp.when.toMillis)
+  def toProtobufStamps(stamps: PersistentStamps): StampsV1 =
+    StampsV1(
+      subscription = stamps.subscription.map(toProtobufStamp),
+      activation = stamps.activation.map(toProtobufStamp),
+      rejection = stamps.rejection.map(toProtobufStamp),
+      suspension = stamps.suspension.map(toProtobufStamp)
     )
 
   def toProtobufDocument(persistentDocument: PersistentAgreementDocument): AgreementDocumentV1 =

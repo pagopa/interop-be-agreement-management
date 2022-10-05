@@ -386,7 +386,6 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  // TODO introduce proper uuid handling (e.g.: Twitter snowflake)
   override def upgradeAgreementById(agreementId: String, seed: UpgradeAgreementSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
@@ -408,7 +407,8 @@ final case class AgreementApiServiceImpl(
           verifiedAttributes = oldAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
           suspendedByConsumer = oldAgreement.suspendedByConsumer,
           suspendedByProducer = oldAgreement.suspendedByProducer,
-          suspendedByPlatform = oldAgreement.suspendedByPlatform
+          suspendedByPlatform = oldAgreement.suspendedByPlatform,
+          stamps = PersistentStamps.toAPI(oldAgreement.stamps)
         ),
         dateTimeSupplier
       )

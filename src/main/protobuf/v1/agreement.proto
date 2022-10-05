@@ -25,6 +25,7 @@ message AgreementV1 {
   repeated AgreementDocumentV1 consumerDocuments = 15;
   optional string consumerNotes = 16;
   optional AgreementDocumentV1 contract = 17;
+  required StampsV1 stamps = 18;
 }
 
 message VerifiedAttributeV1 {
@@ -56,4 +57,16 @@ enum AgreementStateV1 {
   ARCHIVED = 4;
   DRAFT = 5;
   MISSING_CERTIFIED_ATTRIBUTES = 6;
+}
+
+message StampV1 {
+  required string who = 1;
+  required int64 when = 2;
+}
+
+message StampsV1 {
+  optional StampV1 subscription = 18;
+  optional StampV1 activation = 19;
+  optional StampV1 rejection = 20;
+  optional StampV1 suspension = 21;
 }

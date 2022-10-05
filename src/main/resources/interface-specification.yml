@@ -499,11 +499,14 @@ components:
           type: boolean
         consumerNotes:
           type: string
+        stamps:
+          $ref: '#/components/schemas/Stamps'
       required:
         - state
         - verifiedAttributes
         - certifiedAttributes
         - declaredAttributes
+        - stamps
     UpgradeAgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -513,6 +516,29 @@ components:
           format: uuid
       required:
         - descriptorId
+    Stamp:
+      type: object
+      properties:
+        who:
+          type: string
+          format: uuid
+        when:
+          type: string
+          format: date-time
+      required:
+        - who
+        - when
+    Stamps:
+      type: object
+      properties:
+        subscription:
+          $ref: '#/components/schemas/Stamp'
+        activation:
+          $ref: '#/components/schemas/Stamp'
+        rejection:
+          $ref: '#/components/schemas/Stamp'
+        suspension:
+          $ref: '#/components/schemas/Stamp'
     Agreement:
       type: object
       properties:
@@ -568,6 +594,8 @@ components:
           type: string
         contract:
           $ref: '#/components/schemas/Document'
+        stamps:
+          $ref: '#/components/schemas/Stamps'
       required:
         - id
         - eserviceId
@@ -580,6 +608,7 @@ components:
         - declaredAttributes
         - consumerDocuments
         - createdAt
+        - stamps
       description: business representation of an agreement
     Agreements:
       type: array

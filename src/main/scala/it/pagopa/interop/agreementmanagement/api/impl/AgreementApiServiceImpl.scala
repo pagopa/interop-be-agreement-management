@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Directives.{complete, onComplete}
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.pattern.StatusReply
 import akka.util.Timeout
-import cats.implicits.toTraverseOps
+import cats.implicits._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
@@ -386,7 +386,6 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  // TODO introduce proper uuid handling (e.g.: Twitter snowflake)
   override def upgradeAgreementById(agreementId: String, seed: UpgradeAgreementSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
@@ -408,7 +407,8 @@ final case class AgreementApiServiceImpl(
           verifiedAttributes = oldAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
           suspendedByConsumer = oldAgreement.suspendedByConsumer,
           suspendedByProducer = oldAgreement.suspendedByProducer,
-          suspendedByPlatform = oldAgreement.suspendedByPlatform
+          suspendedByPlatform = oldAgreement.suspendedByPlatform,
+          stamps = PersistentStamps.toAPI(oldAgreement.stamps).copy(archiving = seed.stamp.some)
         ),
         dateTimeSupplier
       )

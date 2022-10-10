@@ -26,6 +26,7 @@ message AgreementV1 {
   optional string consumerNotes = 16;
   optional AgreementDocumentV1 contract = 17;
   optional StampsV1 stamps = 18;
+  optional string rejectionReason = 19;
 }
 
 message VerifiedAttributeV1 {
@@ -57,6 +58,7 @@ enum AgreementStateV1 {
   ARCHIVED = 4;
   DRAFT = 5;
   MISSING_CERTIFIED_ATTRIBUTES = 6;
+  REJECTED = 7;
 }
 
 message StampV1 {

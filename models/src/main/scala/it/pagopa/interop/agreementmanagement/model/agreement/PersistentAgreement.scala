@@ -21,5 +21,6 @@ final case class PersistentAgreement(
   updatedAt: Option[OffsetDateTime],
   consumerNotes: Option[String],
   contract: Option[PersistentAgreementDocument],
-  stamps: PersistentStamps
+  stamps: PersistentStamps,
+  rejectionReason: Option[String]
 )

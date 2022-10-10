@@ -46,6 +46,7 @@ object ItSpecData {
     updatedAt = Some(timestamp),
     consumerNotes = None,
     contract = None,
-    stamps = PersistentStamps()
+    stamps = PersistentStamps(),
+    rejectionReason = None
   )
 }

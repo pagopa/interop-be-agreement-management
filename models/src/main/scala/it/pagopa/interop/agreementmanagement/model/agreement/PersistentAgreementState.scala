@@ -8,3 +8,4 @@ case object Active                     extends PersistentAgreementState
 case object Suspended                  extends PersistentAgreementState
 case object Archived                   extends PersistentAgreementState
 case object MissingCertifiedAttributes extends PersistentAgreementState
+case object Rejected                   extends PersistentAgreementState

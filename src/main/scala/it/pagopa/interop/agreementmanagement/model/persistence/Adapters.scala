@@ -31,7 +31,8 @@ object Adapters {
       updatedAt = None,
       consumerNotes = agreement.consumerNotes,
       contract = None,
-      stamps = PersistentStamps()
+      stamps = PersistentStamps(),
+      rejectionReason = None
     )
 
     def update(
@@ -49,7 +50,8 @@ object Adapters {
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
         updatedAt = Some(dateTimeSupplier.get()),
         consumerNotes = updateAgreementSeed.consumerNotes,
-        stamps = PersistentStamps.fromAPI(updateAgreementSeed.stamps)
+        stamps = PersistentStamps.fromAPI(updateAgreementSeed.stamps),
+        rejectionReason = updateAgreementSeed.rejectionReason
       )
 
     def upgrade(
@@ -74,7 +76,8 @@ object Adapters {
         updatedAt = None,
         consumerNotes = oldAgreement.consumerNotes,
         contract = oldAgreement.contract,
-        stamps = oldAgreement.stamps.copy(upgrade = PersistentStamp.fromAPI(seed.stamp).some)
+        stamps = oldAgreement.stamps.copy(upgrade = PersistentStamp.fromAPI(seed.stamp).some),
+        rejectionReason = None
       )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
@@ -95,7 +98,8 @@ object Adapters {
       updatedAt = persistentAgreement.updatedAt,
       consumerNotes = persistentAgreement.consumerNotes,
       contract = persistentAgreement.contract.map(PersistentAgreementDocument.toAPI),
-      stamps = PersistentStamps.toAPI(persistentAgreement.stamps)
+      stamps = PersistentStamps.toAPI(persistentAgreement.stamps),
+      rejectionReason = persistentAgreement.rejectionReason // TODO Is there any reason why this was not set here?
     )
   }
 
@@ -107,6 +111,7 @@ object Adapters {
       case Suspended                  => AgreementState.SUSPENDED
       case Archived                   => AgreementState.ARCHIVED
       case MissingCertifiedAttributes => AgreementState.MISSING_CERTIFIED_ATTRIBUTES
+      case Rejected                   => AgreementState.REJECTED
     }
   }
 
@@ -118,6 +123,7 @@ object Adapters {
       case AgreementState.SUSPENDED                    => Suspended
       case AgreementState.ARCHIVED                     => Archived
       case AgreementState.MISSING_CERTIFIED_ATTRIBUTES => MissingCertifiedAttributes
+      case AgreementState.REJECTED                     => Rejected
     }
   }
 

@@ -156,6 +156,7 @@ object PersistentSerializationSpec {
     consumerNotes                  <- Gen.option(stringGen)
     (contract, contractV1)         <- Gen.option(persistentDocumentGen).map(_.separate)
     (stamps, stampsV1)             <- stampsGen
+    rejectionReason                <- Gen.option(stringGen)
   } yield (
     PersistentAgreement(
       id = id,
@@ -175,7 +176,8 @@ object PersistentSerializationSpec {
       updatedAt = updatedAt,
       consumerNotes = consumerNotes,
       contract = contract,
-      stamps = stamps
+      stamps = stamps,
+      rejectionReason = rejectionReason
     ),
     AgreementV1(
       id = id.toString(),
@@ -195,7 +197,8 @@ object PersistentSerializationSpec {
       updatedAt = updatedAtV1,
       consumerNotes = consumerNotes,
       contract = contractV1,
-      stamps = stampsV1.some
+      stamps = stampsV1.some,
+      rejectionReason = rejectionReason
     )
   )
 

@@ -429,6 +429,7 @@ components:
         - SUSPENDED
         - ARCHIVED
         - MISSING_CERTIFIED_ATTRIBUTES
+        - REJECTED
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -498,6 +499,8 @@ components:
         suspendedByPlatform:
           type: boolean
         consumerNotes:
+          type: string
+        rejectionReason:
           type: string
         stamps:
           $ref: '#/components/schemas/Stamps'
@@ -603,6 +606,9 @@ components:
           $ref: '#/components/schemas/Document'
         stamps:
           $ref: '#/components/schemas/Stamps'
+          type: string
+        rejectionReason:
+          type: string
       required:
         - id
         - eserviceId

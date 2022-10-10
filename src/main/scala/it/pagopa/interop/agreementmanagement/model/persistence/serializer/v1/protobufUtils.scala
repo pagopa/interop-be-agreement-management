@@ -44,7 +44,8 @@ object protobufUtils {
       updatedAt = updatedAt,
       consumerNotes = protobufAgreement.consumerNotes,
       contract = contract,
-      stamps = stamps.getOrElse(PersistentStamps())
+      stamps = stamps.getOrElse(PersistentStamps()),
+      rejectionReason = protobufAgreement.rejectionReason
     )
     agreement.toEither
   }
@@ -108,7 +109,8 @@ object protobufUtils {
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
       consumerNotes = persistentAgreement.consumerNotes,
       contract = persistentAgreement.contract.map(toProtobufDocument),
-      stamps = toProtobufStamps(persistentAgreement.stamps).some
+      stamps = toProtobufStamps(persistentAgreement.stamps).some,
+      rejectionReason = persistentAgreement.rejectionReason
     )
 
   def toProtobufStamp(stamp: PersistentStamp): StampV1 = StampV1(who = stamp.who.toString, when = stamp.when.toMillis)
@@ -158,6 +160,7 @@ object protobufUtils {
       case Suspended                  => AgreementStateV1.SUSPENDED
       case Archived                   => AgreementStateV1.ARCHIVED
       case MissingCertifiedAttributes => AgreementStateV1.MISSING_CERTIFIED_ATTRIBUTES
+      case Rejected                   => AgreementStateV1.REJECTED
     }
 
   def fromProtobufAgreementState(status: AgreementStateV1): Try[PersistentAgreementState] =
@@ -168,6 +171,7 @@ object protobufUtils {
       case AgreementStateV1.SUSPENDED                    => Success(Suspended)
       case AgreementStateV1.ARCHIVED                     => Success(Archived)
       case AgreementStateV1.MISSING_CERTIFIED_ATTRIBUTES => Success(MissingCertifiedAttributes)
+      case AgreementStateV1.REJECTED                     => Success(Rejected)
       case AgreementStateV1.Unrecognized(value)          =>
         Failure(new RuntimeException(s"Protobuf AgreementStatus deserialization failed. Unrecognized value: $value"))
     }

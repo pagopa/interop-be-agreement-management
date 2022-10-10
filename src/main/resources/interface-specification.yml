@@ -498,12 +498,12 @@ components:
           type: boolean
         suspendedByPlatform:
           type: boolean
+        stamps:
+          $ref: '#/components/schemas/Stamps'
         consumerNotes:
           type: string
         rejectionReason:
           type: string
-        stamps:
-          $ref: '#/components/schemas/Stamps'
       required:
         - state
         - verifiedAttributes

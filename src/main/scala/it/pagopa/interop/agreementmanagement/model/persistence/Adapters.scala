@@ -28,7 +28,8 @@ object Adapters {
       consumerDocuments = Nil,
       createdAt = dateTimeSupplier.get(),
       updatedAt = None,
-      consumerNotes = agreement.consumerNotes
+      consumerNotes = agreement.consumerNotes,
+      rejectionReason = None
     )
 
     def update(
@@ -45,7 +46,8 @@ object Adapters {
         suspendedByProducer = updateAgreementSeed.suspendedByProducer,
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
         updatedAt = Some(dateTimeSupplier.get()),
-        consumerNotes = updateAgreementSeed.consumerNotes
+        consumerNotes = updateAgreementSeed.consumerNotes,
+        rejectionReason = updateAgreementSeed.rejectionReason
       )
 
     def upgrade(
@@ -68,7 +70,8 @@ object Adapters {
         consumerDocuments = oldAgreement.consumerDocuments,
         createdAt = dateTimeSupplier.get(),
         updatedAt = None,
-        consumerNotes = oldAgreement.consumerNotes
+        consumerNotes = oldAgreement.consumerNotes,
+        rejectionReason = None
       )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
@@ -99,6 +102,7 @@ object Adapters {
       case Suspended                  => AgreementState.SUSPENDED
       case Archived                   => AgreementState.ARCHIVED
       case MissingCertifiedAttributes => AgreementState.MISSING_CERTIFIED_ATTRIBUTES
+      case Rejected                   => AgreementState.REJECTED
     }
   }
 
@@ -110,6 +114,7 @@ object Adapters {
       case AgreementState.SUSPENDED                    => Suspended
       case AgreementState.ARCHIVED                     => Archived
       case AgreementState.MISSING_CERTIFIED_ATTRIBUTES => MissingCertifiedAttributes
+      case AgreementState.REJECTED                     => Rejected
     }
   }
 

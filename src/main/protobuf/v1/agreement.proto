@@ -24,6 +24,7 @@ message AgreementV1 {
   repeated DeclaredAttributeV1 declaredAttributes = 14;
   repeated AgreementDocumentV1 consumerDocuments = 15;
   optional string consumerNotes = 16;
+  optional string rejectionReason = 17;
 }
 
 message VerifiedAttributeV1 {
@@ -55,4 +56,5 @@ enum AgreementStateV1 {
   ARCHIVED = 4;
   DRAFT = 5;
   MISSING_CERTIFIED_ATTRIBUTES = 6;
+  REJECTED = 7;
 }

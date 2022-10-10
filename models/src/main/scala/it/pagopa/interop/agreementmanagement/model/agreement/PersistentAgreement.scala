@@ -19,5 +19,6 @@ final case class PersistentAgreement(
   consumerDocuments: Seq[PersistentAgreementDocument],
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime],
-  consumerNotes: Option[String]
+  consumerNotes: Option[String],
+  rejectionReason: Option[String]
 )

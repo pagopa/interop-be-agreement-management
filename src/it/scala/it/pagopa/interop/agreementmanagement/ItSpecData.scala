@@ -43,6 +43,7 @@ object ItSpecData {
     consumerDocuments = Seq(persistentConsumerDocument),
     createdAt = timestamp,
     updatedAt = Some(timestamp),
-    consumerNotes = None
+    consumerNotes = None,
+    rejectionReason = None
   )
 }

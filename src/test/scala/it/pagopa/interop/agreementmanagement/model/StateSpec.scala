@@ -142,7 +142,8 @@ class StateSpec extends FunSuite {
     consumerDocuments = documentIds.map(persistentDocument),
     createdAt = OffsetDateTime.now(),
     updatedAt = None,
-    consumerNotes = "these are consumer notes".some
+    consumerNotes = "these are consumer notes".some,
+    rejectionReason = None
   )
 
 }

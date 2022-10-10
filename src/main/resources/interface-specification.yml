@@ -263,6 +263,7 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         description: A Agreement Contract seed
         content:

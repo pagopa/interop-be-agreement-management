@@ -379,6 +379,7 @@ components:
         - SUSPENDED
         - ARCHIVED
         - MISSING_CERTIFIED_ATTRIBUTES
+        - REJECTED
     AgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -449,6 +450,8 @@ components:
           type: boolean
         consumerNotes:
           type: string
+        rejectionReason:
+          type: string
       required:
         - state
         - verifiedAttributes
@@ -515,7 +518,9 @@ components:
           type: string
           format: date-time
         consumerNotes:
-          type: String
+          type: string
+        rejectionReason:
+          type: string
       required:
         - id
         - eserviceId

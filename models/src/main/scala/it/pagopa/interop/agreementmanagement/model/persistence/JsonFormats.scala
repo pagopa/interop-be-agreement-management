@@ -15,6 +15,7 @@ object JsonFormats {
         case JsString("Suspended")                  => Suspended
         case JsString("Archived")                   => Archived
         case JsString("MissingCertifiedAttributes") => MissingCertifiedAttributes
+        case JsString("Rejected")                   => Rejected
         case _ => deserializationError("Unable to deserialize json as a PersistentPurposeVersionState")
       }
 
@@ -25,6 +26,7 @@ object JsonFormats {
         case Suspended                  => JsString("Suspended")
         case Archived                   => JsString("Archived")
         case MissingCertifiedAttributes => JsString("MissingCertifiedAttributes")
+        case Rejected                   => JsString("Rejected")
       }
     }
 
@@ -32,7 +34,7 @@ object JsonFormats {
   implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute]  = jsonFormat1(PersistentDeclaredAttribute.apply)
   implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat1(PersistentVerifiedAttribute.apply)
   implicit val padFormat: RootJsonFormat[PersistentAgreementDocument]  = jsonFormat6(PersistentAgreementDocument.apply)
-  implicit val paFormat: RootJsonFormat[PersistentAgreement]           = jsonFormat16(PersistentAgreement.apply)
+  implicit val paFormat: RootJsonFormat[PersistentAgreement]           = jsonFormat17(PersistentAgreement.apply)
   implicit val aadFormat: RootJsonFormat[AgreementAdded]               = jsonFormat1(AgreementAdded.apply)
   implicit val aUpFormat: RootJsonFormat[AgreementUpdated]             = jsonFormat1(AgreementUpdated)
   implicit val aAcFormat: RootJsonFormat[AgreementActivated]           = jsonFormat1(AgreementActivated)

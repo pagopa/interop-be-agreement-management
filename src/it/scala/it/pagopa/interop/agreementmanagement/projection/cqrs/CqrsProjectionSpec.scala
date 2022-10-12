@@ -32,10 +32,22 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       persisted shouldBe Seq.empty
     }
 
+    "succeed for event AgreementContractAdded" in {
+      val agreement = createAgreement(persistentAgreement.copy(state = Active))
+
+      val document = persistentDocument
+
+      val createdDoc = addContract(agreement.id, document)
+      val expected   = agreement.copy(contract = Some(createdDoc))
+      val persisted  = findOne[PersistentAgreement](expected.id.toString).futureValue
+
+      compareAgreements(expected, persisted)
+    }
+
     "succeed for event AgreementConsumerDocumentAdded" in {
       val agreement = createAgreement(persistentAgreement.copy(state = Active))
 
-      val document = persistentConsumerDocument
+      val document = persistentDocument
 
       val createdDoc = addConsumerDocument(agreement.id, document)
       val expected   = agreement.copy(consumerDocuments = agreement.consumerDocuments :+ createdDoc)
@@ -45,9 +57,9 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
     }
 
     "succeed for event AgreementConsumerDocumentRemoved" in {
-      val document          = persistentConsumerDocument
+      val document          = persistentDocument
       val existingAgreement =
-        persistentAgreement.copy(state = Active, consumerDocuments = Seq(persistentConsumerDocument, document))
+        persistentAgreement.copy(state = Active, consumerDocuments = Seq(persistentDocument, document))
       val agreement         = createAgreement(existingAgreement)
 
       removeConsumerDocument(agreement.id, document.id)

@@ -9,11 +9,12 @@ import akka.persistence.typed.scaladsl.{Effect, EffectBuilder, EventSourcedBehav
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors.{
   AgreementConflict,
   AgreementDocumentNotFound,
-  AgreementNotFound
+  AgreementNotFound,
+  AgreementDocumentAlreadyExists
 }
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.commons.utils.errors.ComponentError
-
+import cats.implicits._
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -55,6 +56,18 @@ object AgreementPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(()))
           )
           .getOrElse(handleFailure(AgreementNotFound(agreementId))(replyTo))
+
+      case AddAgreementContract(agreementId, contract, replyTo) =>
+        val addedDocument: Either[ComponentError, PersistentAgreementDocument] =
+          for {
+            agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
+            result    <- agreement.contract.toLeft(contract).leftMap(_ => AgreementDocumentAlreadyExists(agreementId))
+          } yield result
+
+        addedDocument.fold(
+          handleFailure(_)(replyTo),
+          persistStateAndReply(_, AgreementContractAdded(agreementId, _))(replyTo)
+        )
 
       case AddAgreementConsumerDocument(agreementId, document, replyTo) =>
         state.agreements
@@ -150,11 +163,12 @@ object AgreementPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case AgreementAdded(agreement)                                 => state.add(agreement)
-      case VerifiedAttributeUpdated(agreement)                       => state.updateAgreement(agreement)
-      case AgreementDeleted(agreementId)                             => state.delete(agreementId)
-      case AgreementUpdated(agreement)                               => state.updateAgreement(agreement)
-      case AgreementConsumerDocumentAdded(agreementId, document)     =>
+      case AgreementAdded(agreement)                             => state.add(agreement)
+      case VerifiedAttributeUpdated(agreement)                   => state.updateAgreement(agreement)
+      case AgreementDeleted(agreementId)                         => state.delete(agreementId)
+      case AgreementUpdated(agreement)                           => state.updateAgreement(agreement)
+      case AgreementContractAdded(agreementId, contract)         => state.addAgreementContract(agreementId, contract)
+      case AgreementConsumerDocumentAdded(agreementId, document) =>
         state.addAgreementConsumerDocument(agreementId, document)
       case AgreementConsumerDocumentRemoved(agreementId, documentId) =>
         state.removeAgreementConsumerDocument(agreementId, documentId)

@@ -17,6 +17,7 @@ import it.pagopa.interop.agreementmanagement.server.Controller
 import it.pagopa.interop.agreementmanagement.server.impl.Dependencies
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -112,7 +113,8 @@ class AgreementApiServiceSpec
 
     "update an agreement properly" in {
       // given a pending agreement
-      val agreementId = UUID.randomUUID()
+      val agreementId     = UUID.randomUUID()
+      val submissionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
 
       val agreementSeed = AgreementSeed(
         eserviceId = UUID.randomUUID(),
@@ -130,11 +132,83 @@ class AgreementApiServiceSpec
       bodyResponse.verifiedAttributes shouldBe empty
       bodyResponse.state shouldBe AgreementState.DRAFT
 
-      val updatedAgreementResponse = submitAgreement(bodyResponse)
+      val updatedAgreementResponse = submitAgreement(bodyResponse, submissionStamp)
 
       val updatedAgreement = Await.result(updatedAgreementResponse, Duration.Inf)
 
       updatedAgreement.state shouldBe AgreementState.PENDING
+      updatedAgreement.stamps.submission shouldBe Some(submissionStamp)
+    }
+
+    "add a contract to an agreement" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId   = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
+      )
+
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      val response: Future[Document] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        document <- addContract[Document](agreementId, documentId, documentSeed)
+      } yield document
+
+      val bodyResponse: Document = response.futureValue
+
+      bodyResponse.id shouldBe documentId
+      bodyResponse.name shouldBe documentSeed.name
+      bodyResponse.contentType shouldBe documentSeed.contentType
+      bodyResponse.path shouldBe documentSeed.path
+      bodyResponse.createdAt shouldBe timestamp
+    }
+
+    "fail trying to add a contract to an agreement if a contract already exists" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId1  = UUID.randomUUID()
+      val documentId2  = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
+      )
+
+      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      val response: Future[Problem] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        _        <- addContract[Document](agreementId, documentId1, documentSeed)
+        document <- addContract[Problem](agreementId, documentId2, documentSeed)
+      } yield document
+
+      response.futureValue shouldBe Problem(
+        "about:blank",
+        409,
+        "The request could not be processed because of conflict in the request, such as an edit conflict.",
+        None,
+        List(ProblemError("004-0006", s"Agreement document for ${agreementId.toString} already exists"))
+      )
+
     }
 
     "add a consumer document to an agreement" in {
@@ -206,7 +280,10 @@ class AgreementApiServiceSpec
 
   "upgrade an agreement properly" in {
     // given a pending agreement
-    val agreementId = UUID.randomUUID()
+    val agreementId     = UUID.randomUUID()
+    val submissionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val activationStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val upgradeStamp    = Stamp(UUID.randomUUID(), OffsetDateTime.now())
 
     val agreementSeed        = AgreementSeed(
       eserviceId = UUID.randomUUID(),
@@ -217,11 +294,12 @@ class AgreementApiServiceSpec
       certifiedAttributes = Seq.empty,
       declaredAttributes = Seq.empty
     )
-    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID())
+    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID(), upgradeStamp)
 
     val response: Future[Agreement] = for {
-      draft  <- createAgreement(agreementSeed, agreementId)
-      active <- activateAgreement(draft)
+      draft     <- createAgreement(agreementSeed, agreementId)
+      submitted <- submitAgreement(draft, submissionStamp)
+      active    <- activateAgreement(submitted, activationStamp)
     } yield active
 
     val bodyResponse: Agreement = Await.result(response, Duration.Inf)
@@ -237,11 +315,19 @@ class AgreementApiServiceSpec
     // when we retrieve the original agreement. it should have its state changed to "inactive"
     val archivedAgreement = getAgreement(agreementId.toString).futureValue
     archivedAgreement.state shouldBe AgreementState.ARCHIVED
-
+    archivedAgreement.stamps.submission shouldBe Some(submissionStamp)
+    archivedAgreement.stamps.activation shouldBe Some(activationStamp)
+    archivedAgreement.stamps.archiving shouldBe Some(upgradeStamp)
+    archivedAgreement.stamps.upgrade shouldBe None
     // when we retrieve the updated agreement, it should have its state changed to "active"
-    val activeAgreement = getAgreement(upgradedAgreementId.toString).futureValue
+    val activeAgreement   = getAgreement(upgradedAgreementId.toString).futureValue
 
     activeAgreement.state shouldBe AgreementState.ACTIVE
+    activeAgreement.stamps.submission shouldBe Some(submissionStamp)
+    activeAgreement.stamps.activation shouldBe Some(activationStamp)
+    activeAgreement.stamps.upgrade shouldBe Some(upgradeStamp)
+    activeAgreement.stamps.archiving shouldBe None
+
   }
 
 }

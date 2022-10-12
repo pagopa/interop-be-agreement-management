@@ -55,6 +55,9 @@ package object agreementmanagement extends MockFactory {
   implicit def fromEntityUnmarshallerDocument: FromEntityUnmarshaller[Document] =
     sprayJsonUnmarshaller[Document]
 
+  implicit def fromEntityUnmarshallerProblem: FromEntityUnmarshaller[Problem] =
+    sprayJsonUnmarshaller[Problem]
+
   def makeRequest(data: Source[ByteString, Any], path: String, verb: HttpMethod)(implicit
     actorSystem: ActorSystem
   ): HttpResponse = {

@@ -2,11 +2,11 @@ package it.pagopa.interop.agreementmanagement
 
 import akka.actor
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, MessageEntity}
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, MessageEntity}
+import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import it.pagopa.interop.agreementmanagement.model.AgreementState.{ACTIVE, PENDING, SUSPENDED}
 import it.pagopa.interop.agreementmanagement.model._
-
+import cats.implicits._
 import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.duration.Duration
@@ -82,9 +82,10 @@ trait SpecHelper {
       .to[Agreement]
   } yield updated
 
-  def submitAgreement(
-    agreement: Agreement
-  )(implicit ec: ExecutionContext, actorSystem: actor.ActorSystem): Future[Agreement] =
+  def submitAgreement(agreement: Agreement, stamp: Stamp)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem
+  ): Future[Agreement] =
     updateAgreement(
       agreement.id,
       UpdateAgreementSeed(
@@ -94,12 +95,14 @@ trait SpecHelper {
         verifiedAttributes = agreement.verifiedAttributes,
         suspendedByConsumer = agreement.suspendedByConsumer,
         suspendedByProducer = agreement.suspendedByProducer,
-        suspendedByPlatform = agreement.suspendedByPlatform
+        suspendedByPlatform = agreement.suspendedByPlatform,
+        stamps = agreement.stamps.copy(submission = stamp.some)
       )
     )
 
   def activateAgreement(
     agreement: Agreement,
+    stamp: Stamp,
     suspendedByConsumer: Option[Boolean] = None,
     suspendedByProducer: Option[Boolean] = None,
     suspendedByPlatform: Option[Boolean] = None
@@ -112,12 +115,14 @@ trait SpecHelper {
       verifiedAttributes = agreement.verifiedAttributes,
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
-      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
+      stamps = agreement.stamps.copy(activation = stamp.some)
     )
   )
 
   def suspendAgreement(
     agreement: Agreement,
+    stamp: Stamp,
     suspendedByConsumer: Option[Boolean] = None,
     suspendedByProducer: Option[Boolean] = None,
     suspendedByPlatform: Option[Boolean] = None
@@ -130,7 +135,8 @@ trait SpecHelper {
       verifiedAttributes = agreement.verifiedAttributes,
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
-      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform
+      suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
+      stamps = agreement.stamps.copy(suspension = stamp.some)
     )
   )
 
@@ -144,6 +150,18 @@ trait SpecHelper {
     _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
+
+  def addContract[T](agreementId: UUID, contractId: UUID, seed: DocumentSeed)(implicit
+    ec: ExecutionContext,
+    actorSystem: actor.ActorSystem,
+    unmarshal: Unmarshaller[HttpResponse, T]
+  ): Future[T] = for {
+    data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+    _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
+    _ = (() => mockUUIDSupplier.get()).expects().returning(contractId).once()
+    document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/contract", HttpMethods.POST))
+      .to[T]
+  } yield document
 
   def addConsumerDocument(agreementId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
     ec: ExecutionContext,
@@ -218,7 +236,8 @@ trait SpecHelper {
           verifiedAttributes = draft1.verifiedAttributes,
           suspendedByConsumer = None,
           suspendedByProducer = None,
-          suspendedByPlatform = None
+          suspendedByPlatform = None,
+          stamps = Stamps(activation = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
       draft2 <- createAgreement(agreementSeed3, AgreementThree.agreementId)
@@ -231,7 +250,8 @@ trait SpecHelper {
           verifiedAttributes = draft2.verifiedAttributes,
           suspendedByConsumer = None,
           suspendedByProducer = None,
-          suspendedByPlatform = None
+          suspendedByPlatform = None,
+          stamps = Stamps(suspension = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
       draft4 <- createAgreement(agreementSeed4, AgreementFour.agreementId)
@@ -244,7 +264,8 @@ trait SpecHelper {
           verifiedAttributes = Seq(VerifiedAttribute(attributeId)),
           suspendedByConsumer = None,
           suspendedByProducer = None,
-          suspendedByPlatform = None
+          suspendedByPlatform = None,
+          stamps = Stamps(submission = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
     } yield ()

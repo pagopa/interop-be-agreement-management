@@ -24,7 +24,9 @@ message AgreementV1 {
   repeated DeclaredAttributeV1 declaredAttributes = 14;
   repeated AgreementDocumentV1 consumerDocuments = 15;
   optional string consumerNotes = 16;
-  optional string rejectionReason = 17;
+  optional AgreementDocumentV1 contract = 17;
+  optional StampsV1 stamps = 18;
+  optional string rejectionReason = 19;
 }
 
 message VerifiedAttributeV1 {
@@ -57,4 +59,18 @@ enum AgreementStateV1 {
   DRAFT = 5;
   MISSING_CERTIFIED_ATTRIBUTES = 6;
   REJECTED = 7;
+}
+
+message StampV1 {
+  required string who = 1;
+  required int64 when = 2;
+}
+
+message StampsV1 {
+  optional StampV1 submission = 1;
+  optional StampV1 activation = 2;
+  optional StampV1 rejection = 3;
+  optional StampV1 suspension = 4;
+  optional StampV1 upgrade = 5;
+  optional StampV1 archiving = 6;
 }

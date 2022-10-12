@@ -120,6 +120,12 @@ trait ItSpecHelper
   def deletedAgreement(agreementId: String): Unit =
     commander(agreementId).ask(ref => DeleteAgreement(agreementId, ref)).futureValue.getValue
 
+  def addContract(agreementId: UUID, contract: PersistentAgreementDocument): PersistentAgreementDocument =
+    commander(agreementId)
+      .ask(ref => AddAgreementContract(agreementId.toString, contract, ref))
+      .futureValue
+      .getValue
+
   def addConsumerDocument(agreementId: UUID, document: PersistentAgreementDocument): PersistentAgreementDocument =
     commander(agreementId)
       .ask(ref => AddAgreementConsumerDocument(agreementId.toString, document, ref))

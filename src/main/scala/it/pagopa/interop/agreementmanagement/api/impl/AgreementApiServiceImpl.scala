@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Directives.{complete, onComplete}
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.pattern.StatusReply
 import akka.util.Timeout
-import cats.implicits.toTraverseOps
+import cats.implicits._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.agreementmanagement.api.AgreementApiService
 import it.pagopa.interop.agreementmanagement.error.AgreementManagementErrors._
@@ -269,6 +269,40 @@ final case class AgreementApiServiceImpl(
         ref
       )
 
+  override def addAgreementContract(agreementId: String, documentSeed: DocumentSeed)(implicit
+    toEntityMarshallerDocument: ToEntityMarshaller[Document],
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE) {
+
+    val operationLabel: String = s"Adding agreement $agreementId contract"
+
+    logger.info(operationLabel)
+
+    val result: Future[PersistentAgreementDocument] =
+      commander(agreementId).askWithStatus(ref =>
+        AddAgreementContract(
+          agreementId,
+          PersistentAgreementDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
+          ref
+        )
+      )
+
+    onComplete(result) {
+      case Success(document)                           =>
+        addAgreementContract200(PersistentAgreementDocument.toAPI(document))
+      case Failure(ex: AgreementNotFound)              =>
+        logger.error(s"Error while $operationLabel", ex)
+        addAgreementContract404(problemOf(StatusCodes.NotFound, ex))
+      case Failure(ex: AgreementDocumentAlreadyExists) =>
+        logger.error(s"Error while $operationLabel", ex)
+        addAgreementContract409(problemOf(StatusCodes.Conflict, ex))
+      case Failure(ex)                                 =>
+        logger.error(s"Error while $operationLabel", ex)
+        internalServerError(operationLabel, ex.getMessage)
+    }
+  }
+
   override def addAgreementConsumerDocument(agreementId: String, documentSeed: DocumentSeed)(implicit
     toEntityMarshallerAgreement: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
@@ -352,7 +386,6 @@ final case class AgreementApiServiceImpl(
     }
   }
 
-  // TODO introduce proper uuid handling (e.g.: Twitter snowflake)
   override def upgradeAgreementById(agreementId: String, seed: UpgradeAgreementSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
@@ -374,7 +407,8 @@ final case class AgreementApiServiceImpl(
           verifiedAttributes = oldAgreement.verifiedAttributes.map(PersistentVerifiedAttribute.toAPI),
           suspendedByConsumer = oldAgreement.suspendedByConsumer,
           suspendedByProducer = oldAgreement.suspendedByProducer,
-          suspendedByPlatform = oldAgreement.suspendedByPlatform
+          suspendedByPlatform = oldAgreement.suspendedByPlatform,
+          stamps = PersistentStamps.toAPI(oldAgreement.stamps).copy(archiving = seed.stamp.some)
         ),
         dateTimeSupplier
       )

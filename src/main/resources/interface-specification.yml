@@ -20,11 +20,11 @@ tags:
       description: Find out more
       url: 'http://swagger.io'
 paths:
-  '/agreements/{agreement_id}':
+  '/agreements/{agreementId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
-      - name: agreement_id
+      - name: agreementId
         in: path
         description: the agreement id
         required: true
@@ -245,6 +245,57 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/agreements/{agreementId}/contract':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      tags:
+        - agreement
+      summary: Create the agreement contract
+      operationId: addAgreementContract
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: agreementId
+          in: path
+          description: the agreement id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: A Agreement Contract seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentSeed'
+        required: true
+      responses:
+        '200':
+          description: Agreement Document create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Agreement not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Agreement Contract already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/agreements/{agreementId}/consumer-documents':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -448,6 +499,8 @@ components:
           type: boolean
         suspendedByPlatform:
           type: boolean
+        stamps:
+          $ref: '#/components/schemas/Stamps'
         consumerNotes:
           type: string
         rejectionReason:
@@ -457,6 +510,7 @@ components:
         - verifiedAttributes
         - certifiedAttributes
         - declaredAttributes
+        - stamps
     UpgradeAgreementSeed:
       type: object
       description: contains the expected payload for attributes persistence.
@@ -464,8 +518,38 @@ components:
         descriptorId:
           type: string
           format: uuid
+        stamp:
+          $ref: '#/components/schemas/Stamp'
       required:
         - descriptorId
+        - stamp
+    Stamp:
+      type: object
+      properties:
+        who:
+          type: string
+          format: uuid
+        when:
+          type: string
+          format: date-time
+      required:
+        - who
+        - when
+    Stamps:
+      type: object
+      properties:
+        submission:
+          $ref: '#/components/schemas/Stamp'
+        activation:
+          $ref: '#/components/schemas/Stamp'
+        rejection:
+          $ref: '#/components/schemas/Stamp'
+        suspension:
+          $ref: '#/components/schemas/Stamp'
+        upgrade:
+          $ref: '#/components/schemas/Stamp'
+        archiving:
+          $ref: '#/components/schemas/Stamp'
     Agreement:
       type: object
       properties:
@@ -519,6 +603,11 @@ components:
           format: date-time
         consumerNotes:
           type: string
+        contract:
+          $ref: '#/components/schemas/Document'
+        stamps:
+          $ref: '#/components/schemas/Stamps'
+          type: string
         rejectionReason:
           type: string
       required:
@@ -533,6 +622,7 @@ components:
         - declaredAttributes
         - consumerDocuments
         - createdAt
+        - stamps
       description: business representation of an agreement
     Agreements:
       type: array

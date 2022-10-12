@@ -102,6 +102,41 @@ object PersistentSerializationSpec {
   val persistentDeclaredAttributeGen: Gen[(PersistentDeclaredAttribute, DeclaredAttributeV1)] =
     Gen.uuid.map(id => (PersistentDeclaredAttribute(id), DeclaredAttributeV1(id.toString)))
 
+  val stampGen: Gen[(PersistentStamp, StampV1)] = {
+    for {
+      who           <- Gen.uuid
+      (when, whenL) <- offsetDatetimeLongGen
+    } yield (PersistentStamp(who = who, when = when), StampV1(who = who.toString, when = whenL))
+  }
+
+  val stampsGen: Gen[(PersistentStamps, StampsV1)] = {
+    for {
+      (submission, submissionV1) <- Gen.option(stampGen).map(_.separate)
+      (activation, activationV1) <- Gen.option(stampGen).map(_.separate)
+      (rejection, rejectionV1)   <- Gen.option(stampGen).map(_.separate)
+      (suspension, suspensionV1) <- Gen.option(stampGen).map(_.separate)
+      (upgrade, upgradeV1)       <- Gen.option(stampGen).map(_.separate)
+      (archiving, archivingV1)   <- Gen.option(stampGen).map(_.separate)
+    } yield (
+      PersistentStamps(
+        submission = submission,
+        activation = activation,
+        rejection = rejection,
+        suspension = suspension,
+        upgrade = upgrade,
+        archiving = archiving
+      ),
+      StampsV1(
+        submission = submissionV1,
+        activation = activationV1,
+        rejection = rejectionV1,
+        suspension = suspensionV1,
+        upgrade = upgradeV1,
+        archiving = archivingV1
+      )
+    )
+  }
+
   val persistentAgreementGen: Gen[(PersistentAgreement, AgreementV1)] = for {
     id                             <- Gen.uuid
     eserviceId                     <- Gen.uuid
@@ -119,6 +154,8 @@ object PersistentSerializationSpec {
     (createdAt, createdAtV1)       <- offsetDatetimeLongGen
     (updatedAt, updatedAtV1)       <- Gen.option(offsetDatetimeLongGen).map(_.separate)
     consumerNotes                  <- Gen.option(stringGen)
+    (contract, contractV1)         <- Gen.option(persistentDocumentGen).map(_.separate)
+    (stamps, stampsV1)             <- stampsGen
     rejectionReason                <- Gen.option(stringGen)
   } yield (
     PersistentAgreement(
@@ -138,6 +175,8 @@ object PersistentSerializationSpec {
       createdAt = createdAt,
       updatedAt = updatedAt,
       consumerNotes = consumerNotes,
+      contract = contract,
+      stamps = stamps,
       rejectionReason = rejectionReason
     ),
     AgreementV1(
@@ -157,6 +196,8 @@ object PersistentSerializationSpec {
       createdAt = createdAtV1,
       updatedAt = updatedAtV1,
       consumerNotes = consumerNotes,
+      contract = contractV1,
+      stamps = stampsV1.some,
       rejectionReason = rejectionReason
     )
   )

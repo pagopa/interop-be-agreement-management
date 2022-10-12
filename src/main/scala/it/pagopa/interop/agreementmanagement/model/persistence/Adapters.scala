@@ -1,5 +1,6 @@
 package it.pagopa.interop.agreementmanagement.model.persistence
 
+import cats.implicits._
 import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.commons.utils.service._
@@ -29,6 +30,8 @@ object Adapters {
       createdAt = dateTimeSupplier.get(),
       updatedAt = None,
       consumerNotes = agreement.consumerNotes,
+      contract = None,
+      stamps = PersistentStamps(),
       rejectionReason = None
     )
 
@@ -47,6 +50,7 @@ object Adapters {
         suspendedByPlatform = updateAgreementSeed.suspendedByPlatform,
         updatedAt = Some(dateTimeSupplier.get()),
         consumerNotes = updateAgreementSeed.consumerNotes,
+        stamps = PersistentStamps.fromAPI(updateAgreementSeed.stamps),
         rejectionReason = updateAgreementSeed.rejectionReason
       )
 
@@ -71,6 +75,8 @@ object Adapters {
         createdAt = dateTimeSupplier.get(),
         updatedAt = None,
         consumerNotes = oldAgreement.consumerNotes,
+        contract = oldAgreement.contract,
+        stamps = oldAgreement.stamps.copy(upgrade = PersistentStamp.fromAPI(seed.stamp).some),
         rejectionReason = None
       )
 
@@ -90,7 +96,10 @@ object Adapters {
       consumerDocuments = persistentAgreement.consumerDocuments.map(PersistentAgreementDocument.toAPI),
       createdAt = persistentAgreement.createdAt,
       updatedAt = persistentAgreement.updatedAt,
-      consumerNotes = persistentAgreement.consumerNotes
+      consumerNotes = persistentAgreement.consumerNotes,
+      contract = persistentAgreement.contract.map(PersistentAgreementDocument.toAPI),
+      stamps = PersistentStamps.toAPI(persistentAgreement.stamps),
+      rejectionReason = persistentAgreement.rejectionReason
     )
   }
 
@@ -169,6 +178,34 @@ object Adapters {
         contentType = document.contentType,
         path = document.path,
         createdAt = document.createdAt
+      )
+  }
+
+  implicit class PersistentStampObjectWrapper(private val p: PersistentStamp.type) extends AnyVal {
+    def fromAPI(stamp: Stamp): PersistentStamp = PersistentStamp(who = stamp.who, when = stamp.when)
+
+    def toAPI(stamp: PersistentStamp): Stamp = Stamp(who = stamp.who, when = stamp.when)
+  }
+
+  implicit class PersistentStampsObjectWrapper(private val p: PersistentStamps.type) extends AnyVal {
+    def fromAPI(stamps: Stamps): PersistentStamps =
+      PersistentStamps(
+        submission = stamps.submission.map(PersistentStamp.fromAPI),
+        activation = stamps.activation.map(PersistentStamp.fromAPI),
+        rejection = stamps.rejection.map(PersistentStamp.fromAPI),
+        suspension = stamps.suspension.map(PersistentStamp.fromAPI),
+        archiving = stamps.archiving.map(PersistentStamp.fromAPI),
+        upgrade = stamps.upgrade.map(PersistentStamp.fromAPI)
+      )
+
+    def toAPI(stamps: PersistentStamps): Stamps =
+      Stamps(
+        submission = stamps.submission.map(PersistentStamp.toAPI),
+        activation = stamps.activation.map(PersistentStamp.toAPI),
+        rejection = stamps.rejection.map(PersistentStamp.toAPI),
+        suspension = stamps.suspension.map(PersistentStamp.toAPI),
+        archiving = stamps.archiving.map(PersistentStamp.toAPI),
+        upgrade = stamps.upgrade.map(PersistentStamp.toAPI)
       )
   }
 

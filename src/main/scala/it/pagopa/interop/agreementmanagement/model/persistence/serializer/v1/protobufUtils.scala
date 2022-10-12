@@ -4,7 +4,7 @@ import cats.implicits.toTraverseOps
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.serializer.v1.agreement._
 import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, OffsetDateTimeOps, StringOps}
-
+import cats.implicits._
 import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
@@ -24,6 +24,8 @@ object protobufUtils {
       certifiedAttributes <- protobufAgreement.certifiedAttributes.traverse(deserializeCertifiedAttribute)
       declaredAttributes  <- protobufAgreement.declaredAttributes.traverse(deserializeDeclaredAttribute)
       consumerDocuments   <- protobufAgreement.consumerDocuments.traverse(toPersistentDocument).toTry
+      contract            <- protobufAgreement.contract.traverse(toPersistentDocument).toTry
+      stamps              <- protobufAgreement.stamps.traverse(toPersistentStamps).toTry
     } yield PersistentAgreement(
       id = id,
       eserviceId = eserviceId,
@@ -41,6 +43,8 @@ object protobufUtils {
       createdAt = createdAt,
       updatedAt = updatedAt,
       consumerNotes = protobufAgreement.consumerNotes,
+      contract = contract,
+      stamps = stamps.getOrElse(PersistentStamps()),
       rejectionReason = protobufAgreement.rejectionReason
     )
     agreement.toEither
@@ -61,6 +65,31 @@ object protobufUtils {
     document.toEither
   }
 
+  def toPersistentStamps(stampsV1: StampsV1): Either[Throwable, PersistentStamps] = for {
+    submission <- stampsV1.submission.traverse(toPersistentStamp)
+    activation <- stampsV1.activation.traverse(toPersistentStamp)
+    rejection  <- stampsV1.rejection.traverse(toPersistentStamp)
+    suspension <- stampsV1.suspension.traverse(toPersistentStamp)
+    upgrade    <- stampsV1.upgrade.traverse(toPersistentStamp)
+    archiving  <- stampsV1.archiving.traverse(toPersistentStamp)
+  } yield PersistentStamps(
+    submission = submission,
+    activation = activation,
+    rejection = rejection,
+    suspension = suspension,
+    upgrade = upgrade,
+    archiving = archiving
+  )
+
+  def toPersistentStamp(stampV1: StampV1): Either[Throwable, PersistentStamp] = {
+    val stamp: Try[PersistentStamp] = for {
+      who  <- stampV1.who.toUUID
+      when <- stampV1.when.toOffsetDateTime
+    } yield PersistentStamp(who = who, when = when)
+
+    stamp.toEither
+  }
+
   def toProtobufAgreement(persistentAgreement: PersistentAgreement): AgreementV1 =
     AgreementV1(
       id = persistentAgreement.id.toString,
@@ -79,7 +108,20 @@ object protobufUtils {
       createdAt = persistentAgreement.createdAt.toMillis,
       updatedAt = persistentAgreement.updatedAt.map(_.toMillis),
       consumerNotes = persistentAgreement.consumerNotes,
+      contract = persistentAgreement.contract.map(toProtobufDocument),
+      stamps = toProtobufStamps(persistentAgreement.stamps).some,
       rejectionReason = persistentAgreement.rejectionReason
+    )
+
+  def toProtobufStamp(stamp: PersistentStamp): StampV1 = StampV1(who = stamp.who.toString, when = stamp.when.toMillis)
+  def toProtobufStamps(stamps: PersistentStamps): StampsV1 =
+    StampsV1(
+      submission = stamps.submission.map(toProtobufStamp),
+      activation = stamps.activation.map(toProtobufStamp),
+      rejection = stamps.rejection.map(toProtobufStamp),
+      suspension = stamps.suspension.map(toProtobufStamp),
+      upgrade = stamps.upgrade.map(toProtobufStamp),
+      archiving = stamps.archiving.map(toProtobufStamp)
     )
 
   def toProtobufDocument(persistentDocument: PersistentAgreementDocument): AgreementDocumentV1 =

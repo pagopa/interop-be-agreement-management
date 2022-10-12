@@ -99,7 +99,7 @@ object Adapters {
       consumerNotes = persistentAgreement.consumerNotes,
       contract = persistentAgreement.contract.map(PersistentAgreementDocument.toAPI),
       stamps = PersistentStamps.toAPI(persistentAgreement.stamps),
-      rejectionReason = persistentAgreement.rejectionReason // TODO Is there any reason why this was not set here?
+      rejectionReason = persistentAgreement.rejectionReason
     )
   }
 

@@ -49,7 +49,7 @@ object AgreementEventsSerde {
     case _: VerifiedAttributeUpdated         => verifiedAttributeUpdated
   }
 
-  private val agreementContractAdded: String           = "agreementContractAdded"
+  private val agreementContractAdded: String           = "agreement_contract_added"
   private val agreementConsumerDocumentAdded: String   = "agreement_consumer_document_added"
   private val agreementConsumerDocumentRemoved: String = "agreement_consumer_document_removed"
   private val agreementAdded: String                   = "agreement_added"

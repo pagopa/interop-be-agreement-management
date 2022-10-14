@@ -58,8 +58,8 @@ class AgreementApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalate
       validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.addAgreement(fakeSeed) })
     }
 
-    "accept authorized roles for updateAgreement" in {
-      val endpoint = AuthorizedRoutes.endpoints("updateAgreement")
+    "accept authorized roles for updateAgreementById" in {
+      val endpoint = AuthorizedRoutes.endpoints("updateAgreementById")
 
       val fakeSeed = UpdateAgreementSeed(
         state = DRAFT,

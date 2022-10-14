@@ -107,7 +107,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
 
     val operationLabel: String = s"Updating agreement $agreementId"
 

@@ -25,9 +25,11 @@
       "verb": "GET"
     },
     {
-      "route": "updateAgreement",
+      "route": "updateAgreementById",
       "roles": [
-        "admin"
+        "admin",
+        "m2m",
+        "internal"
       ],
       "verb": "POST"
     },

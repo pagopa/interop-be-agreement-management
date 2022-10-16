@@ -151,25 +151,23 @@ trait SpecHelper {
     agreement <- Unmarshal(makeRequest(data, s"agreements/$agreementId/upgrade", HttpMethods.POST)).to[Agreement]
   } yield agreement
 
-  def addContract[T](agreementId: UUID, contractId: UUID, seed: DocumentSeed)(implicit
+  def addContract[T](agreementId: UUID, seed: DocumentSeed)(implicit
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem,
     unmarshal: Unmarshaller[HttpResponse, T]
   ): Future[T] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
-    _ = (() => mockUUIDSupplier.get()).expects().returning(contractId).once()
     document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/contract", HttpMethods.POST))
       .to[T]
   } yield document
 
-  def addConsumerDocument(agreementId: UUID, documentId: UUID, seed: DocumentSeed)(implicit
+  def addConsumerDocument(agreementId: UUID, seed: DocumentSeed)(implicit
     ec: ExecutionContext,
     actorSystem: actor.ActorSystem
   ): Future[Document] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
-    _ = (() => mockUUIDSupplier.get()).expects().returning(documentId).once()
     document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/consumer-documents", HttpMethods.POST))
       .to[Document]
   } yield document

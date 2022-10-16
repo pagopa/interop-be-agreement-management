@@ -159,18 +159,16 @@ object Adapters {
 
   implicit class PersistentAgreementDocumentObjectWrapper(private val p: PersistentAgreementDocument.type)
       extends AnyVal {
-    def fromAPI(
-      seed: DocumentSeed
-    )(uuidSupplier: UUIDSupplier, dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreementDocument =
+    def fromAPI(seed: DocumentSeed)(dateTimeSupplier: OffsetDateTimeSupplier): PersistentAgreementDocument =
       PersistentAgreementDocument(
-        id = uuidSupplier.get(),
+        id = seed.id,
         name = seed.name,
         prettyName = seed.prettyName,
         contentType = seed.contentType,
         path = seed.path,
         createdAt = dateTimeSupplier.get()
       )
-    def toAPI(document: PersistentAgreementDocument): Document =
+    def toAPI(document: PersistentAgreementDocument): Document                                             =
       Document(
         id = document.id,
         name = document.name,

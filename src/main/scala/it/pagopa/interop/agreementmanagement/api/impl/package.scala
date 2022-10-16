@@ -19,7 +19,7 @@ import scala.concurrent.duration.Duration
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val documentFormat: RootJsonFormat[Document]                         = jsonFormat6(Document)
-  implicit val documentSeedFormat: RootJsonFormat[DocumentSeed]                 = jsonFormat4(DocumentSeed)
+  implicit val documentSeedFormat: RootJsonFormat[DocumentSeed]                 = jsonFormat5(DocumentSeed)
   implicit val verifiedAttributeFormat: RootJsonFormat[VerifiedAttribute]       = jsonFormat1(VerifiedAttribute)
   implicit val certifiedAttributeFormat: RootJsonFormat[CertifiedAttribute]     = jsonFormat1(CertifiedAttribute)
   implicit val declaredAttributeFormat: RootJsonFormat[DeclaredAttribute]       = jsonFormat1(DeclaredAttribute)

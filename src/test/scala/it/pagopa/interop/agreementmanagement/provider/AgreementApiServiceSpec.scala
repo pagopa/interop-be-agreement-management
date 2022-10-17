@@ -158,11 +158,12 @@ class AgreementApiServiceSpec
         declaredAttributes = Nil
       )
 
-      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+      val documentSeed =
+        DocumentSeed(id = documentId, name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[Document] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        document <- addContract[Document](agreementId, documentId, documentSeed)
+        document <- addContract[Document](agreementId, documentSeed)
       } yield document
 
       val bodyResponse: Document = response.futureValue
@@ -193,12 +194,13 @@ class AgreementApiServiceSpec
         declaredAttributes = Nil
       )
 
-      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+      def documentSeed(id: UUID) =
+        DocumentSeed(id = id, name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[Problem] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        _        <- addContract[Document](agreementId, documentId1, documentSeed)
-        document <- addContract[Problem](agreementId, documentId2, documentSeed)
+        _        <- addContract[Document](agreementId, documentSeed(documentId1))
+        document <- addContract[Problem](agreementId, documentSeed(documentId2))
       } yield document
 
       response.futureValue shouldBe Problem(
@@ -229,11 +231,12 @@ class AgreementApiServiceSpec
         declaredAttributes = Nil
       )
 
-      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+      val documentSeed =
+        DocumentSeed(id = documentId, name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[Document] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        document <- addConsumerDocument(agreementId, documentId, documentSeed)
+        document <- addConsumerDocument(agreementId, documentSeed)
       } yield document
 
       val bodyResponse: Document = response.futureValue
@@ -263,11 +266,12 @@ class AgreementApiServiceSpec
         declaredAttributes = Nil
       )
 
-      val documentSeed = DocumentSeed(name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+      val documentSeed =
+        DocumentSeed(id = documentId, name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
 
       val response: Future[String] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        _        <- addConsumerDocument(agreementId, documentId, documentSeed)
+        _        <- addConsumerDocument(agreementId, documentSeed)
         response <- removeConsumerDocument(agreementId, documentId)
       } yield response
 

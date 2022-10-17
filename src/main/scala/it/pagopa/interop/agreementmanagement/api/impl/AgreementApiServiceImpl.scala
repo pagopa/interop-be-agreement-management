@@ -281,11 +281,7 @@ final case class AgreementApiServiceImpl(
 
     val result: Future[PersistentAgreementDocument] =
       commander(agreementId).askWithStatus(ref =>
-        AddAgreementContract(
-          agreementId,
-          PersistentAgreementDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
-          ref
-        )
+        AddAgreementContract(agreementId, PersistentAgreementDocument.fromAPI(documentSeed)(dateTimeSupplier), ref)
       )
 
     onComplete(result) {
@@ -317,7 +313,7 @@ final case class AgreementApiServiceImpl(
       commander(agreementId).askWithStatus(ref =>
         AddAgreementConsumerDocument(
           agreementId,
-          PersistentAgreementDocument.fromAPI(documentSeed)(UUIDSupplier, dateTimeSupplier),
+          PersistentAgreementDocument.fromAPI(documentSeed)(dateTimeSupplier),
           ref
         )
       )

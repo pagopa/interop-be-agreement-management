@@ -122,5 +122,6 @@ lazy val root = (project in file("."))
   .aggregate(client, models)
   .dependsOn(generated, models)
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
   .enablePlugins(NoPublishPlugin)
   .setupBuildInfo

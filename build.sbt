@@ -69,9 +69,11 @@ lazy val generated = project
     scalacOptions       := Seq(),
     libraryDependencies := Dependencies.Jars.generated,
     scalafmtOnCompile   := true,
-    publish / skip      := true
+    publish / skip      := true,
+    publish             := (()),
+    publishLocal        := (()),
+    publishTo           := None
   )
-  .enablePlugins(NoPublishPlugin)
   .setupBuildInfo
 
 lazy val models = project

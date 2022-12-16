@@ -70,14 +70,19 @@ object AgreementPersistentBehavior {
         )
 
       case AddAgreementConsumerDocument(agreementId, document, replyTo) =>
-        state.agreements
-          .get(agreementId)
-          .toRight(AgreementNotFound(agreementId))
-          .map(_ => document)
-          .fold(
-            handleFailure(_)(replyTo),
-            persistStateAndReply(_, AgreementConsumerDocumentAdded(agreementId, _))(replyTo)
-          )
+        val addedDocument: Either[ComponentError, PersistentAgreementDocument] =
+          for {
+            agreement <- state.agreements.get(agreementId).toRight(AgreementNotFound(agreementId))
+            result    <- agreement.consumerDocuments
+              .find(_.id == document.id)
+              .toLeft(document)
+              .leftMap(_ => AgreementDocumentAlreadyExists(agreementId))
+          } yield result
+
+        addedDocument.fold(
+          handleFailure(_)(replyTo),
+          persistStateAndReply(_, AgreementConsumerDocumentAdded(agreementId, _))(replyTo)
+        )
 
       case RemoveAgreementConsumerDocument(agreementId, documentId, replyTo) =>
         state.agreements

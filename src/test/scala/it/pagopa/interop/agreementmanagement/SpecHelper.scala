@@ -162,14 +162,15 @@ trait SpecHelper {
       .to[T]
   } yield document
 
-  def addConsumerDocument(agreementId: UUID, seed: DocumentSeed)(implicit
+  def addConsumerDocument[T](agreementId: UUID, seed: DocumentSeed)(implicit
     ec: ExecutionContext,
-    actorSystem: actor.ActorSystem
-  ): Future[Document] = for {
+    actorSystem: actor.ActorSystem,
+    unmarshal: Unmarshaller[HttpResponse, T]
+  ): Future[T] = for {
     data <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
     _ = (() => mockDateTimeSupplier.get()).expects().returning(timestamp).once()
     document <- Unmarshal(makeRequest(data, s"agreements/$agreementId/consumer-documents", HttpMethods.POST))
-      .to[Document]
+      .to[T]
   } yield document
 
   def removeConsumerDocument(agreementId: UUID, documentId: UUID)(implicit

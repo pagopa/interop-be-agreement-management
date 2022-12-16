@@ -12,6 +12,7 @@ import com.atlassian.oai.validator.report.ValidationReport
 import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.interop.agreementmanagement.api.AgreementApi
+import it.pagopa.interop.agreementmanagement.api.impl.ResponseHandlers.serviceCode
 import it.pagopa.interop.agreementmanagement.api.impl._
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.agreementmanagement.common.system.ApplicationConfiguration.{
@@ -33,6 +34,7 @@ import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, S
 import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.commons.utils.errors.{Problem => CommonProblem}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -118,7 +120,8 @@ trait Dependencies {
   )
 
   val validationExceptionToRoute: ValidationReport => Route = report => {
-    val error = problemOf(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report))
-    complete(error.status, error)(AgreementApiMarshallerImpl.toEntityMarshallerProblem)
+    val error =
+      CommonProblem(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report), serviceCode)
+    complete(error.status, error)
   }
 }

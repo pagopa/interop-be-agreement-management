@@ -236,7 +236,7 @@ class AgreementApiServiceSpec
 
       val response: Future[Document] = for {
         _        <- createAgreement(agreementSeed, agreementId)
-        document <- addConsumerDocument(agreementId, documentSeed)
+        document <- addConsumerDocument[Document](agreementId, documentSeed)
       } yield document
 
       val bodyResponse: Document = response.futureValue
@@ -246,6 +246,43 @@ class AgreementApiServiceSpec
       bodyResponse.contentType shouldBe documentSeed.contentType
       bodyResponse.path shouldBe documentSeed.path
       bodyResponse.createdAt shouldBe timestamp
+    }
+
+    "fail trying to add a consumer document if it already exists" in {
+      val agreementId  = UUID.randomUUID()
+      val eserviceId   = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+      val producerId   = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val documentId   = UUID.randomUUID()
+
+      val agreementSeed = AgreementSeed(
+        eserviceId = eserviceId,
+        descriptorId = descriptorId,
+        producerId = producerId,
+        consumerId = consumerId,
+        verifiedAttributes = Nil,
+        certifiedAttributes = Nil,
+        declaredAttributes = Nil
+      )
+
+      val documentSeed =
+        DocumentSeed(id = documentId, name = "doc1", prettyName = "prettyDoc1", contentType = "pdf", path = "somewhere")
+
+      val response: Future[Problem] = for {
+        _        <- createAgreement(agreementSeed, agreementId)
+        _        <- addConsumerDocument[Document](agreementId, documentSeed)
+        document <- addConsumerDocument[Problem](agreementId, documentSeed)
+      } yield document
+
+      response.futureValue shouldBe Problem(
+        "about:blank",
+        409,
+        "The request could not be processed because of conflict in the request, such as an edit conflict.",
+        None,
+        List(ProblemError("004-0006", s"Agreement document for ${agreementId.toString} already exists"))
+      )
+
     }
 
     "remove a consumer document from an agreement" in {

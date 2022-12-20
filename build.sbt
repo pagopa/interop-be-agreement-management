@@ -9,7 +9,7 @@ ThisBuild / version           := ComputeVersion.version
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 ThisBuild / githubOwner      := "pagopa"
-ThisBuild / githubRepository := "interop-be-tenant-management"
+ThisBuild / githubRepository := "interop-be-agreement-management"
 ThisBuild / resolvers += Resolver.githubPackages("pagopa")
 
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")

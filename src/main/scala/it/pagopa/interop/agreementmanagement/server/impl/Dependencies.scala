@@ -42,8 +42,12 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import com.typesafe.scalalogging.LoggerTakingImplicit
 
 trait Dependencies {
+
+  implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts")
 
   val uuidSupplier: UUIDSupplier               = UUIDSupplier
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
@@ -118,7 +122,7 @@ trait Dependencies {
   ): AgreementApi = new AgreementApi(
     AgreementApiServiceImpl(actorSystem, sharding, agreementPersistenceEntity, uuidSupplier, dateTimeSupplier),
     AgreementApiMarshallerImpl,
-    jwtReader.OAuth2JWTValidatorAsContexts(Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts"))
+    jwtReader.OAuth2JWTValidatorAsContexts
   )
 
   val validationExceptionToRoute: ValidationReport => Route = report => {

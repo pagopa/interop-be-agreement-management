@@ -46,7 +46,7 @@ import com.typesafe.scalalogging.LoggerTakingImplicit
 
 trait Dependencies {
 
-  implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+  implicit val loggerTI: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts")
 
   val uuidSupplier: UUIDSupplier               = UUIDSupplier

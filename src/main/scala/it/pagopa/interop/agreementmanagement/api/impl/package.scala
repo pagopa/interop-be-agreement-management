@@ -29,7 +29,7 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val upgradeAgreementSeedFormat: RootJsonFormat[UpgradeAgreementSeed] = jsonFormat2(UpgradeAgreementSeed)
   implicit val agreementFormat: RootJsonFormat[Agreement]                       = jsonFormat19(Agreement)
   implicit val problemErrorFormat: RootJsonFormat[ProblemError]                 = jsonFormat2(ProblemError)
-  implicit val problemFormat: RootJsonFormat[Problem]                           = jsonFormat5(Problem)
+  implicit val problemFormat: RootJsonFormat[Problem]                           = jsonFormat6(Problem)
 
   final val entityMarshallerProblem: ToEntityMarshaller[Problem] = sprayJsonMarshaller[Problem]
 

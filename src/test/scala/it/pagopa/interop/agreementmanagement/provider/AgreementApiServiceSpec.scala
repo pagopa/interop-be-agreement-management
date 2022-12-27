@@ -207,6 +207,7 @@ class AgreementApiServiceSpec
         "about:blank",
         409,
         "The request could not be processed because of conflict in the request, such as an edit conflict.",
+        Some("test-id"),
         None,
         List(ProblemError("004-0006", s"Agreement document for ${agreementId.toString} already exists"))
       )
@@ -279,6 +280,7 @@ class AgreementApiServiceSpec
         "about:blank",
         409,
         "The request could not be processed because of conflict in the request, such as an edit conflict.",
+        Some("test-id"),
         None,
         List(ProblemError("004-0006", s"Agreement document for ${agreementId.toString} already exists"))
       )

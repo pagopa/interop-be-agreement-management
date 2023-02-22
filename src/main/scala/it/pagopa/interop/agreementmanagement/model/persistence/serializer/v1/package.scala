@@ -99,4 +99,12 @@ package object v1 {
     : PersistEventSerializer[VerifiedAttributeUpdated, VerifiedAttributeUpdatedV1] =
     event => Right(VerifiedAttributeUpdatedV1.of(toProtobufAgreement(event.agreement)))
 
+  implicit def agreementContractAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementContractAddedV1, AgreementContractAdded] =
+    event => toPersistentDocument(event.contract).map(contract => AgreementContractAdded(event.agreementId, contract))
+
+  implicit def agreementContractAddedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementContractAdded, AgreementContractAddedV1] =
+    event => Right(AgreementContractAddedV1.of(event.agreementId, toProtobufDocument(event.contract)))
+
 }

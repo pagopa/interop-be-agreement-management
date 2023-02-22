@@ -45,3 +45,8 @@ message AgreementConsumerDocumentRemovedV1 {
   required string agreementId = 1;
   required string documentId = 2;
 }
+
+message AgreementContractAddedV1 {
+  required string agreementId = 1;
+  required AgreementDocumentV1 contract = 2;
+}

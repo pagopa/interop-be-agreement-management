@@ -455,7 +455,7 @@ class AgreementApiServiceSpec
     archivedAgreement.stamps.activation shouldBe Some(activationStamp)
     archivedAgreement.stamps.archiving shouldBe Some(upgradeStamp)
     archivedAgreement.stamps.upgrade shouldBe None
-    // when we retrieve the updated agreement, it should have its state changed to "active"
+    // when we retrieve the updated agreement, it should have its state changed to previous state
     val activeAgreement   = getAgreement(upgradedAgreementId.toString).futureValue
 
     activeAgreement.state shouldBe AgreementState.SUSPENDED

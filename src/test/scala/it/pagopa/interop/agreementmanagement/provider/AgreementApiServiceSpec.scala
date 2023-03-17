@@ -321,7 +321,7 @@ class AgreementApiServiceSpec
 
   }
 
-  "upgrade an agreement properly" in {
+  "upgrade an agreement properly if active" in {
     // given a pending agreement
     val agreementId     = UUID.randomUUID()
     val submissionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
@@ -371,6 +371,101 @@ class AgreementApiServiceSpec
     activeAgreement.stamps.upgrade shouldBe Some(upgradeStamp)
     activeAgreement.stamps.archiving shouldBe None
 
+  }
+
+  "upgrade an agreement properly if suspended by consumer" in {
+    testUpgradeWithSuspension(suspendedByConsumer = Some(true))
+
+  }
+
+  "upgrade an agreement properly if suspended by producer" in {
+    testUpgradeWithSuspension(suspendedByProducer = Some(true))
+
+  }
+
+  "upgrade an agreement properly if suspended by platform" in {
+    testUpgradeWithSuspension(suspendedByPlatform = Some(true))
+
+  }
+
+  "upgrade an agreement properly if suspended by all" in {
+    testUpgradeWithSuspension(
+      suspendedByConsumer = Some(true),
+      suspendedByProducer = Some(true),
+      suspendedByPlatform = Some(true)
+    )
+
+  }
+
+  private def testUpgradeWithSuspension(
+    suspendedByConsumer: Option[Boolean] = None,
+    suspendedByProducer: Option[Boolean] = None,
+    suspendedByPlatform: Option[Boolean] = None
+  ) = {
+    val agreementId     = UUID.randomUUID()
+    val submissionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val activationStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val suspensionStamp = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+    val upgradeStamp    = Stamp(UUID.randomUUID(), OffsetDateTime.now())
+
+    val agreementSeed        = AgreementSeed(
+      eserviceId = UUID.randomUUID(),
+      descriptorId = UUID.randomUUID(),
+      producerId = UUID.randomUUID(),
+      consumerId = UUID.randomUUID(),
+      verifiedAttributes = Seq.empty,
+      certifiedAttributes = Seq.empty,
+      declaredAttributes = Seq.empty
+    )
+    val upgradeAgreementSeed = UpgradeAgreementSeed(descriptorId = UUID.randomUUID(), upgradeStamp)
+
+    val response: Future[Agreement] = for {
+      draft     <- createAgreement(agreementSeed, agreementId)
+      submitted <- submitAgreement(draft, submissionStamp)
+      active    <- activateAgreement(submitted, activationStamp)
+      suspended <- suspendAgreement(
+        active,
+        suspensionStamp,
+        suspendedByConsumer = suspendedByConsumer,
+        suspendedByProducer = suspendedByProducer,
+        suspendedByPlatform = suspendedByPlatform
+      )
+    } yield suspended
+
+    val bodyResponse: Agreement = Await.result(response, Duration.Inf)
+    bodyResponse.verifiedAttributes shouldBe empty
+    bodyResponse.certifiedAttributes shouldBe empty
+    bodyResponse.declaredAttributes shouldBe empty
+    bodyResponse.state shouldBe AgreementState.SUSPENDED
+    bodyResponse.suspendedByConsumer shouldBe suspendedByConsumer
+    bodyResponse.suspendedByProducer shouldBe suspendedByProducer
+    bodyResponse.suspendedByPlatform shouldBe suspendedByPlatform
+
+    // and its upgrade
+    val upgradedAgreementId = UUID.randomUUID()
+    val _ = upgradeAgreement(agreementId.toString, upgradedAgreementId, upgradeAgreementSeed).futureValue
+
+    // when we retrieve the original agreement. it should have its state changed to "inactive"
+    val archivedAgreement = getAgreement(agreementId.toString).futureValue
+    archivedAgreement.state shouldBe AgreementState.ARCHIVED
+    archivedAgreement.suspendedByConsumer shouldBe suspendedByConsumer
+    archivedAgreement.suspendedByProducer shouldBe suspendedByProducer
+    archivedAgreement.suspendedByPlatform shouldBe suspendedByPlatform
+    archivedAgreement.stamps.submission shouldBe Some(submissionStamp)
+    archivedAgreement.stamps.activation shouldBe Some(activationStamp)
+    archivedAgreement.stamps.archiving shouldBe Some(upgradeStamp)
+    archivedAgreement.stamps.upgrade shouldBe None
+    // when we retrieve the updated agreement, it should have its state changed to "active"
+    val activeAgreement   = getAgreement(upgradedAgreementId.toString).futureValue
+
+    activeAgreement.state shouldBe AgreementState.SUSPENDED
+    activeAgreement.suspendedByConsumer shouldBe suspendedByConsumer
+    activeAgreement.suspendedByProducer shouldBe suspendedByProducer
+    activeAgreement.suspendedByPlatform shouldBe suspendedByPlatform
+    activeAgreement.stamps.submission shouldBe Some(submissionStamp)
+    activeAgreement.stamps.activation shouldBe Some(activationStamp)
+    activeAgreement.stamps.upgrade shouldBe Some(upgradeStamp)
+    activeAgreement.stamps.archiving shouldBe None
   }
 
 }

@@ -4,7 +4,7 @@ import akka.actor
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, HttpResponse, MessageEntity}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
-import cats.implicits._
+import cats.syntax.all._
 import it.pagopa.interop.agreementmanagement.model.AgreementState.{ACTIVE, PENDING, SUSPENDED}
 import it.pagopa.interop.agreementmanagement.model._
 

@@ -27,6 +27,7 @@ message AgreementV1 {
   optional AgreementDocumentV1 contract = 17;
   optional StampsV1 stamps = 18;
   optional string rejectionReason = 19;
+  optional int64 suspendedAt = 20;
 }
 
 message VerifiedAttributeV1 {
@@ -70,7 +71,8 @@ message StampsV1 {
   optional StampV1 submission = 1;
   optional StampV1 activation = 2;
   optional StampV1 rejection = 3;
-  optional StampV1 suspension = 4;
+  optional StampV1 suspensionByProducer = 4;
   optional StampV1 upgrade = 5;
   optional StampV1 archiving = 6;
+  optional StampV1 suspensionByConsumer = 7;
 }

@@ -176,7 +176,8 @@ class StateSpec extends FunSuite {
       consumerNotes = "these are consumer notes".some,
       contract = persistentDocument(contractId).some,
       stamps = PersistentStamps(),
-      rejectionReason = None
+      rejectionReason = None,
+      suspendedAt = None
     )
 
 }

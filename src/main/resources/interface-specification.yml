@@ -544,7 +544,9 @@ components:
           $ref: '#/components/schemas/Stamp'
         rejection:
           $ref: '#/components/schemas/Stamp'
-        suspension:
+        suspensionByProducer:
+          $ref: '#/components/schemas/Stamp'
+        suspensionByConsumer:
           $ref: '#/components/schemas/Stamp'
         upgrade:
           $ref: '#/components/schemas/Stamp'
@@ -610,6 +612,9 @@ components:
           type: string
         rejectionReason:
           type: string
+        suspendedAt:
+          type: string
+          format: date-time
       required:
         - id
         - eserviceId

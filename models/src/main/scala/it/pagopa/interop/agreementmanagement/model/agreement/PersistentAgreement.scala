@@ -22,5 +22,6 @@ final case class PersistentAgreement(
   consumerNotes: Option[String],
   contract: Option[PersistentAgreementDocument],
   stamps: PersistentStamps,
-  rejectionReason: Option[String]
+  rejectionReason: Option[String],
+  suspendedAt: Option[OffsetDateTime]
 )

@@ -20,6 +20,7 @@ object protobufUtils {
       consumerId          <- protobufAgreement.consumerId.toUUID
       createdAt           <- protobufAgreement.createdAt.toOffsetDateTime
       updatedAt           <- protobufAgreement.updatedAt.traverse(_.toOffsetDateTime)
+      suspendedAt         <- protobufAgreement.suspendedAt.traverse(_.toOffsetDateTime)
       verifiedAttributes  <- protobufAgreement.verifiedAttributes.traverse(deserializeVerifiedAttribute)
       certifiedAttributes <- protobufAgreement.certifiedAttributes.traverse(deserializeCertifiedAttribute)
       declaredAttributes  <- protobufAgreement.declaredAttributes.traverse(deserializeDeclaredAttribute)
@@ -45,7 +46,8 @@ object protobufUtils {
       consumerNotes = protobufAgreement.consumerNotes,
       contract = contract,
       stamps = stamps.getOrElse(PersistentStamps()),
-      rejectionReason = protobufAgreement.rejectionReason
+      rejectionReason = protobufAgreement.rejectionReason,
+      suspendedAt = suspendedAt
     )
     agreement.toEither
   }
@@ -66,17 +68,19 @@ object protobufUtils {
   }
 
   def toPersistentStamps(stampsV1: StampsV1): Either[Throwable, PersistentStamps] = for {
-    submission <- stampsV1.submission.traverse(toPersistentStamp)
-    activation <- stampsV1.activation.traverse(toPersistentStamp)
-    rejection  <- stampsV1.rejection.traverse(toPersistentStamp)
-    suspension <- stampsV1.suspension.traverse(toPersistentStamp)
-    upgrade    <- stampsV1.upgrade.traverse(toPersistentStamp)
-    archiving  <- stampsV1.archiving.traverse(toPersistentStamp)
+    submission           <- stampsV1.submission.traverse(toPersistentStamp)
+    activation           <- stampsV1.activation.traverse(toPersistentStamp)
+    rejection            <- stampsV1.rejection.traverse(toPersistentStamp)
+    suspensionByProducer <- stampsV1.suspensionByProducer.traverse(toPersistentStamp)
+    suspensionByConsumer <- stampsV1.suspensionByConsumer.traverse(toPersistentStamp)
+    upgrade              <- stampsV1.upgrade.traverse(toPersistentStamp)
+    archiving            <- stampsV1.archiving.traverse(toPersistentStamp)
   } yield PersistentStamps(
     submission = submission,
     activation = activation,
     rejection = rejection,
-    suspension = suspension,
+    suspensionByProducer = suspensionByProducer,
+    suspensionByConsumer = suspensionByConsumer,
     upgrade = upgrade,
     archiving = archiving
   )
@@ -110,7 +114,8 @@ object protobufUtils {
       consumerNotes = persistentAgreement.consumerNotes,
       contract = persistentAgreement.contract.map(toProtobufDocument),
       stamps = toProtobufStamps(persistentAgreement.stamps).some,
-      rejectionReason = persistentAgreement.rejectionReason
+      rejectionReason = persistentAgreement.rejectionReason,
+      suspendedAt = persistentAgreement.suspendedAt.map(_.toMillis)
     )
 
   def toProtobufStamp(stamp: PersistentStamp): StampV1 = StampV1(who = stamp.who.toString, when = stamp.when.toMillis)
@@ -119,7 +124,8 @@ object protobufUtils {
       submission = stamps.submission.map(toProtobufStamp),
       activation = stamps.activation.map(toProtobufStamp),
       rejection = stamps.rejection.map(toProtobufStamp),
-      suspension = stamps.suspension.map(toProtobufStamp),
+      suspensionByProducer = stamps.suspensionByProducer.map(toProtobufStamp),
+      suspensionByConsumer = stamps.suspensionByConsumer.map(toProtobufStamp),
       upgrade = stamps.upgrade.map(toProtobufStamp),
       archiving = stamps.archiving.map(toProtobufStamp)
     )

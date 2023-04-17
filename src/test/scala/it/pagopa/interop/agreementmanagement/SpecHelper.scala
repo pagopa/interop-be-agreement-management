@@ -137,7 +137,7 @@ trait SpecHelper {
       suspendedByConsumer = suspendedByConsumer orElse agreement.suspendedByConsumer,
       suspendedByProducer = suspendedByProducer orElse agreement.suspendedByProducer,
       suspendedByPlatform = suspendedByPlatform orElse agreement.suspendedByPlatform,
-      stamps = agreement.stamps.copy(suspension = stamp.some)
+      stamps = agreement.stamps.copy(suspensionByProducer = stamp.some)
     )
   )
 
@@ -251,7 +251,7 @@ trait SpecHelper {
           suspendedByConsumer = None,
           suspendedByProducer = None,
           suspendedByPlatform = None,
-          stamps = Stamps(suspension = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
+          stamps = Stamps(suspensionByProducer = Stamp(who = UUID.randomUUID(), when = OffsetDateTime.now()).some)
         )
       )
       draft4 <- createAgreement(agreementSeed4, AgreementFour.agreementId)

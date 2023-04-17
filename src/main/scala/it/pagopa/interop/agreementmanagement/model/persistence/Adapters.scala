@@ -32,7 +32,8 @@ object Adapters {
       consumerNotes = agreement.consumerNotes,
       contract = None,
       stamps = PersistentStamps(),
-      rejectionReason = None
+      rejectionReason = None,
+      suspendedAt = None
     )
 
     def update(
@@ -77,7 +78,8 @@ object Adapters {
         consumerNotes = oldAgreement.consumerNotes,
         contract = oldAgreement.contract,
         stamps = oldAgreement.stamps.copy(upgrade = PersistentStamp.fromAPI(seed.stamp).some),
-        rejectionReason = None
+        rejectionReason = None,
+        suspendedAt = oldAgreement.suspendedAt
       )
 
     def toAPI(persistentAgreement: PersistentAgreement): Agreement = Agreement(
@@ -191,7 +193,8 @@ object Adapters {
         submission = stamps.submission.map(PersistentStamp.fromAPI),
         activation = stamps.activation.map(PersistentStamp.fromAPI),
         rejection = stamps.rejection.map(PersistentStamp.fromAPI),
-        suspension = stamps.suspension.map(PersistentStamp.fromAPI),
+        suspensionByProducer = stamps.suspensionByProducer.map(PersistentStamp.fromAPI),
+        suspensionByConsumer = stamps.suspensionByConsumer.map(PersistentStamp.fromAPI),
         archiving = stamps.archiving.map(PersistentStamp.fromAPI),
         upgrade = stamps.upgrade.map(PersistentStamp.fromAPI)
       )
@@ -201,7 +204,8 @@ object Adapters {
         submission = stamps.submission.map(PersistentStamp.toAPI),
         activation = stamps.activation.map(PersistentStamp.toAPI),
         rejection = stamps.rejection.map(PersistentStamp.toAPI),
-        suspension = stamps.suspension.map(PersistentStamp.toAPI),
+        suspensionByProducer = stamps.suspensionByProducer.map(PersistentStamp.toAPI),
+        suspensionByConsumer = stamps.suspensionByConsumer.map(PersistentStamp.toAPI),
         archiving = stamps.archiving.map(PersistentStamp.toAPI),
         upgrade = stamps.upgrade.map(PersistentStamp.toAPI)
       )

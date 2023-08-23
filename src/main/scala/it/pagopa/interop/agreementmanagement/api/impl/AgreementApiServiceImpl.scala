@@ -16,7 +16,6 @@ import it.pagopa.interop.agreementmanagement.model._
 import it.pagopa.interop.agreementmanagement.model.agreement._
 import it.pagopa.interop.agreementmanagement.model.persistence.Adapters._
 import it.pagopa.interop.agreementmanagement.model.persistence._
-import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.OpenapiUtils.parseArrayParameters
@@ -45,7 +44,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel =
       s"Adding an Agreement for consumer ${agreementSeed.consumerId} descriptor ${agreementSeed.descriptorId} EService ${agreementSeed.eserviceId} Producer ${agreementSeed.producerId}"
     logger.info(operationLabel)
@@ -64,7 +63,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Updating agreement $agreementId"
     logger.info(operationLabel)
 
@@ -84,23 +83,22 @@ final case class AgreementApiServiceImpl(
 
   override def deleteAgreement(
     agreementId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
-    authorize(ADMIN_ROLE) {
-      val operationLabel: String = s"Deleting agreement $agreementId"
-      logger.info(operationLabel)
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
+    val operationLabel: String = s"Deleting agreement $agreementId"
+    logger.info(operationLabel)
 
-      val result: Future[Unit] = commander(agreementId).askWithStatus(DeleteAgreement(agreementId, _))
+    val result: Future[Unit] = commander(agreementId).askWithStatus(DeleteAgreement(agreementId, _))
 
-      onComplete(result) {
-        deleteAgreementResponse[Unit](operationLabel)(_ => deleteAgreement204)
-      }
+    onComplete(result) {
+      deleteAgreementResponse[Unit](operationLabel)(_ => deleteAgreement204)
     }
+  }
 
   override def getAgreement(agreementId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Getting agreement $agreementId"
     logger.info(operationLabel)
 
@@ -124,7 +122,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerAgreementarray: ToEntityMarshaller[Seq[Agreement]],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
 
     val resourceId: String =
       s"""
@@ -189,7 +187,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerDocument: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Adding contract ${documentSeed.id} to Agreement $agreementId"
     logger.info(operationLabel)
 
@@ -209,7 +207,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerAgreement: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Adding consumer document ${documentSeed.id} to Agreement $agreementId"
     logger.info(operationLabel)
 
@@ -232,7 +230,7 @@ final case class AgreementApiServiceImpl(
   override def removeAgreementConsumerDocument(agreementId: String, documentId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Removing consumer document $documentId from agreement $agreementId"
     logger.info(operationLabel)
 
@@ -248,7 +246,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerDocument: ToEntityMarshaller[Document],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Retrieving consumer document $documentId from agreement $agreementId"
     logger.info(operationLabel)
 
@@ -266,7 +264,7 @@ final case class AgreementApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerAgreement: ToEntityMarshaller[Agreement],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Upgrading agreement $agreementId"
     logger.info(s"$operationLabel, with data $seed")
 

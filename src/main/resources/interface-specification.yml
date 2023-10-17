@@ -23,7 +23,6 @@ paths:
   '/agreements/{agreementId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: agreementId
         in: path
         description: the agreement id
@@ -75,7 +74,6 @@ paths:
   '/agreements/{agreementId}/upgrade':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: []
@@ -121,7 +119,6 @@ paths:
   '/agreements/{agreementId}/update':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: []
@@ -161,7 +158,6 @@ paths:
   /agreements:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       security:
         - bearerAuth: []
@@ -248,7 +244,6 @@ paths:
   '/agreements/{agreementId}/contract':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - agreement
@@ -299,7 +294,6 @@ paths:
   '/agreements/{agreementId}/consumer-documents':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: agreementId
         in: path
         schema:
@@ -343,7 +337,6 @@ paths:
   '/agreements/{agreementId}/consumer-documents/{documentId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: agreementId
         in: path
         schema:
@@ -412,11 +405,6 @@ components:
       in: header
       name: X-Correlation-Id
       required: true
-      schema:
-        type: string
-    IpAddress:
-      in: header
-      name: X-Forwarded-For
       schema:
         type: string
   schemas:

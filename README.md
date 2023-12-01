@@ -13,5 +13,3 @@ where `<loggerName>` is the name of a specific logger that has to have been crea
 `GET`ting the same endpoints w/o the `level` query parameters returns the actual logging level for that logger.
 
 [Source](https://doc.akka.io/docs/akka-management/current/loglevels/logback.html) 
-
-fake commit
